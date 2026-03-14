@@ -76,7 +76,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-100">
             <h2 class="text-xl font-bold">2. 查 FDP 底線</h2>
-            <p class="text-slate-500 mt-1">輸入任務開始時間、派遣模式、日航／夜航，自動計算最晚 Block In 時間。</p>
+            <p class="text-slate-500 mt-1">輸入 FDP Start、派遣模式與日航／夜航類型，計算最晚 Block In 時間。</p>
           </div>
           <div class="p-6 space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -112,8 +112,8 @@
                 </select>
               </div>
               <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
-                規則說明：請直接輸入 <span class="font-semibold">FDP Start</span>，並由使用者自行判斷航班屬於日航或夜航。<br>
-                系統將依派遣模式與你選擇的日航／夜航類型，套用對應 FDP 上限後計算 FDP 底線。
+                規則說明：請直接輸入 <span class="font-semibold">FDP Start</span>，並由使用者自行選擇航班屬於日航或夜航。<br>
+                系統將依派遣模式與你選擇的航班類型，直接套用對應 FDP 上限後計算 FDP 底線，不再自動判斷日夜航。
               </div>
             </div>
 
@@ -238,6 +238,7 @@
     function calculateFDPDeadline() {
       const start = buildDateFromParts('fdpStartDate', 'fdpStartHour', 'fdpStartMinute');
       const dispatchMode = document.getElementById('dispatchMode').value;
+      const flightType = document.getElementById('flightType').value;
       const resultBox = document.getElementById('fdpResult');
 
       if (!start) {
@@ -245,7 +246,6 @@
         return;
       }
 
-      const flightType = document.getElementById('flightType').value;
       const etd = new Date(start.getTime() + 90 * 60 * 1000);
       const flightTypeLabel = flightType === 'day' ? '日航' : '夜航';
 
