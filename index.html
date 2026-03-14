@@ -103,9 +103,18 @@
               </div>
             </div>
 
-            <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
-              規則說明：網頁輸入的任務開始時間即為 <span class="font-semibold">FDP Start</span>，也就是 <span class="font-semibold">ETD - 90 分鐘</span>。<br>
-              系統會先自動推算 ETD，再依 ETD 判斷日航（07:00–21:00）或夜航（21:01–06:59），並套用對應 FDP 上限。
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">航班類型</label>
+                <select id="flightType" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                  <option value="day">日航</option>
+                  <option value="night">夜航</option>
+                </select>
+              </div>
+              <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
+                規則說明：請直接輸入 <span class="font-semibold">FDP Start</span>，並由使用者自行判斷航班屬於日航或夜航。<br>
+                系統將依派遣模式與你選擇的日航／夜航類型，套用對應 FDP 上限後計算 FDP 底線。
+              </div>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -236,13 +245,9 @@
         return;
       }
 
+      const flightType = document.getElementById('flightType').value;
       const etd = new Date(start.getTime() + 90 * 60 * 1000);
-      const etdHour = etd.getHours();
-      const etdMinute = etd.getMinutes();
-      const etdTotalMinutes = etdHour * 60 + etdMinute;
-
-      const isDayFlight = etdTotalMinutes >= 7 * 60 && etdTotalMinutes <= 21 * 60;
-      const flightTypeLabel = isDayFlight ? '日航' : '夜航';
+      const flightTypeLabel = flightType === 'day' ? '日航' : '夜航';
 
       const fdpLimitMap = {
         '2': { day: 14, night: 12, label: '標準組員（2人派）' },
@@ -251,7 +256,7 @@
       };
 
       const selectedRule = fdpLimitMap[dispatchMode];
-      const finalFDPHours = isDayFlight ? selectedRule.day : selectedRule.night;
+      const finalFDPHours = flightType === 'day' ? selectedRule.day : selectedRule.night;
       const deadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
       const dayOffsetLabel = getDayOffsetLabel(start, deadline);
       const summaryText = `${selectedRule.label} / ${flightTypeLabel} / FDP 上限 ${finalFDPHours} 小時`;
