@@ -146,8 +146,8 @@
                 </select>
               </div>
               <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
-                規則說明：請直接輸入 <span class="font-semibold">FDP Start</span>，並由使用者自行選擇航班屬於日航或夜航。<br>
-                系統將依派遣模式與你選擇的航班類型，直接套用對應 FDP 上限後計算 FDP 底線，不再自動判斷日夜航。
+                請直接輸入 <span class="font-semibold">FDP起算時間</span>，並須自行判斷並選擇航班屬於日航或夜航。<br>
+                系統將依派遣模式與你選擇的航班類型，直接套用對應 FDP 上限後計算 FDP 底線。
               </div>
             </div>
 
@@ -184,7 +184,11 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-2">航段</label>
-                  <input id="msgRoute" type="text" placeholder="例如 TPE-HKG-TPE 或 ANC-TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <div class="grid grid-cols-3 gap-2">
+                    <input id="msgRoute1" type="text" maxlength="3" placeholder="例如 TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="msgRoute2" type="text" maxlength="3" placeholder="例如 HKG" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="msgRoute3" type="text" maxlength="3" placeholder="第三段可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  </div>
                 </div>
               </div>
 
@@ -318,7 +322,11 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-2">航段</label>
-                  <input id="splitMsgRoute" type="text" placeholder="例如 TPE-HKG-TPE 或 ANC-TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <div class="grid grid-cols-3 gap-2">
+                    <input id="splitMsgRoute1" type="text" maxlength="3" placeholder="例如 TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="splitMsgRoute2" type="text" maxlength="3" placeholder="例如 HKG" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="splitMsgRoute3" type="text" maxlength="3" placeholder="第三段可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  </div>
                 </div>
               </div>
 
@@ -450,6 +458,19 @@
       return parts.length ? parts[parts.length - 1] : '';
     }
 
+    function buildRouteFromInputs(...ids) {
+      const parts = ids
+        .map(id => document.getElementById(id).value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3))
+        .filter(Boolean);
+      if (parts.length < 2) {
+        return { route: '', lastStation: '' };
+      }
+      return {
+        route: parts.join('-'),
+        lastStation: parts[parts.length - 1]
+      };
+    }
+
     function getFDPRule(dispatchMode, flightType) {
       const fdpLimitMap = {
         '2': { day: 14, night: 12, label: '標準組員（2人派）', crewCount: 2, maxFlightTime: 10 },
@@ -572,7 +593,7 @@
       const flightNoDigits = document.getElementById('msgFlightNo').value.trim().replace(/\D/g, '');
       const flightDateValue = document.getElementById('msgFlightDate').value;
       const tailSuffixRaw = document.getElementById('msgTailSuffix').value.trim().toUpperCase();
-      const route = document.getElementById('msgRoute').value.trim().toUpperCase();
+      const { route, lastStation } = buildRouteFromInputs('msgRoute1', 'msgRoute2', 'msgRoute3');
 
       if (!flightNoDigits || !flightDateValue || !tailSuffixRaw || !route) {
         output.textContent = '請完整輸入航班號、航班日期、機尾號末 3 碼與航段。';
@@ -585,9 +606,8 @@
         return;
       }
 
-      const lastStation = getLastStation(route);
       if (!lastStation) {
-        output.textContent = '航段格式不正確，請使用例如 TPE-HKG-TPE 或 ANC-TPE。';
+        output.textContent = '請至少輸入前兩個機場代號，第三個可留空。';
         return;
       }
 
@@ -735,7 +755,7 @@
       const flightNoDigits = document.getElementById('splitMsgFlightNo').value.trim().replace(/\D/g, '');
       const flightDateValue = document.getElementById('splitMsgFlightDate').value;
       const tailSuffixRaw = document.getElementById('splitMsgTailSuffix').value.trim().toUpperCase();
-      const route = document.getElementById('splitMsgRoute').value.trim().toUpperCase();
+      const { route, lastStation } = buildRouteFromInputs('splitMsgRoute1', 'splitMsgRoute2', 'splitMsgRoute3');
 
       if (!flightNoDigits || !flightDateValue || !tailSuffixRaw || !route) {
         output.textContent = '請完整輸入航班號、航班日期、機尾號末 3 碼與航段。';
@@ -748,9 +768,9 @@
         return;
       }
 
-      const lastStation = getLastStation(route);
+      // lastStation 已由 buildRouteFromInputs 取得，不需再次宣告
       if (!lastStation) {
-        output.textContent = '航段格式不正確，請使用例如 TPE-HKG-TPE 或 ANC-TPE。';
+        output.textContent = '請至少輸入前兩個機場代號，第三個可留空。';
         return;
       }
 
@@ -815,7 +835,9 @@
       document.getElementById('msgFlightNo').value = '';
       document.getElementById('msgFlightDate').value = '';
       document.getElementById('msgTailSuffix').value = '';
-      document.getElementById('msgRoute').value = '';
+      document.getElementById('msgRoute1').value = '';
+      document.getElementById('msgRoute2').value = '';
+      document.getElementById('msgRoute3').value = '';
       document.getElementById('fdpMessageResult').innerHTML = '請先完成 FDP 底線計算，再輸入航班資訊產生電報。';
       latestFDPData = null;
     }
@@ -836,7 +858,9 @@
       document.getElementById('splitMsgFlightNo').value = '';
       document.getElementById('splitMsgFlightDate').value = '';
       document.getElementById('splitMsgTailSuffix').value = '';
-      document.getElementById('splitMsgRoute').value = '';
+      document.getElementById('splitMsgRoute1').value = '';
+      document.getElementById('splitMsgRoute2').value = '';
+      document.getElementById('splitMsgRoute3').value = '';
       document.getElementById('splitDutyMessageResult').innerHTML = '請先完成中斷工時計算，再輸入航班資訊產生電報。';
       latestSplitDutyData = null;
     }
