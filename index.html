@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Crew Duty Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;padding:30px;background:#f5f5f5}
+.container{max-width:500px;margin:auto;background:white;padding:20px;border-radius:10px}
+input,select,button{width:100%;padding:10px;margin:10px 0}
+.result{margin-top:20px;font-size:18px}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Crew Duty Calculator</h2>
+
+<label>Duty Start</label>
+<input type="datetime-local" id="start">
+
+<label>Duty End</label>
+<input type="datetime-local" id="end">
+
+<label>Crew Type</label>
+<select id="crew">
+<option>Standard Crew</option>
+<option>Augmented Crew</option>
+<option>Double Crew</option>
+</select>
+
+<button onclick="calculate()">Calculate</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+<script>
+
+function calculate(){
+
+let start=new Date(document.getElementById("start").value)
+let end=new Date(document.getElementById("end").value)
+
+let duty=(end-start)/3600000
+
+let rest=Math.max(duty,10)
+
+let next=new Date(end.getTime()+rest*3600000)
+
+document.getElementById("result").innerHTML=
+"Duty Time: "+duty.toFixed(2)+" hrs<br>"+
+"Minimum Rest: "+rest.toFixed(2)+" hrs<br>"+
+"Next Earliest Duty: "+next
+
+}
+
+</script>
+
+</body>
+</html>
