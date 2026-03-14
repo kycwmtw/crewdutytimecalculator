@@ -1,62 +1,247 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-<title>Crew Duty Calculator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:Arial;padding:30px;background:#f5f5f5}
-.container{max-width:500px;margin:auto;background:white;padding:20px;border-radius:10px}
-input,select,button{width:100%;padding:10px;margin:10px 0}
-.result{margin-top:20px;font-size:18px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>組員時間計算工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+  </style>
 </head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <div class="max-w-6xl mx-auto px-4 py-8 md:px-6 lg:px-8">
+    <header class="mb-8">
+      <div class="bg-slate-900 text-white rounded-3xl shadow-xl p-6 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="text-sky-300 text-sm tracking-[0.25em] uppercase">Crew Duty Utility</p>
+            <h1 class="text-3xl md:text-4xl font-bold mt-2">組員時間計算工具</h1>
+            <p class="text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              目前開放兩項功能：時間差計算、FDP 底線查詢。其餘功能先保留版位，後續可逐步補上規則與公式。
+            </p>
+          </div>
+          <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm">
+            <div class="text-slate-400">目前版本</div>
+            <div class="text-lg font-semibold">v1.0</div>
+          </div>
+        </div>
+      </div>
+    </header>
 
-<body>
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100">
+            <h2 class="text-xl font-bold">1. 時間差計算</h2>
+            <p class="text-slate-500 mt-1">輸入任務開始與結束時間，計算兩者之間的時間差。</p>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">任務開始時間</label>
+              <input id="diffStart" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">任務結束時間</label>
+              <input id="diffEnd" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
+              <button onclick="calculateTimeDiff()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">計算時間差</button>
+              <button onclick="resetTimeDiff()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
+            </div>
+            <div class="md:col-span-2">
+              <div id="timeDiffResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[96px] flex items-center text-slate-600">
+                請輸入開始與結束時間。
+              </div>
+            </div>
+          </div>
+        </div>
 
-<div class="container">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100">
+            <h2 class="text-xl font-bold">2. 查 FDP 底線</h2>
+            <p class="text-slate-500 mt-1">輸入任務開始時間、派遣模式、日航／夜航，自動計算最晚 Block In 時間。</p>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">組員任務開始時間</label>
+              <input id="fdpStart" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">組員派遣模式</label>
+              <select id="dispatchMode" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="2">2 人派</option>
+                <option value="3">3 人派</option>
+                <option value="4">4 人派</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">航班型態</label>
+              <select id="flightType" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="day">日航</option>
+                <option value="night">夜航（FDP 上限 - 2 小時）</option>
+              </select>
+            </div>
+            <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              目前先採固定上限：<br>
+              2 人派 12 小時、3 人派 16 小時、4 人派 18 小時。<br>
+              夜航會在該上限基礎上再減 2 小時。
+            </div>
+            <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
+              <button onclick="calculateFDPDeadline()" class="rounded-2xl bg-slate-900 text-white px-5 py-3 font-medium hover:bg-slate-800 transition">計算 FDP 底線</button>
+              <button onclick="resetFDP()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
+            </div>
+            <div class="md:col-span-2">
+              <div id="fdpResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[132px] flex items-center text-slate-600">
+                請輸入任務開始時間並選擇條件。
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<h2>Crew Duty Calculator</h2>
+      <aside class="space-y-6">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+          <h3 class="text-lg font-bold">功能總覽</h3>
+          <div class="mt-4 space-y-3">
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <div class="font-semibold text-emerald-800">已開發</div>
+              <ul class="mt-2 text-sm text-emerald-700 space-y-1 list-disc list-inside">
+                <li>時間差計算</li>
+                <li>FDP 底線查詢</li>
+              </ul>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="font-semibold text-slate-700">保留功能</div>
+              <ul class="mt-2 text-sm text-slate-600 space-y-1 list-disc list-inside">
+                <li>中斷工時</li>
+                <li>延長工時</li>
+                <li>標準派遣 24 小時內最高飛時 10 小時限制</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-<label>Duty Start</label>
-<input type="datetime-local" id="start">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+          <h3 class="text-lg font-bold">後續擴充建議</h3>
+          <ul class="mt-4 text-sm text-slate-600 space-y-3 leading-relaxed">
+            <li>加入規則說明面板，避免只顯示結果卻不知道算法。</li>
+            <li>將時間輸出格式統一成 YYYY-MM-DD HH:mm。</li>
+            <li>未來可加入夜航判定條件，而不是手動切換。</li>
+            <li>可再加「一鍵複製結果」與「手機版大按鈕模式」。</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
 
-<label>Duty End</label>
-<input type="datetime-local" id="end">
+  <script>
+    function formatDateTime(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
 
-<label>Crew Type</label>
-<select id="crew">
-<option>Standard Crew</option>
-<option>Augmented Crew</option>
-<option>Double Crew</option>
-</select>
+    function formatDuration(totalMinutes) {
+      const sign = totalMinutes < 0 ? '-' : '';
+      const absMinutes = Math.abs(totalMinutes);
+      const hours = Math.floor(absMinutes / 60);
+      const minutes = absMinutes % 60;
+      return `${sign}${hours} 小時 ${minutes} 分`;
+    }
 
-<button onclick="calculate()">Calculate</button>
+    function getMinutesDifference(start, end) {
+      return Math.round((end - start) / 60000);
+    }
 
-<div class="result" id="result"></div>
+    function calculateTimeDiff() {
+      const startValue = document.getElementById('diffStart').value;
+      const endValue = document.getElementById('diffEnd').value;
+      const resultBox = document.getElementById('timeDiffResult');
 
-</div>
+      if (!startValue || !endValue) {
+        resultBox.innerHTML = '<span class="text-rose-600">請完整輸入開始與結束時間。</span>';
+        return;
+      }
 
-<script>
+      const start = new Date(startValue);
+      const end = new Date(endValue);
+      const diffMinutes = getMinutesDifference(start, end);
 
-function calculate(){
+      if (diffMinutes < 0) {
+        resultBox.innerHTML = '<span class="text-rose-600">結束時間不能早於開始時間。</span>';
+        return;
+      }
 
-let start=new Date(document.getElementById("start").value)
-let end=new Date(document.getElementById("end").value)
+      resultBox.innerHTML = `
+        <div class="space-y-2">
+          <div><span class="font-semibold text-slate-900">任務開始：</span>${formatDateTime(start)}</div>
+          <div><span class="font-semibold text-slate-900">任務結束：</span>${formatDateTime(end)}</div>
+          <div class="text-lg font-bold text-sky-700 pt-1">時間差：${formatDuration(diffMinutes)}</div>
+        </div>
+      `;
+    }
 
-let duty=(end-start)/3600000
+    function resetTimeDiff() {
+      document.getElementById('diffStart').value = '';
+      document.getElementById('diffEnd').value = '';
+      document.getElementById('timeDiffResult').innerHTML = '請輸入開始與結束時間。';
+    }
 
-let rest=Math.max(duty,10)
+    function calculateFDPDeadline() {
+      const startValue = document.getElementById('fdpStart').value;
+      const dispatchMode = document.getElementById('dispatchMode').value;
+      const flightType = document.getElementById('flightType').value;
+      const resultBox = document.getElementById('fdpResult');
 
-let next=new Date(end.getTime()+rest*3600000)
+      if (!startValue) {
+        resultBox.innerHTML = '<span class="text-rose-600">請輸入組員任務開始時間。</span>';
+        return;
+      }
 
-document.getElementById("result").innerHTML=
-"Duty Time: "+duty.toFixed(2)+" hrs<br>"+
-"Minimum Rest: "+rest.toFixed(2)+" hrs<br>"+
-"Next Earliest Duty: "+next
+      const start = new Date(startValue);
 
-}
+      const baseHoursMap = {
+        '2': 12,
+        '3': 16,
+        '4': 18
+      };
 
-</script>
+      const baseHours = baseHoursMap[dispatchMode];
+      const nightReduction = flightType === 'night' ? 2 : 0;
+      const finalFDPHours = baseHours - nightReduction;
+      const deadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
 
+      const dispatchLabelMap = {
+        '2': '2 人派',
+        '3': '3 人派',
+        '4': '4 人派'
+      };
+
+      const flightTypeLabel = flightType === 'night' ? '夜航' : '日航';
+
+      resultBox.innerHTML = `
+        <div class="space-y-2">
+          <div><span class="font-semibold text-slate-900">任務開始時間：</span>${formatDateTime(start)}</div>
+          <div><span class="font-semibold text-slate-900">派遣模式：</span>${dispatchLabelMap[dispatchMode]}</div>
+          <div><span class="font-semibold text-slate-900">航班型態：</span>${flightTypeLabel}</div>
+          <div><span class="font-semibold text-slate-900">適用 FDP 上限：</span>${finalFDPHours} 小時</div>
+          <div class="text-lg font-bold text-indigo-700 pt-1">FDP 底線（最晚 Block In 時間）：${formatDateTime(deadline)}</div>
+        </div>
+      `;
+    }
+
+    function resetFDP() {
+      document.getElementById('fdpStart').value = '';
+      document.getElementById('dispatchMode').value = '2';
+      document.getElementById('flightType').value = 'day';
+      document.getElementById('fdpResult').innerHTML = '請輸入任務開始時間並選擇條件。';
+    }
+  </script>
 </body>
 </html>
