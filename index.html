@@ -18,9 +18,23 @@
               先選擇功能，再進入對應的輸入頁面進行計算。現在開放時間差計算、FDP 底線查詢與電報產生、中斷工時計算與電報產生。
             </p>
           </div>
-          <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
-            <div class="text-slate-400">目前版本</div>
-            <div class="text-lg font-semibold">v2.1</div>
+          <div class="flex flex-col gap-3 md:items-end">
+            <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
+              <div class="text-slate-400">目前版本</div>
+              <div class="text-lg font-semibold">v2.1</div>
+            </div>
+            <div class="bg-slate-900/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm min-w-[220px]">
+              <div class="grid grid-cols-1 gap-2">
+                <div>
+                  <div class="text-slate-400 text-xs">UTC / Zulu</div>
+                  <div id="utcClock" class="text-base font-semibold text-sky-300">--:--:--</div>
+                </div>
+                <div>
+                  <div class="text-slate-400 text-xs">Taipei (UTC+8)</div>
+                  <div id="taipeiClock" class="text-base font-semibold text-white">--:--:--</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -38,7 +52,7 @@
               <button onclick="showView('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
                 <div class="text-sm text-sky-700 font-semibold">功能 1</div>
                 <div class="text-xl font-bold mt-2">時間差計算</div>
-                <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入任務開始與結束時間，快速算出兩者之間的時間差。</p>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入兩個時間，快速算出兩者之間的時間差。</p>
               </button>
 
               <button onclick="showView('fdpView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
@@ -400,6 +414,25 @@
     let latestFDPData = null;
     let latestSplitDutyData = null;
 
+    function updateLiveClocks() {
+      const now = new Date();
+
+      const utcText = now.toLocaleString('sv-SE', {
+        timeZone: 'UTC',
+        hour12: false
+      });
+
+      const taipeiText = now.toLocaleString('sv-SE', {
+        timeZone: 'Asia/Taipei',
+        hour12: false
+      });
+
+      const utcClock = document.getElementById('utcClock');
+      const taipeiClock = document.getElementById('taipeiClock');
+      if (utcClock) utcClock.textContent = utcText + ' Z';
+      if (taipeiClock) taipeiClock.textContent = taipeiText;
+    }
+
     function showView(viewId) {
       const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView'];
       viewIds.forEach(id => {
@@ -457,13 +490,6 @@
       return Math.round((end - start) / 60000);
     }
 
-    function getLastStation(routeText) {
-      const cleaned = routeText.trim().toUpperCase().replace(/\s+/g, '');
-      if (!cleaned) return '';
-      const parts = cleaned.split('-').filter(Boolean);
-      return parts.length ? parts[parts.length - 1] : '';
-    }
-
     function autoAdvanceField(currentInput, nextId) {
       const cleaned = currentInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       currentInput.value = cleaned;
@@ -477,9 +503,11 @@
       const parts = ids
         .map(id => document.getElementById(id).value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3))
         .filter(Boolean);
+
       if (parts.length < 2) {
         return { route: '', lastStation: '' };
       }
+
       return {
         route: parts.join('-'),
         lastStation: parts[parts.length - 1]
@@ -783,7 +811,6 @@
         return;
       }
 
-      // lastStation 已由 buildRouteFromInputs 取得，不需再次宣告
       if (!lastStation) {
         output.textContent = '請至少輸入前兩個機場代號，第三個可留空。';
         return;
@@ -885,6 +912,8 @@
       resetFDP();
       resetSplitDuty();
       showView('homeView');
+      updateLiveClocks();
+      setInterval(updateLiveClocks, 1000);
     });
   </script>
 </body>
