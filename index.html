@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>組員時間計算工具</title>
   <script src="https://cdn.tailwindcss.com">
-    populateTimeSelectors();
-    resetTimeDiff();
-    resetFDP();
+    document.addEventListener('DOMContentLoaded', function () {
+      populateTimeSelectors();
+      resetTimeDiff();
+      resetFDP();
+    });
   </script>
   <style>
     input[type="datetime-local"]::-webkit-calendar-picker-indicator {
@@ -160,24 +162,26 @@
 
       hourSelectors.forEach(id => {
         const select = document.getElementById(id);
-        if (!select || select.options.length > 0) return;
+        if (!select) return;
+        select.innerHTML = '';
         for (let i = 0; i < 24; i++) {
           const value = String(i).padStart(2, '0');
           const option = document.createElement('option');
           option.value = value;
-          option.textContent = `${value} 時`;
+          option.textContent = value;
           select.appendChild(option);
         }
       });
 
       minuteSelectors.forEach(id => {
         const select = document.getElementById(id);
-        if (!select || select.options.length > 0) return;
+        if (!select) return;
+        select.innerHTML = '';
         for (let i = 0; i < 60; i++) {
           const value = String(i).padStart(2, '0');
           const option = document.createElement('option');
           option.value = value;
-          option.textContent = `${value} 分`;
+          option.textContent = value;
           select.appendChild(option);
         }
       });
