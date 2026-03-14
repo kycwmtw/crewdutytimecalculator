@@ -49,7 +49,7 @@
           <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-100">
               <h2 class="text-xl font-bold">功能選擇</h2>
-              <p class="text-slate-500 mt-1">請先選擇要使用的功能，再進入個別輸入頁面。</p>
+              <p class="text-slate-500 mt-1">請選擇要使用的功能。</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               <button onclick="openUsageModal('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
@@ -75,7 +75,7 @@
           <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-100">
               <h2 class="text-xl font-bold">工作日誌</h2>
-              <p class="text-slate-500 mt-1">這裡記錄每次更新的功能與調整內容，方便回頭查版本差異。</p>
+              <p class="text-slate-500 mt-1">這裡記錄每次更新的功能與調整內容。</p>
             </div>
             <div class="p-6">
               <div class="space-y-4">
@@ -272,7 +272,7 @@
             <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-4">
               <div>
                 <h3 class="text-lg font-bold">產出的電報</h3>
-                <p class="text-sm text-slate-500 mt-1">完成 FDP 計算後，若已補齊航班號、日期、機尾號末三碼與航段，系統會同步產出可直接複製的電報。</p>
+                <p class="text-sm text-slate-500 mt-1"> 請再檢查一下，沒有錯就可以直接複製了。</p>
               </div>
 
               <div class="flex flex-wrap gap-3">
@@ -529,8 +529,7 @@
         items: [
           '必填欄位為 FDP 起算時間、組員派遣模式、航班類型。只填這三項也可以先算出 FDP 底線。',
           '航班號、日期、機尾號與航段屬於選填。補齊後，系統才能生出電報內容。',
-          '若資料庫查得到航班，系統會嘗試帶入航段，並算出起飛站當地時間 ETD，自動判斷日/夜航。',
-          '若資料庫查無航班，或查出來的航班資訊有誤，請手動輸入所有資訊。',
+          '若資料庫查無航班，或系統自動帶出的航班有誤，請手動輸入所有資訊。',
           '系統提供的是輔助判斷，特殊班、調機、包機或臨時異動仍請以實際任務資訊為準。'
         ]
       },
@@ -540,8 +539,7 @@
           '此功能用於後推前送飯店情境，檢查飯店休息時間是否符合中斷工時條件，並計算出新的FDP。',
           '必填欄位為 FDP 起算時間、派遣模式、航班類型，以及飯店進房與退房時間。系統會計算原底線、休息時長與新底線。',
           '航班號、日期、機尾號與航段屬於選填。補齊後，系統才能生出電報內容。',
-          '若資料庫查得到航班，系統會嘗試帶入航段，並算出起飛站當地時間 ETD，自動判斷日/夜航。',
-          '若資料庫查無航班，或查出來的航班資訊有誤，請手動輸入所有資訊。'
+          '若資料庫查無航班，或系統自動帶出的航班有誤，請手動輸入所有資訊。'
         ]
       }
     };
