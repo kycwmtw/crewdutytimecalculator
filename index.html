@@ -23,7 +23,7 @@
           <div class="flex flex-col gap-3 md:items-end">
             <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
               <div class="text-slate-400">目前版本</div>
-              <div class="text-lg font-semibold">v2.1</div>
+              <div class="text-lg font-semibold">v2.2</div>
             </div>
             <div class="bg-slate-900/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm min-w-[220px]">
               <div class="grid grid-cols-1 gap-2">
@@ -84,25 +84,25 @@
                     <div class="text-sm text-slate-500">本次更新</div>
                   </div>
                   <ul class="mt-3 space-y-2 text-sm text-slate-700 list-disc pl-5">
-                    <li>首頁新增工作日誌欄位，可持續記錄每次版本更新內容。</li>
-                    <li>進入各功能前新增使用說明視窗，閱讀並按下「了解」後才會進入輸入畫面。</li>
-                    <li>使用流程改為先看說明、再輸入資料，減少誤填與誤判。</li>
+                    <li>加入航班資料庫，輸入航班號後可以自動帶入航段。</li>
+                    <li>輸入FDP起算時間、航班號後，電腦能算出當地時間的ETD，並自動判斷日/夜航。</li>
+                    <li>新增使用前必讀說明。</li>
                   </ul>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div class="font-semibold text-slate-900">v2.1</div>
                   <ul class="mt-3 space-y-2 text-sm text-slate-700 list-disc pl-5">
-                    <li>查 FDP 底線區塊完成必填與選填欄位重排，並新增紅色星號提示。</li>
-                    <li>修正航班號手動輸入時自動補零造成的錯誤，改為保留實際輸入數字。</li>
-                    <li>網頁內 Flight Master 相關文字改為「資料庫」。</li>
+                    <li>新增中斷工時計算FDP功能。</li>
+                    <li>計算出FDP底線後，新增產出電報功能，可直接複製。</li>
+                    <li>修復Bug。</li>
                   </ul>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="font-semibold text-slate-900">v2.0</div>
+                  <div class="font-semibold text-slate-900">v1.0</div>
                   <ul class="mt-3 space-y-2 text-sm text-slate-700 list-disc pl-5">
-                    <li>整合 FDP 計算與電報輸入邏輯，同頁完成底線查詢與電報產生。</li>
-                    <li>導入 CI 航班資料庫與機場時區資料，支援自動帶入航段與時區判定。</li>
-                    <li>加入多航段航班選擇器，避免班號對應多條航段時自動帶錯資料。</li>
+                    <li>時間差計算功能。</li>
+                    <li>計算FDP底線。</li>
+                    <li>其他的之後慢慢補。</li>
                   </ul>
                 </div>
               </div>
@@ -240,7 +240,7 @@
 
               <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
                 <span class="font-semibold">必填：</span>FDP 起算時間、組員派遣模式、航班類型。<br>
-                <span class="font-semibold">選填：</span>航班號、日期、機尾號末三碼、航段。若系統查得到航班起飛站，會依 TPE/TSA = ETD 前 90 分、其他場站 = ETD 前 60 分，自動推算 ETD 與日夜航，但你仍可手動覆寫。
+                <span class="font-semibold">選填：</span>航班號、日期、機尾號末三碼、航段。若系統查得到航班起飛站，會自動推算當地時間的 ETD 並判斷日/夜航，但你仍可手動覆寫。
               </div>
 
               <div class="flex flex-wrap gap-3">
@@ -401,8 +401,8 @@
                   <label class="block text-sm font-medium mb-2">航段 <span class="text-slate-400 text-xs">(可自動帶入，可手動覆寫)</span></label>
                   <div class="grid grid-cols-3 gap-2">
                     <input id="splitMsgRoute1" type="text" maxlength="3" placeholder="例如 TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" oninput="autoAdvanceField(this, 'splitMsgRoute2')" />
-                    <input id="splitMsgRoute2" type="text" maxlength="3" placeholder="例如 HKG" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" oninput="autoAdvanceField(this, 'splitMsgRoute3')" />
-                    <input id="splitMsgRoute3" type="text" maxlength="3" placeholder="第三段可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="splitMsgRoute2" type="text" maxlength="3" placeholder="例如 ANC" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" oninput="autoAdvanceField(this, 'splitMsgRoute3')" />
+                    <input id="splitMsgRoute3" type="text" maxlength="3" placeholder="可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
                   </div>
                 </div>
               </div>
