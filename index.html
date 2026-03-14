@@ -15,12 +15,12 @@
             <p class="text-sky-300 text-sm tracking-[0.25em] uppercase">Crew Duty Utility</p>
             <h1 class="text-3xl md:text-4xl font-bold mt-2">組員時間計算工具</h1>
             <p class="text-slate-300 mt-3 max-w-3xl leading-relaxed">
-              目前開放兩項功能：時間差計算、FDP 底線查詢。其餘功能先保留版位，後續可逐步補上規則與公式。
+              目前開放兩項功能：時間差計算、FDP 底線查詢，並可延伸產生聯合管制處電報格式。
             </p>
           </div>
           <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
             <div class="text-slate-400">目前版本</div>
-            <div class="text-lg font-semibold">v1.0</div>
+            <div class="text-lg font-semibold">v1.1</div>
           </div>
         </div>
       </div>
@@ -76,7 +76,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-100">
             <h2 class="text-xl font-bold">2. 查 FDP 底線</h2>
-            <p class="text-slate-500 mt-1">輸入 FDP Start、派遣模式與日航／夜航類型，計算最晚 Block In 時間。</p>
+            <p class="text-slate-500 mt-1">輸入 FDP Start、派遣模式與日航／夜航類型，計算最晚 Block In 時間，並可直接產生電報。</p>
           </div>
           <div class="p-6 space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -125,6 +125,41 @@
             <div id="fdpResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[132px] flex items-center text-slate-600">
               請輸入任務開始時間並選擇條件。
             </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">FDP 電報產生</h3>
+                <p class="text-sm text-slate-500 mt-1">先完成 FDP 底線計算，再輸入航班資訊，系統會自動產生電報內容。</p>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班號</label>
+                  <input id="msgFlightNo" type="text" placeholder="例如 CI5685" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班日期</label>
+                  <input id="msgFlightDate" type="date" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">機尾號末 3 碼</label>
+                  <input id="msgTailSuffix" type="text" maxlength="3" placeholder="例如 778" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">航段</label>
+                  <input id="msgRoute" type="text" placeholder="例如 TPE-HKG-TPE 或 ANC-TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <button onclick="generateFDPMessage()" class="rounded-2xl bg-emerald-600 text-white px-5 py-3 font-medium hover:bg-emerald-700 transition">產生電報</button>
+                <button onclick="copyFDPMessage()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">複製電報</button>
+              </div>
+
+              <div id="fdpMessageResult" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 whitespace-pre-line">
+                請先完成 FDP 底線計算，再輸入航班資訊產生電報。
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -138,6 +173,7 @@
               <ul class="mt-2 text-sm text-emerald-700 space-y-1 list-disc list-inside">
                 <li>時間差計算</li>
                 <li>FDP 底線查詢</li>
+                <li>FDP 電報產生</li>
               </ul>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -154,9 +190,9 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
           <h3 class="text-lg font-bold">後續擴充建議</h3>
           <ul class="mt-4 text-sm text-slate-600 space-y-3 leading-relaxed list-disc list-inside">
-            <li>加入規則說明面板，避免只顯示結果卻不知道算法。</li>
-            <li>將時間輸出格式統一成 YYYY-MM-DD HH:mm。</li>
-            <li>未來可加入夜航判定條件，而不是手動切換。</li>
+            <li>加入電報一鍵套版寄送前檢查欄位。</li>
+            <li>將時間輸出格式統一成 local / zulu 可切換。</li>
+            <li>可加入航段最後站自動高亮提示。</li>
             <li>可再加一鍵複製結果與手機版大按鈕模式。</li>
           </ul>
         </div>
@@ -165,6 +201,8 @@
   </div>
 
   <script>
+    let latestFDPData = null;
+
     function buildDateFromParts(dateId, hourId, minuteId) {
       const dateValue = document.getElementById(dateId).value;
       const hourValue = document.getElementById(hourId).value;
@@ -180,6 +218,18 @@
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    function formatDDMON(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      return `${day}${months[date.getMonth()]}`;
+    }
+
+    function formatHHMMZ(date) {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}${minutes}Z`;
     }
 
     function getDayOffsetLabel(start, end) {
@@ -198,6 +248,13 @@
 
     function getMinutesDifference(start, end) {
       return Math.round((end - start) / 60000);
+    }
+
+    function getLastStation(routeText) {
+      const cleaned = routeText.trim().toUpperCase().replace(/\s+/g, '');
+      if (!cleaned) return '';
+      const parts = cleaned.split('-').filter(Boolean);
+      return parts.length ? parts[parts.length - 1] : '';
     }
 
     function calculateTimeDiff() {
@@ -225,16 +282,6 @@
       `;
     }
 
-    function resetTimeDiff() {
-      document.getElementById('diffStartDate').value = '';
-      document.getElementById('diffStartHour').value = '00';
-      document.getElementById('diffStartMinute').value = '00';
-      document.getElementById('diffEndDate').value = '';
-      document.getElementById('diffEndHour').value = '00';
-      document.getElementById('diffEndMinute').value = '00';
-      document.getElementById('timeDiffResult').innerHTML = '請輸入開始與結束時間。';
-    }
-
     function calculateFDPDeadline() {
       const start = buildDateFromParts('fdpStartDate', 'fdpStartHour', 'fdpStartMinute');
       const dispatchMode = document.getElementById('dispatchMode').value;
@@ -243,6 +290,7 @@
 
       if (!start) {
         resultBox.innerHTML = '<span class="text-rose-600">請輸入組員任務開始時間。</span>';
+        latestFDPData = null;
         return;
       }
 
@@ -250,9 +298,9 @@
       const flightTypeLabel = flightType === 'day' ? '日航' : '夜航';
 
       const fdpLimitMap = {
-        '2': { day: 14, night: 12, label: '標準組員（2人派）' },
-        '3': { day: 18, night: 16, label: '加強組員（3人派）' },
-        '4': { day: 24, night: 22, label: '雙組組員（4人派）' }
+        '2': { day: 14, night: 12, label: '標準組員（2人派）', crewCount: 2, maxFlightTime: 10 },
+        '3': { day: 18, night: 16, label: '加強組員（3人派）', crewCount: 3, maxFlightTime: 16 },
+        '4': { day: 24, night: 22, label: '雙組組員（4人派）', crewCount: 4, maxFlightTime: 18 }
       };
 
       const selectedRule = fdpLimitMap[dispatchMode];
@@ -260,6 +308,17 @@
       const deadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
       const dayOffsetLabel = getDayOffsetLabel(start, deadline);
       const summaryText = `${selectedRule.label} / ${flightTypeLabel} / FDP 上限 ${finalFDPHours} 小時`;
+
+      latestFDPData = {
+        start,
+        etd,
+        dispatchLabel: selectedRule.label,
+        flightTypeLabel,
+        finalFDPHours,
+        deadline,
+        crewCount: selectedRule.crewCount,
+        maxFlightTime: selectedRule.maxFlightTime
+      };
 
       resultBox.innerHTML = `
         <div class="space-y-5 leading-relaxed">
@@ -302,6 +361,67 @@
           </div>
         </div>
       `;
+
+      document.getElementById('fdpMessageResult').textContent = '已完成 FDP 底線計算，請輸入航班資訊後產生電報。';
+    }
+
+    function generateFDPMessage() {
+      const output = document.getElementById('fdpMessageResult');
+
+      if (!latestFDPData) {
+        output.textContent = '請先完成 FDP 底線計算。';
+        return;
+      }
+
+      const flightNo = document.getElementById('msgFlightNo').value.trim().toUpperCase();
+      const flightDateValue = document.getElementById('msgFlightDate').value;
+      const tailSuffixRaw = document.getElementById('msgTailSuffix').value.trim().toUpperCase();
+      const route = document.getElementById('msgRoute').value.trim().toUpperCase();
+
+      if (!flightNo || !flightDateValue || !tailSuffixRaw || !route) {
+        output.textContent = '請完整輸入航班號、航班日期、機尾號末 3 碼與航段。';
+        return;
+      }
+
+      const tailSuffix = tailSuffixRaw.replace(/[^A-Z0-9]/g, '').slice(0, 3);
+      if (tailSuffix.length !== 3) {
+        output.textContent = '機尾號末 3 碼格式不正確。';
+        return;
+      }
+
+      const lastStation = getLastStation(route);
+      if (!lastStation) {
+        output.textContent = '航段格式不正確，請使用例如 TPE-HKG-TPE 或 ANC-TPE。';
+        return;
+      }
+
+      const flightDate = new Date(`${flightDateValue}T00:00`);
+      const message = `${flightNo}/${formatDDMON(flightDate)}/B-18${tailSuffix}/${route}\nNO.OF OPRT CRW：${latestFDPData.crewCount}\nMAX FLT TIME : ${latestFDPData.maxFlightTime} HRS\nFDP LIMIT：HAVE TO BLOCK IN ${lastStation}\nBEFORE ${formatHHMMZ(latestFDPData.deadline)}/${formatDDMON(latestFDPData.deadline)}`;
+
+      output.textContent = message;
+    }
+
+    async function copyFDPMessage() {
+      const output = document.getElementById('fdpMessageResult');
+      const text = output.textContent.trim();
+      if (!text || text.startsWith('請')) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        output.textContent = `${text}\n\n[已複製到剪貼簿]`;
+      } catch (error) {
+        output.textContent = `${text}\n\n[複製失敗，請手動複製]`;
+      }
+    }
+
+    function resetTimeDiff() {
+      document.getElementById('diffStartDate').value = '';
+      document.getElementById('diffStartHour').value = '00';
+      document.getElementById('diffStartMinute').value = '00';
+      document.getElementById('diffEndDate').value = '';
+      document.getElementById('diffEndHour').value = '00';
+      document.getElementById('diffEndMinute').value = '00';
+      document.getElementById('timeDiffResult').innerHTML = '請輸入開始與結束時間。';
     }
 
     function resetFDP() {
@@ -311,6 +431,12 @@
       document.getElementById('dispatchMode').value = '2';
       document.getElementById('flightType').value = 'day';
       document.getElementById('fdpResult').innerHTML = '請輸入任務開始時間並選擇條件。';
+      document.getElementById('msgFlightNo').value = '';
+      document.getElementById('msgFlightDate').value = '';
+      document.getElementById('msgTailSuffix').value = '';
+      document.getElementById('msgRoute').value = '';
+      document.getElementById('fdpMessageResult').textContent = '請先完成 FDP 底線計算，再輸入航班資訊產生電報。';
+      latestFDPData = null;
     }
 
     document.addEventListener('DOMContentLoaded', function () {
