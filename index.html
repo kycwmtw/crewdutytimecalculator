@@ -40,11 +40,11 @@
           </div>
           <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium mb-2">任務開始時間</label>
+              <label class="block text-sm font-medium mb-2">前段時間</label>
               <input id="diffStart" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-2">任務結束時間</label>
+              <label class="block text-sm font-medium mb-2">後段時間</label>
               <input id="diffEnd" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
             </div>
             <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
@@ -180,8 +180,8 @@
 
       resultBox.innerHTML = `
         <div class="space-y-2">
-          <div><span class="font-semibold text-slate-900">任務開始：</span>${formatDateTime(start)}</div>
-          <div><span class="font-semibold text-slate-900">任務結束：</span>${formatDateTime(end)}</div>
+          <div><span class="font-semibold text-slate-900">開始：</span>${formatDateTime(start)}</div>
+          <div><span class="font-semibold text-slate-900">結束：</span>${formatDateTime(end)}</div>
           <div class="text-lg font-bold text-sky-700 pt-1">時間差：${formatDuration(diffMinutes)}</div>
         </div>
       `;
