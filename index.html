@@ -63,7 +63,7 @@
 
               <button onclick="showView('splitDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
                 <div class="text-sm text-emerald-700 font-semibold">功能 3</div>
-                <div class="text-xl font-bold mt-2">中斷工時計算</div>
+                <div class="text-xl font-bold mt-2">中斷工時計算 (ASBY)</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推前送飯店之情況，計算是否符合中斷工時，以及新的 FDP 底線與電報。</p>
               </button>
             </div>
@@ -155,8 +155,8 @@
               <div class="min-w-0">
                 <label class="block text-sm font-medium mb-2">航班類型</label>
                 <select id="flightType" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                  <option value="day">日航</option>
-                  <option value="night">夜航</option>
+                  <option value="day">日航 (ETD 0700-2100)</option>
+                  <option value="night">夜航 (ETD 2101-0659)</option>
                 </select>
               </div>
               <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
@@ -235,7 +235,7 @@
         <div id="splitDutyView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
             <div>
-              <h2 class="text-xl font-bold">3. 中斷工時計算</h2>
+              <h2 class="text-xl font-bold">3. 中斷工時計算 (ASBY)</h2>
               <p class="text-slate-500 mt-1">僅適用航機後推前送飯店之情況。若飯店房內休息超過 3 小時 1 分，可自 FDP 全額扣除，重新計算新的 FDP 底線。</p>
             </div>
             <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
@@ -269,8 +269,8 @@
               <div class="min-w-0">
                 <label class="block text-sm font-medium mb-2">航班類型</label>
                 <select id="splitFlightType" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                  <option value="day">日航</option>
-                  <option value="night">夜航</option>
+                  <option value="day">日航 (ETD 0700-2100)</option>
+                  <option value="night">夜航 (ETD 2101-0659)</option>
                 </select>
               </div>
               <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
