@@ -15,12 +15,12 @@
             <p class="text-sky-300 text-sm tracking-[0.25em] uppercase">Crew Duty Utility</p>
             <h1 class="text-3xl md:text-4xl font-bold mt-2">組員時間計算工具</h1>
             <p class="text-slate-300 mt-3 max-w-3xl leading-relaxed">
-              目前開放兩項功能：時間差計算、FDP 底線查詢，並可延伸產生聯合管制處電報格式。
+              先選擇功能，再進入對應的輸入頁面進行計算。現在開放時間差計算、FDP 底線查詢與電報產生、中斷工時計算與電報產生。
             </p>
           </div>
           <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
             <div class="text-slate-400">目前版本</div>
-            <div class="text-lg font-semibold">v1.2</div>
+            <div class="text-lg font-semibold">v2.1</div>
           </div>
         </div>
       </div>
@@ -28,10 +28,41 @@
 
     <main class="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_360px] gap-6 items-start">
       <section class="space-y-6 min-w-0">
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="px-6 py-5 border-b border-slate-100">
-            <h2 class="text-xl font-bold">1. 時間差計算</h2>
-            <p class="text-slate-500 mt-1">輸入任務開始與結束時間，計算兩者之間的時間差。</p>
+        <div id="homeView" class="space-y-6">
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100">
+              <h2 class="text-xl font-bold">功能選擇</h2>
+              <p class="text-slate-500 mt-1">請先選擇要使用的功能，再進入個別輸入頁面。</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              <button onclick="showView('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
+                <div class="text-sm text-sky-700 font-semibold">功能 1</div>
+                <div class="text-xl font-bold mt-2">時間差計算</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入任務開始與結束時間，快速算出兩者之間的時間差。</p>
+              </button>
+
+              <button onclick="showView('fdpView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
+                <div class="text-sm text-indigo-700 font-semibold">功能 2</div>
+                <div class="text-xl font-bold mt-2">FDP 底線</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入 FDP Start、派遣模式與日夜航類型，計算最晚 Block In 時間，並可產生電報。</p>
+              </button>
+
+              <button onclick="showView('splitDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
+                <div class="text-sm text-emerald-700 font-semibold">功能 3</div>
+                <div class="text-xl font-bold mt-2">中斷工時計算</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推前送飯店之情況，計算是否符合中斷工時，以及新的 FDP 底線與電報。</p>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="timeDiffView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold">1. 時間差計算</h2>
+              <p class="text-slate-500 mt-1">輸入任務開始與結束時間，計算兩者之間的時間差。</p>
+            </div>
+            <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
           </div>
           <div class="p-6 space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -73,10 +104,13 @@
           </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="px-6 py-5 border-b border-slate-100">
-            <h2 class="text-xl font-bold">2. 查 FDP 底線</h2>
-            <p class="text-slate-500 mt-1">輸入 FDP Start、派遣模式與日航／夜航類型，計算最晚 Block In 時間，並可直接產生電報。</p>
+        <div id="fdpView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold">2. 查 FDP 底線</h2>
+              <p class="text-slate-500 mt-1">輸入 FDP Start、派遣模式與日航／夜航類型，計算最晚 Block In 時間，並可直接產生電報。</p>
+            </div>
+            <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
           </div>
           <div class="p-6 space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -160,8 +194,148 @@
               </div>
 
               <div class="flex flex-col gap-3">
+                <div class="rounded-2xl bg-yellow-50 border border-yellow-300 text-yellow-900 px-4 py-3 text-sm font-semibold">
+                  ⚠ THIS MESSAGE IS AUTO-GENERATED – VERIFY BEFORE SENDING
+                </div>
                 <div id="fdpMessageResult" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 whitespace-pre-line">
                   請先完成 FDP 底線計算，再輸入航班資訊產生電報。
+                </div>
+                <div class="text-red-600 font-semibold">
+                  ⚠ 發出電報前請務必再三確認所有 <span class="font-bold">紅色字</span> 的內容是否正確！
+                </div>
+                <div class="text-red-600 font-semibold">
+                  ⚠ 請留意 FLT TIME！(確認是否該機型有 BUNK 供組員輪休，預設都是有)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="splitDutyView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold">3. 中斷工時計算</h2>
+              <p class="text-slate-500 mt-1">僅適用航機後推前送飯店之情況。若飯店房內休息超過 3 小時 1 分，可自 FDP 全額扣除，重新計算新的 FDP 底線。</p>
+            </div>
+            <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
+          </div>
+          <div class="p-6 space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">FDP Start <span class="text-rose-600 text-xs font-semibold">（請留意輸入為 UTC / Zulu 時間）</span></label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input id="splitStartDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <select id="splitStartHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                  </select>
+                  <select id="splitStartMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">組員派遣模式</label>
+                <select id="splitDispatchMode" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                  <option value="2">標準組員（2人派）</option>
+                  <option value="3">加強組員（3人派）</option>
+                  <option value="4">雙組組員（4人派）</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">航班類型</label>
+                <select id="splitFlightType" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                  <option value="day">日航</option>
+                  <option value="night">夜航</option>
+                </select>
+              </div>
+              <div class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 leading-relaxed">
+                中斷工時僅適用於航機後推前送飯店之情況。若飯店房內休息時間未超過 3 小時 1 分，則不可自 FDP 扣除。
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">飯店 Check-in 時間 <span class="text-rose-600 text-xs font-semibold">（UTC / Zulu）</span></label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input id="splitCheckInDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <select id="splitCheckInHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                  </select>
+                  <select id="splitCheckInMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <label class="block text-sm font-medium mb-2">飯店 Check-out / 接回時間 <span class="text-rose-600 text-xs font-semibold">（UTC / Zulu）</span></label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input id="splitCheckOutDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  <select id="splitCheckOutHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                  </select>
+                  <select id="splitCheckOutMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+              <button onclick="calculateSplitDuty()" class="rounded-2xl bg-indigo-700 text-white px-5 py-3 font-medium hover:bg-indigo-800 transition">計算中斷工時</button>
+              <button onclick="resetSplitDuty()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
+            </div>
+
+            <div id="splitDutyResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[132px] flex items-center text-slate-600">
+              請輸入中斷工時相關資訊。
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">中斷工時電報產生</h3>
+                <p class="text-sm text-slate-500 mt-1">先完成中斷工時計算，再輸入航班資訊，系統會依新的 FDP 底線自動產生電報內容。</p>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班號(CIXXX)</label>
+                  <div class="flex gap-2">
+                    <div class="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-700 font-semibold min-w-[72px] text-center">CI</div>
+                    <input id="splitMsgFlightNo" type="text" placeholder="例如 5869" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班日期</label>
+                  <input id="splitMsgFlightDate" type="date" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">機尾號末3碼(B-18XXX)</label>
+                  <input id="splitMsgTailSuffix" type="text" maxlength="3" placeholder="例如 719" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">航段</label>
+                  <input id="splitMsgRoute" type="text" placeholder="例如 TPE-HKG-TPE 或 ANC-TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <button onclick="generateSplitDutyMessage()" class="rounded-2xl bg-emerald-600 text-white px-5 py-3 font-medium hover:bg-emerald-700 transition">產生電報</button>
+                <button onclick="copySplitDutyMessage()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">複製電報</button>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <div class="rounded-2xl bg-yellow-50 border border-yellow-300 text-yellow-900 px-4 py-3 text-sm font-semibold">
+                  ⚠ THIS MESSAGE IS AUTO-GENERATED – VERIFY BEFORE SENDING
+                </div>
+                <div id="splitDutyMessageResult" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 whitespace-pre-line">
+                  請先完成中斷工時計算，再輸入航班資訊產生電報。
+                </div>
+                <div class="text-red-600 font-semibold">
+                  ⚠ 發出電報前請務必再三確認所有 <span class="font-bold">紅色字</span> 的內容是否正確！
                 </div>
                 <div class="text-red-600 font-semibold">
                   ⚠ 請留意 FLT TIME！(確認是否該機型有 BUNK 供組員輪休，預設都是有)
@@ -182,12 +356,13 @@
                 <li>時間差計算</li>
                 <li>FDP 底線查詢</li>
                 <li>FDP 電報產生</li>
+                <li>中斷工時計算</li>
+                <li>中斷工時電報產生</li>
               </ul>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div class="font-semibold text-slate-700">保留功能</div>
               <ul class="mt-2 text-sm text-slate-600 space-y-1 list-disc list-inside">
-                <li>中斷工時</li>
                 <li>延長工時</li>
                 <li>標準派遣 24 小時內最高飛時 10 小時限制</li>
               </ul>
@@ -196,12 +371,11 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-          <h3 class="text-lg font-bold">後續擴充建議</h3>
+          <h3 class="text-lg font-bold">使用提示</h3>
           <ul class="mt-4 text-sm text-slate-600 space-y-3 leading-relaxed list-disc list-inside">
-            <li>加入電報一鍵套版寄送前檢查欄位。</li>
-            <li>將時間輸出格式統一成 local / zulu 可切換。</li>
-            <li>可加入航段最後站自動高亮提示。</li>
-            <li>可再加一鍵複製結果與手機版大按鈕模式。</li>
+            <li>本網站時間輸入以 UTC / Zulu 為主，請避免誤輸入 Local time。</li>
+            <li>FDP 與中斷工時電報內容為自動生成，發送前請再次確認紅字欄位。</li>
+            <li>中斷工時計算目前僅適用於後推前送飯店之情況。</li>
           </ul>
         </div>
       </aside>
@@ -210,6 +384,17 @@
 
   <script>
     let latestFDPData = null;
+    let latestSplitDutyData = null;
+
+    function showView(viewId) {
+      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView'];
+      viewIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (!element) return;
+        element.classList.toggle('hidden', id !== viewId);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     function buildDateFromParts(dateId, hourId, minuteId) {
       const dateValue = document.getElementById(dateId).value;
@@ -265,6 +450,18 @@
       return parts.length ? parts[parts.length - 1] : '';
     }
 
+    function getFDPRule(dispatchMode, flightType) {
+      const fdpLimitMap = {
+        '2': { day: 14, night: 12, label: '標準組員（2人派）', crewCount: 2, maxFlightTime: 10 },
+        '3': { day: 18, night: 16, label: '加強組員（3人派）', crewCount: 3, maxFlightTime: 16 },
+        '4': { day: 24, night: 22, label: '雙組組員（4人派）', crewCount: 4, maxFlightTime: 18 }
+      };
+      const selectedRule = fdpLimitMap[dispatchMode];
+      const finalFDPHours = flightType === 'day' ? selectedRule.day : selectedRule.night;
+      const flightTypeLabel = flightType === 'day' ? '日航' : '夜航';
+      return { selectedRule, finalFDPHours, flightTypeLabel };
+    }
+
     function calculateTimeDiff() {
       const start = buildDateFromParts('diffStartDate', 'diffStartHour', 'diffStartMinute');
       const end = buildDateFromParts('diffEndDate', 'diffEndHour', 'diffEndMinute');
@@ -303,16 +500,7 @@
       }
 
       const etd = new Date(start.getTime() + 90 * 60 * 1000);
-      const flightTypeLabel = flightType === 'day' ? '日航' : '夜航';
-
-      const fdpLimitMap = {
-        '2': { day: 14, night: 12, label: '標準組員（2人派）', crewCount: 2, maxFlightTime: 10 },
-        '3': { day: 18, night: 16, label: '加強組員（3人派）', crewCount: 3, maxFlightTime: 16 },
-        '4': { day: 24, night: 22, label: '雙組組員（4人派）', crewCount: 4, maxFlightTime: 18 }
-      };
-
-      const selectedRule = fdpLimitMap[dispatchMode];
-      const finalFDPHours = flightType === 'day' ? selectedRule.day : selectedRule.night;
+      const { selectedRule, finalFDPHours, flightTypeLabel } = getFDPRule(dispatchMode, flightType);
       const deadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
       const dayOffsetLabel = getDayOffsetLabel(start, deadline);
       const summaryText = `${selectedRule.label} / ${flightTypeLabel} / FDP 上限 ${finalFDPHours} 小時`;
@@ -409,17 +597,193 @@
 
       output.innerHTML = `
         <div class="space-y-1 font-medium">
+          <div>ATTN TPEJC D/O:</div>
           <div>CI<span class="text-red-600 font-bold">${flightNoDigits}</span>/<span class="text-red-600 font-bold">${ddMonFlight}</span>/B-18<span class="text-red-600 font-bold">${tailSuffix}</span>/<span class="text-red-600 font-bold">${route}</span></div>
-          <div>NO.OF OPRT CRW : <span class="text-red-600 font-bold">${latestFDPData.crewCount}</span></div>
-          <div>MAX FLT TIME : <span class="text-red-600 font-bold">${latestFDPData.maxFlightTime}</span> HRS</div>
-          <div>FDP LIMIT : HAVE TO BLOCK IN <span class="text-red-600 font-bold">${lastStation}</span></div>
-          <div>BEFORE <span class="text-red-600 font-bold">${beforeZulu}</span></div>
+          <div>NO.OF OPRT CRW: <span class="text-red-600 font-bold">${latestFDPData.crewCount}</span></div>
+          <div>MAX FLT TIME: <span class="text-red-600 font-bold">${latestFDPData.maxFlightTime}</span> HRS</div>
+          <div>FDP LIMIT: HAVE TO BLOCK IN <span class="text-red-600 font-bold">${lastStation}</span> BEFORE <span class="text-red-600 font-bold">${beforeZulu}</span></div>
+        </div>
+      `;
+    }
+
+    function calculateSplitDuty() {
+      const start = buildDateFromParts('splitStartDate', 'splitStartHour', 'splitStartMinute');
+      const dispatchMode = document.getElementById('splitDispatchMode').value;
+      const flightType = document.getElementById('splitFlightType').value;
+      const checkIn = buildDateFromParts('splitCheckInDate', 'splitCheckInHour', 'splitCheckInMinute');
+      const checkOut = buildDateFromParts('splitCheckOutDate', 'splitCheckOutHour', 'splitCheckOutMinute');
+      const resultBox = document.getElementById('splitDutyResult');
+
+      if (!start || !checkIn || !checkOut) {
+        resultBox.innerHTML = '<span class="text-rose-600">請完整輸入 FDP Start、Check-in 與 Check-out / 接回時間。</span>';
+        latestSplitDutyData = null;
+        return;
+      }
+
+      if (checkOut <= checkIn) {
+        resultBox.innerHTML = '<span class="text-rose-600">Check-out / 接回時間必須晚於 Check-in 時間。</span>';
+        latestSplitDutyData = null;
+        return;
+      }
+
+      const { selectedRule, finalFDPHours, flightTypeLabel } = getFDPRule(dispatchMode, flightType);
+      const originalDeadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
+      const restMinutes = getMinutesDifference(checkIn, checkOut);
+      const minReleaseTime = new Date(checkIn.getTime() + 181 * 60 * 1000);
+      const qualifies = restMinutes >= 181;
+      const deductibleMinutes = qualifies ? restMinutes : 0;
+      const newDeadline = new Date(originalDeadline.getTime() + deductibleMinutes * 60 * 1000);
+      const summaryText = qualifies
+        ? '符合中斷工時條件，休息時間可自 FDP 全額扣除。'
+        : '未達 3 小時 1 分，不符合中斷工時條件，休息時間不可自 FDP 扣除。';
+
+      latestSplitDutyData = {
+        start,
+        dispatchLabel: selectedRule.label,
+        flightTypeLabel,
+        originalDeadline,
+        checkIn,
+        checkOut,
+        restMinutes,
+        deductibleMinutes,
+        qualifies,
+        newDeadline,
+        crewCount: selectedRule.crewCount,
+        maxFlightTime: selectedRule.maxFlightTime
+      };
+
+      resultBox.innerHTML = `
+        <div class="space-y-5 leading-relaxed">
+          <div>
+            <div class="text-sm text-slate-500">FDP Start</div>
+            <div class="text-lg font-semibold text-slate-900">${formatDateTime(start)}</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-slate-500">派遣模式</div>
+            <div class="text-lg font-semibold text-slate-900">${selectedRule.label}</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-slate-500">航班類型</div>
+            <div class="text-lg font-semibold text-slate-900">${flightTypeLabel}</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-slate-500">原 FDP 上限</div>
+            <div class="text-lg font-semibold text-slate-900">${finalFDPHours} 小時</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-slate-500">原 FDP 底線</div>
+            <div class="text-lg font-semibold text-slate-900">${formatDateTime(originalDeadline)}</div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div>
+              <div class="text-sm text-slate-500">飯店 Check-in</div>
+              <div class="text-lg font-semibold text-slate-900">${formatDateTime(checkIn)}</div>
+            </div>
+            <div>
+              <div class="text-sm text-slate-500">飯店 Check-out / 接回時間</div>
+              <div class="text-lg font-semibold text-slate-900">${formatDateTime(checkOut)}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div>
+              <div class="text-sm text-slate-500">飯店房內休息時間</div>
+              <div class="text-lg font-semibold text-slate-900">${formatDuration(restMinutes)}</div>
+            </div>
+            <div>
+              <div class="text-sm text-slate-500">最早可接出時間</div>
+              <div class="text-lg font-semibold text-slate-900">${formatDateTime(minReleaseTime)}</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl ${qualifies ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'} border px-4 py-4">
+            <div class="font-semibold">${qualifies ? '✅ 符合中斷工時條件' : '❌ 不符合中斷工時條件'}</div>
+            <div class="mt-1 text-sm">${summaryText}</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-slate-500">可自 FDP 扣除時間</div>
+            <div class="text-lg font-semibold text-slate-900">${formatDuration(deductibleMinutes)}</div>
+          </div>
+
+          <div class="pt-1 border-t border-slate-200">
+            <div class="text-sm text-slate-500 mb-2">新 FDP 底線</div>
+            <div class="rounded-2xl bg-slate-900 text-white px-5 py-4 shadow-lg">
+              <div class="text-sm text-slate-300">新的最晚 Block In</div>
+              <div class="text-2xl font-bold mt-1">${formatDateTime(newDeadline)} <span class="text-amber-300 text-lg font-semibold">${getDayOffsetLabel(start, newDeadline)}</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('splitDutyMessageResult').innerHTML = '已完成中斷工時計算，請輸入航班資訊後產生電報。';
+    }
+
+    function generateSplitDutyMessage() {
+      const output = document.getElementById('splitDutyMessageResult');
+
+      if (!latestSplitDutyData) {
+        output.textContent = '請先完成中斷工時計算。';
+        return;
+      }
+
+      const flightNoDigits = document.getElementById('splitMsgFlightNo').value.trim().replace(/\D/g, '');
+      const flightDateValue = document.getElementById('splitMsgFlightDate').value;
+      const tailSuffixRaw = document.getElementById('splitMsgTailSuffix').value.trim().toUpperCase();
+      const route = document.getElementById('splitMsgRoute').value.trim().toUpperCase();
+
+      if (!flightNoDigits || !flightDateValue || !tailSuffixRaw || !route) {
+        output.textContent = '請完整輸入航班號、航班日期、機尾號末 3 碼與航段。';
+        return;
+      }
+
+      const tailSuffix = tailSuffixRaw.replace(/[^A-Z0-9]/g, '').slice(0, 3);
+      if (tailSuffix.length !== 3) {
+        output.textContent = '機尾號末 3 碼格式不正確。';
+        return;
+      }
+
+      const lastStation = getLastStation(route);
+      if (!lastStation) {
+        output.textContent = '航段格式不正確，請使用例如 TPE-HKG-TPE 或 ANC-TPE。';
+        return;
+      }
+
+      const flightDate = new Date(`${flightDateValue}T00:00`);
+      const ddMonFlight = formatDDMON(flightDate);
+      const beforeZulu = `${formatHHMMZ(latestSplitDutyData.newDeadline)}/${formatDDMON(latestSplitDutyData.newDeadline)}`;
+
+      output.innerHTML = `
+        <div class="space-y-1 font-medium">
+          <div>ATTN TPEJC D/O:</div>
+          <div>CI<span class="text-red-600 font-bold">${flightNoDigits}</span>/<span class="text-red-600 font-bold">${ddMonFlight}</span>/B-18<span class="text-red-600 font-bold">${tailSuffix}</span>/<span class="text-red-600 font-bold">${route}</span></div>
+          <div>NO.OF OPRT CRW: <span class="text-red-600 font-bold">${latestSplitDutyData.crewCount}</span></div>
+          <div>MAX FLT TIME: <span class="text-red-600 font-bold">${latestSplitDutyData.maxFlightTime}</span> HRS</div>
+          <div>FDP LIMIT: HAVE TO BLOCK IN <span class="text-red-600 font-bold">${lastStation}</span> BEFORE <span class="text-red-600 font-bold">${beforeZulu}</span></div>
         </div>
       `;
     }
 
     async function copyFDPMessage() {
       const output = document.getElementById('fdpMessageResult');
+      const text = output.innerText.trim();
+      if (!text || text.startsWith('請')) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        output.insertAdjacentHTML('beforeend', '<div class="mt-4 text-slate-500">[已複製到剪貼簿]</div>');
+      } catch (error) {
+        output.insertAdjacentHTML('beforeend', '<div class="mt-4 text-rose-600">[複製失敗，請手動複製]</div>');
+      }
+    }
+
+    async function copySplitDutyMessage() {
+      const output = document.getElementById('splitDutyMessageResult');
       const text = output.innerText.trim();
       if (!text || text.startsWith('請')) return;
 
@@ -456,9 +820,32 @@
       latestFDPData = null;
     }
 
+    function resetSplitDuty() {
+      document.getElementById('splitStartDate').value = '';
+      document.getElementById('splitStartHour').value = '00';
+      document.getElementById('splitStartMinute').value = '00';
+      document.getElementById('splitDispatchMode').value = '2';
+      document.getElementById('splitFlightType').value = 'day';
+      document.getElementById('splitCheckInDate').value = '';
+      document.getElementById('splitCheckInHour').value = '00';
+      document.getElementById('splitCheckInMinute').value = '00';
+      document.getElementById('splitCheckOutDate').value = '';
+      document.getElementById('splitCheckOutHour').value = '00';
+      document.getElementById('splitCheckOutMinute').value = '00';
+      document.getElementById('splitDutyResult').innerHTML = '請輸入中斷工時相關資訊。';
+      document.getElementById('splitMsgFlightNo').value = '';
+      document.getElementById('splitMsgFlightDate').value = '';
+      document.getElementById('splitMsgTailSuffix').value = '';
+      document.getElementById('splitMsgRoute').value = '';
+      document.getElementById('splitDutyMessageResult').innerHTML = '請先完成中斷工時計算，再輸入航班資訊產生電報。';
+      latestSplitDutyData = null;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       resetTimeDiff();
       resetFDP();
+      resetSplitDuty();
+      showView('homeView');
     });
   </script>
 </body>
