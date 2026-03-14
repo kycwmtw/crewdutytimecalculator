@@ -177,7 +177,7 @@
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div>
-                  <label class="block text-sm font-medium mb-2">航班號 (CIXXX)</label>
+                  <label class="block text-sm font-medium mb-2">航班號</label>
                   <div class="flex gap-2">
                     <div class="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-700 font-semibold min-w-[72px] text-center">CI</div>
                     <input id="msgFlightNo" type="text" placeholder="例如 503 或 0503" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
@@ -233,7 +233,7 @@
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input id="msgRoute1" type="text" maxlength="3" placeholder="例如 TPE" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" oninput="autoAdvanceField(this, 'msgRoute2')" />
                     <input id="msgRoute2" type="text" maxlength="3" placeholder="例如 HKG" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" oninput="autoAdvanceField(this, 'msgRoute3')" />
-                    <input id="msgRoute3" type="text" maxlength="3" placeholder="第三段可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    <input id="msgRoute3" type="text" maxlength="3" placeholder="可留空" class="w-full rounded-2xl border border-slate-300 px-4 py-3 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
                   </div>
                 </div>
               </div>
@@ -272,7 +272,7 @@
 
               <div class="flex flex-col gap-3">
                 <div class="rounded-2xl bg-yellow-50 border border-yellow-300 text-yellow-900 px-4 py-3 text-sm font-semibold">
-                  ⚠ THIS MESSAGE IS AUTO-GENERATED – VERIFY BEFORE SENDING
+                  ⚠ THIS TELEX IS AUTO-GENERATED – VERIFY BEFORE SENDING
                 </div>
                 <div id="fdpMessageResult" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 whitespace-pre-line">
                   請先完成 FDP 底線計算；若選填欄位未完整輸入，這裡將不會產出完整電報。
@@ -301,12 +301,12 @@
             <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
               <div>
                 <h3 class="text-lg font-bold">查中斷工時</h3>
-                <p class="text-sm text-slate-500 mt-1">排版與 FDP 底線模組一致。請先輸入必填欄位完成中斷工時計算，若再補齊選填欄位，系統可同步產生電報。</p>
+                <p class="text-sm text-slate-500 mt-1">請先輸入必填欄位完成中斷工時計算，若再補齊選填欄位，系統可同步產生電報。</p>
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div>
-                  <label class="block text-sm font-medium mb-2">航班號 (CIXXX)</label>
+                  <label class="block text-sm font-medium mb-2">航班號</label>
                   <div class="flex gap-2">
                     <div class="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-slate-700 font-semibold min-w-[72px] text-center">CI</div>
                     <div class="w-full">
@@ -429,7 +429,7 @@
 
               <div class="flex flex-col gap-3">
                 <div class="rounded-2xl bg-yellow-50 border border-yellow-300 text-yellow-900 px-4 py-3 text-sm font-semibold">
-                  ⚠ THIS MESSAGE IS AUTO-GENERATED – VERIFY BEFORE SENDING
+                  ⚠ THIS TELEX IS AUTO-GENERATED – VERIFY BEFORE SENDING
                 </div>
                 <div id="splitDutyMessageResult" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 whitespace-pre-line">
                   請先完成中斷工時計算，再輸入航班資訊產生電報。
@@ -783,7 +783,7 @@
 
       if (!statusBox) return;
       if (!normalized.masterCode) {
-        statusBox.innerHTML = '輸入航班號後，系統會自動補成 CI 四碼格式並嘗試帶入航段。';
+        statusBox.innerHTML = '輸入航班號後，系統會自動帶入航段。';
         return;
       }
 
