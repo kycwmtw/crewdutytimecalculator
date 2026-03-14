@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>組員時間計算工具</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+    populateTimeSelectors();
+    resetTimeDiff();
+    resetFDP();
+  </script>
   <style>
     input[type="datetime-local"]::-webkit-calendar-picker-indicator {
       cursor: pointer;
@@ -40,12 +44,20 @@
           </div>
           <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium mb-2">前段時間</label>
-              <input id="diffStart" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label class="block text-sm font-medium mb-2">任務開始時間</label>
+              <div class="grid grid-cols-3 gap-2">
+                <input id="diffStartDate" type="date" class="col-span-3 md:col-span-1 w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <select id="diffStartHour" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+                <select id="diffStartMinute" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+              </div>
             </div>
             <div>
-              <label class="block text-sm font-medium mb-2">後段時間</label>
-              <input id="diffEnd" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <label class="block text-sm font-medium mb-2">任務結束時間</label>
+              <div class="grid grid-cols-3 gap-2">
+                <input id="diffEndDate" type="date" class="col-span-3 md:col-span-1 w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <select id="diffEndHour" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+                <select id="diffEndMinute" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+              </div>
             </div>
             <div class="md:col-span-2 flex flex-wrap gap-3 pt-2">
               <button onclick="calculateTimeDiff()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">計算時間差</button>
@@ -67,7 +79,11 @@
           <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-2">組員任務開始時間</label>
-              <input id="fdpStart" type="datetime-local" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <div class="grid grid-cols-3 gap-2">
+                <input id="fdpStartDate" type="date" class="col-span-3 md:col-span-1 w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <select id="fdpStartHour" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+                <select id="fdpStartMinute" class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">組員派遣模式</label>
@@ -138,6 +154,44 @@
   </div>
 
   <script>
+    function populateTimeSelectors() {
+      const hourSelectors = ['diffStartHour', 'diffEndHour', 'fdpStartHour'];
+      const minuteSelectors = ['diffStartMinute', 'diffEndMinute', 'fdpStartMinute'];
+
+      hourSelectors.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select || select.options.length > 0) return;
+        for (let i = 0; i < 24; i++) {
+          const value = String(i).padStart(2, '0');
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = `${value} 時`;
+          select.appendChild(option);
+        }
+      });
+
+      minuteSelectors.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select || select.options.length > 0) return;
+        for (let i = 0; i < 60; i++) {
+          const value = String(i).padStart(2, '0');
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = `${value} 分`;
+          select.appendChild(option);
+        }
+      });
+    }
+
+    function buildDateFromParts(dateId, hourId, minuteId) {
+      const dateValue = document.getElementById(dateId).value;
+      const hourValue = document.getElementById(hourId).value;
+      const minuteValue = document.getElementById(minuteId).value;
+
+      if (!dateValue) return null;
+      return new Date(`${dateValue}T${hourValue}:${minuteValue}`);
+    }
+
     function formatDateTime(date) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -160,17 +214,15 @@
     }
 
     function calculateTimeDiff() {
-      const startValue = document.getElementById('diffStart').value;
-      const endValue = document.getElementById('diffEnd').value;
+      const start = buildDateFromParts('diffStartDate', 'diffStartHour', 'diffStartMinute');
+      const end = buildDateFromParts('diffEndDate', 'diffEndHour', 'diffEndMinute');
       const resultBox = document.getElementById('timeDiffResult');
 
-      if (!startValue || !endValue) {
+      if (!start || !end) {
         resultBox.innerHTML = '<span class="text-rose-600">請完整輸入開始與結束時間。</span>';
         return;
       }
 
-      const start = new Date(startValue);
-      const end = new Date(endValue);
       const diffMinutes = getMinutesDifference(start, end);
 
       if (diffMinutes < 0) {
@@ -180,31 +232,35 @@
 
       resultBox.innerHTML = `
         <div class="space-y-2">
-          <div><span class="font-semibold text-slate-900">開始：</span>${formatDateTime(start)}</div>
-          <div><span class="font-semibold text-slate-900">結束：</span>${formatDateTime(end)}</div>
+          <div><span class="font-semibold text-slate-900">任務開始：</span>${formatDateTime(start)}</div>
+          <div><span class="font-semibold text-slate-900">任務結束：</span>${formatDateTime(end)}</div>
           <div class="text-lg font-bold text-sky-700 pt-1">時間差：${formatDuration(diffMinutes)}</div>
         </div>
       `;
     }
 
     function resetTimeDiff() {
-      document.getElementById('diffStart').value = '';
-      document.getElementById('diffEnd').value = '';
+      document.getElementById('diffStartDate').value = '';
+      document.getElementById('diffStartHour').value = '00';
+      document.getElementById('diffStartMinute').value = '00';
+      document.getElementById('diffEndDate').value = '';
+      document.getElementById('diffEndHour').value = '00';
+      document.getElementById('diffEndMinute').value = '00';
       document.getElementById('timeDiffResult').innerHTML = '請輸入開始與結束時間。';
     }
 
     function calculateFDPDeadline() {
-      const startValue = document.getElementById('fdpStart').value;
+      const start = buildDateFromParts('fdpStartDate', 'fdpStartHour', 'fdpStartMinute');
       const dispatchMode = document.getElementById('dispatchMode').value;
       const flightType = document.getElementById('flightType').value;
       const resultBox = document.getElementById('fdpResult');
 
-      if (!startValue) {
+      if (!start) {
         resultBox.innerHTML = '<span class="text-rose-600">請輸入組員任務開始時間。</span>';
         return;
       }
 
-      const start = new Date(startValue);
+      
 
       const baseHoursMap = {
         '2': 12,
@@ -237,7 +293,9 @@
     }
 
     function resetFDP() {
-      document.getElementById('fdpStart').value = '';
+      document.getElementById('fdpStartDate').value = '';
+      document.getElementById('fdpStartHour').value = '00';
+      document.getElementById('fdpStartMinute').value = '00';
       document.getElementById('dispatchMode').value = '2';
       document.getElementById('flightType').value = 'day';
       document.getElementById('fdpResult').innerHTML = '請輸入任務開始時間並選擇條件。';
