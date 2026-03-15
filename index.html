@@ -227,6 +227,7 @@
                     <option value="day">日航 (ETD 0700-2100)</option>
                     <option value="night">夜航 (ETD 2101-0659)</option>
                   </select>
+                  <div id="fdpFlightTypeHint" class="mt-2 text-sm text-slate-500"></div>
                 </div>
 
                 <div>
@@ -356,6 +357,7 @@
                     <option value="day">日航 (ETD 0700-2100)</option>
                     <option value="night">夜航 (ETD 2101-0659)</option>
                   </select>
+                  <div id="splitFlightTypeHint" class="mt-2 text-sm text-slate-500"></div>
                 </div>
 
                 <div>
@@ -904,8 +906,8 @@
       if (sectionPrefix === 'fdp') syncFDPAutoDetection();
     }
 
-    function deriveFDPAutoInfo(startUtc) {
-      const route = getSelectedRoute('fdp');
+    function deriveAutoFlightInfo(sectionPrefix, startUtc) {
+      const route = getSelectedRoute(sectionPrefix);
       if (!startUtc || !route) return null;
       const dep = route.dep;
       const depTimeZone = route.dep_tz || (typeof AIRPORT_TIMEZONES !== 'undefined' ? AIRPORT_TIMEZONES[dep] : '');
@@ -926,6 +928,18 @@
       };
     }
 
+    function renderFlightTypeHint(sectionPrefix, info) {
+      const hintId = sectionPrefix === 'fdp' ? 'fdpFlightTypeHint' : 'splitFlightTypeHint';
+      const hintBox = document.getElementById(hintId);
+      if (!hintBox) return;
+      if (!info) {
+        hintBox.innerHTML = '';
+        return;
+      }
+      const hh = String(info.localParts.hour).padStart(2, '0');
+      const mm = String(info.localParts.minute).padStart(2, '0');
+      hintBox.innerHTML = `<span class="text-sky-700">ETD為當地時間 ${hh}:${mm}，自動判定為${info.flightTypeLabel}</span>`;
+    }
 
     function syncPrimaryDateToFDP() {
       const source = document.getElementById('msgFlightDate');
@@ -948,14 +962,23 @@
           if (target) target.value = source.value;
         });
       }
+      syncSplitAutoDetection();
     }
 
     function syncFDPAutoDetection() {
       const startUtc = buildUTCDateFromParts('fdpStartDate', 'fdpStartHour', 'fdpStartMinute');
-      const info = deriveFDPAutoInfo(startUtc);
-      const hintBox = document.getElementById('fdpResult');
-      if (!info || !hintBox) return;
+      const info = deriveAutoFlightInfo('fdp', startUtc);
+      renderFlightTypeHint('fdp', info);
+      if (!info) return;
       document.getElementById('flightType').value = info.flightType;
+    }
+
+    function syncSplitAutoDetection() {
+      const startUtc = buildUTCDateFromParts('splitStartDate', 'splitStartHour', 'splitStartMinute');
+      const info = deriveAutoFlightInfo('split', startUtc);
+      renderFlightTypeHint('split', info);
+      if (!info) return;
+      document.getElementById('splitFlightType').value = info.flightType;
     }
 
     function setMessageBoxText(id, html) {
@@ -1014,7 +1037,7 @@
         return;
       }
 
-      const autoInfo = deriveFDPAutoInfo(start);
+      const autoInfo = deriveAutoFlightInfo('fdp', start);
       const effectiveFlightType = autoInfo ? autoInfo.flightType : manualFlightType;
       document.getElementById('flightType').value = effectiveFlightType;
       const { selectedRule, finalFDPHours, flightTypeLabel } = getFDPRule(dispatchMode, effectiveFlightType);
@@ -1156,7 +1179,7 @@
     function calculateSplitDuty() {
       const start = buildUTCDateFromParts('splitStartDate', 'splitStartHour', 'splitStartMinute');
       const dispatchMode = document.getElementById('splitDispatchMode').value;
-      const flightType = document.getElementById('splitFlightType').value;
+      const manualFlightType = document.getElementById('splitFlightType').value;
       const checkIn = buildUTCDateFromParts('splitCheckInDate', 'splitCheckInHour', 'splitCheckInMinute');
       const checkOut = buildUTCDateFromParts('splitCheckOutDate', 'splitCheckOutHour', 'splitCheckOutMinute');
       const resultBox = document.getElementById('splitDutyResult');
@@ -1172,7 +1195,10 @@
         return;
       }
 
-      const { selectedRule, finalFDPHours, flightTypeLabel } = getFDPRule(dispatchMode, flightType);
+      const autoInfo = deriveAutoFlightInfo('split', start);
+      const effectiveFlightType = autoInfo ? autoInfo.flightType : manualFlightType;
+      document.getElementById('splitFlightType').value = effectiveFlightType;
+      const { selectedRule, finalFDPHours, flightTypeLabel } = getFDPRule(dispatchMode, effectiveFlightType);
       const aircraftStatus = renderAircraftLookupStatus('split');
       const originalDeadline = new Date(start.getTime() + finalFDPHours * 60 * 60 * 1000);
       const restMinutes = getMinutesDifference(checkIn, checkOut);
@@ -1184,6 +1210,11 @@
 
       latestSplitDutyData = {
         start,
+        etd: autoInfo ? autoInfo.etdUtc : null,
+        localETDText: autoInfo ? formatZoneParts(autoInfo.localParts) : '',
+        depTimeZone: autoInfo ? autoInfo.depTimeZone : '',
+        dep: autoInfo ? autoInfo.dep : '',
+        routeRecord: autoInfo ? autoInfo.route : null,
         dispatchLabel: selectedRule.label,
         flightTypeLabel,
         originalDeadline,
@@ -1351,6 +1382,7 @@
       document.getElementById('dispatchMode').value = '2';
       document.getElementById('flightType').value = 'day';
       document.getElementById('fdpResult').innerHTML = '請輸入任務開始時間並選擇條件。';
+      setMessageBoxText('fdpFlightTypeHint', '');
       document.getElementById('msgFlightNo').value = '';
       document.getElementById('msgFlightDate').value = '';
       document.getElementById('msgTailSuffix').value = '';
@@ -1401,7 +1433,14 @@
       ['msgFlightNo', 'splitMsgFlightNo'].forEach((id, index) => {
         const section = index === 0 ? 'fdp' : 'split';
         const input = document.getElementById(id);
-        if (input) input.addEventListener('input', () => renderFlightLookupStatus(section));
+        if (input) input.addEventListener('input', () => {
+          renderFlightLookupStatus(section);
+          if (section === 'fdp') {
+            syncFDPAutoDetection();
+          } else {
+            syncSplitAutoDetection();
+          }
+        });
       });
 
       [['msgTailSuffix', 'fdp'], ['splitMsgTailSuffix', 'split']].forEach(([id, section]) => {
@@ -1418,6 +1457,11 @@
       ['fdpStartDate', 'fdpStartHour', 'fdpStartMinute'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', syncFDPAutoDetection);
+      });
+
+      ['splitStartDate', 'splitStartHour', 'splitStartMinute'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', syncSplitAutoDetection);
       });
 
       const msgFlightDate = document.getElementById('msgFlightDate');
