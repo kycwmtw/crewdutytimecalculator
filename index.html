@@ -52,31 +52,31 @@
               <p class="text-slate-500 mt-1">請選擇要使用的功能。</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              <button onclick="openUsageModal('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
+              <button onclick="showView('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
                 <div class="text-sm text-sky-700 font-semibold">功能 1</div>
                 <div class="text-xl font-bold mt-2">時間差計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入兩個時間，快速算出兩者之間的時間差。</p>
               </button>
 
-              <button onclick="openUsageModal('fdpView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
+              <button onclick="showView('fdpView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
                 <div class="text-sm text-indigo-700 font-semibold">功能 2</div>
                 <div class="text-xl font-bold mt-2">FDP 底線</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入 FDP Start、派遣模式與日夜航類型，計算最晚 Block In 時間，並可產生電報。</p>
               </button>
 
-              <button onclick="openUsageModal('splitDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
+              <button onclick="showView('splitDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
                 <div class="text-sm text-emerald-700 font-semibold">功能 3</div>
                 <div class="text-xl font-bold mt-2">中斷工時計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推前送飯店之情況，計算是否符合中斷工時，以及新的 FDP 底線與電報。</p>
               </button>
 
-              <button onclick="openUsageModal('extensionDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 transition p-5 shadow-sm">
+              <button onclick="showView('extensionDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 transition p-5 shadow-sm">
                 <div class="text-sm text-rose-700 font-semibold">功能 4</div>
                 <div class="text-xl font-bold mt-2">*Beta*延長工時計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推後送飯店之情況，計算延長後的新 FDP 底線、24 小時上限檢查，並可產生電報。</p>
               </button>
 
-              <button onclick="openUsageModal('reTimeView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 transition p-5 shadow-sm">
+              <button onclick="showView('reTimeView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 transition p-5 shadow-sm">
                 <div class="text-sm text-amber-700 font-semibold">功能 5</div>
                 <div class="text-xl font-bold mt-2">改時通知產生器</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入航班號、日期與新的 ETD，一鍵產生改時通知標準格式訊息。</p>
@@ -807,79 +807,10 @@
     </main>
   </div>
 
-    <div id="usageModal" class="fixed inset-0 z-50 hidden">
-      <div class="absolute inset-0 bg-slate-950/55"></div>
-      <div class="relative min-h-screen flex items-center justify-center p-4">
-        <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
-          <div class="px-6 py-5 border-b border-slate-100">
-            <div class="text-sm font-semibold tracking-[0.2em] uppercase text-sky-700">使用說明</div>
-            <h3 id="usageModalTitle" class="text-2xl font-bold mt-2">功能使用說明</h3>
-            <p class="text-slate-500 mt-2">請先閱讀以下說明，確認了解後再進入功能頁面。</p>
-          </div>
-          <div class="px-6 py-5">
-            <div id="usageModalBody" class="space-y-3 text-sm leading-7 text-slate-700"></div>
-            <div class="mt-5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              送出電報前，請再次核對所有資訊，避免過度信賴此系統。
-            </div>
-          </div>
-          <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-            <button onclick="closeUsageModal()" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回首頁</button>
-            <button onclick="confirmUsageModal()" class="rounded-2xl bg-slate-900 text-white px-5 py-2 font-medium hover:bg-slate-800 transition">了解，進入功能</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
   <script>
     let latestFDPData = null;
     let latestSplitDutyData = null;
     let latestExtensionDutyData = null;
-    let pendingUsageView = null;
-
-    const usageGuideMap = {
-      timeDiffView: {
-        title: '時間差計算 使用說明',
-        items: [
-          '此功能很簡陋，只用於計算兩個時間點之間的總時差，適合快速確認任務起訖間隔。',
-          '請先輸入開始時間與結束時間，系統會以你填入的日期與時間直接換算差值。',
-          '若結束時間早於開始時間，請先確認日期是否跨日，避免把時差算成負值。'
-        ]
-      },
-      fdpView: {
-        title: 'FDP 底線 使用說明',
-        items: [
-          '必填欄位為 FDP 起算時間、組員派遣模式、航班類型。只填這三項也可以先算出 FDP 底線。',
-          '航班號、日期、機尾號與航段屬於選填。補齊後，系統才能生出電報內容。',
-          '若資料庫查無航班，或系統自動帶出的航班有誤，請手動輸入所有資訊。',
-          '系統提供的是輔助判斷，特殊班、調機、包機或臨時異動仍請以實際任務資訊為準。'
-        ]
-      },
-      splitDutyView: {
-        title: '中斷工時 使用說明',
-        items: [
-          '此功能用於後推前送飯店情境，檢查飯店休息時間是否符合中斷工時條件，並計算出新的FDP。',
-          '必填欄位為 FDP 起算時間、派遣模式、航班類型，以及飯店進房與退房時間。系統會計算原底線、休息時長與新底線。',
-          '航班號、日期、機尾號與航段屬於選填。補齊後，系統才能生出電報內容。',
-          '若資料庫查無航班，或系統自動帶出的航班有誤，請手動輸入所有資訊。'
-        ]
-      },
-      extensionDutyView: {
-        title: '延長工時 使用說明',
-        items: [
-          '此功能用於航機後推後送飯店情境。休息需達 3 小時（含）以上，且僅能以休息時間的一半延長 FDP。',
-          'NEW ETD 為非必填。若未輸入，系統會暫以出飯店時間 + 80 分鐘作為 NEW ETD，請務必再自行確認實際 ETD 與日夜航。',
-          '延長後之新 FDP 底線仍須通過連續 24 小時上限檢查，若超限系統會明確提示。'
-        ]
-      },
-      reTimeView: {
-        title: '改時通知產生器 使用說明',
-        items: [
-          '輸入航班號（數字部分）、航班日期與新的 ETD（Local Time），系統自動計算 BOT Reporting Time（新 ETD − 90 分鐘）。',
-          '若 BOT Reporting Time 跨到前一天，系統會自動正確顯示日期。',
-          '確認內容後，點選「一鍵複製通知內容」即可複製標準格式改時通知。'
-        ]
-      }
-    };
 
     function updateLiveClocks() {
       const now = new Date();
@@ -889,40 +820,6 @@
       const taipeiClock = document.getElementById('taipeiClock');
       if (utcClock) utcClock.textContent = utcText + ' Z';
       if (taipeiClock) taipeiClock.textContent = taipeiText;
-    }
-
-    function openUsageModal(viewId) {
-      const modal = document.getElementById('usageModal');
-      const titleEl = document.getElementById('usageModalTitle');
-      const bodyEl = document.getElementById('usageModalBody');
-      const guide = usageGuideMap[viewId];
-      if (!modal || !titleEl || !bodyEl || !guide) {
-        showView(viewId);
-        return;
-      }
-      pendingUsageView = viewId;
-      titleEl.textContent = guide.title;
-      bodyEl.innerHTML = guide.items.map((item, index) => `
-        <div class="flex items-start gap-3">
-          <div class="mt-0.5 h-6 w-6 shrink-0 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-semibold">${index + 1}</div>
-          <div>${item}</div>
-        </div>
-      `).join('');
-      modal.classList.remove('hidden');
-      document.body.classList.add('overflow-hidden');
-    }
-
-    function closeUsageModal() {
-      const modal = document.getElementById('usageModal');
-      pendingUsageView = null;
-      if (modal) modal.classList.add('hidden');
-      document.body.classList.remove('overflow-hidden');
-    }
-
-    function confirmUsageModal() {
-      const targetView = pendingUsageView;
-      closeUsageModal();
-      if (targetView) showView(targetView);
     }
 
     function showView(viewId) {
