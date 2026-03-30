@@ -75,6 +75,12 @@
                 <div class="text-xl font-bold mt-2">*Beta*延長工時計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推後送飯店之情況，計算延長後的新 FDP 底線、24 小時上限檢查，並可產生電報。</p>
               </button>
+
+              <button onclick="openUsageModal('reTimeView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 transition p-5 shadow-sm">
+                <div class="text-sm text-amber-700 font-semibold">功能 5</div>
+                <div class="text-xl font-bold mt-2">改時通知產生器</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入航班號、日期與新的 ETD，一鍵產生改時通知標準格式訊息。</p>
+              </button>
             </div>
           </div>
 
@@ -670,6 +676,80 @@
           </div>
         </div>
 
+        <div id="reTimeView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold">5. 改時通知產生器</h2>
+              <p class="text-slate-500 mt-1">輸入航班號、日期與新的 ETD，快速產生改時通知內容。</p>
+            </div>
+            <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
+          </div>
+          <div class="p-6 space-y-6">
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
+              <div>
+                <h3 class="text-lg font-bold">輸入重要資訊</h3>
+                <p class="text-sm text-slate-500 mt-1">請輸入航班號、航班日期與新的 ETD（Local Time）。</p>
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班號</label>
+                  <div class="flex gap-2 items-center">
+                    <div class="flex h-[50px] items-center justify-center rounded-2xl border border-slate-300 bg-slate-100 px-4 text-slate-700 font-semibold min-w-[72px] shrink-0">CI</div>
+                    <input id="reTimeFlightNo" type="text" placeholder="例如 5877" class="w-full h-[50px] rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-2">航班日期</label>
+                  <input id="reTimeFlightDate" type="date" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                </div>
+
+                <div class="lg:col-span-2">
+                  <label class="block text-sm font-medium mb-2">NEW ETD <span class="text-slate-500 text-xs">（Local Time）</span></label>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="reTimeEtdDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    <select id="reTimeEtdHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                    </select>
+                    <select id="reTimeEtdMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button onclick="calculateReTimeNotice()" class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition">確認並產生通知</button>
+                <button onclick="resetReTime()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">計算結果</h3>
+                <p class="text-sm text-slate-500 mt-1">系統根據輸入自動計算 BOT Reporting Time（NEW ETD − 90 分鐘）。</p>
+              </div>
+              <div id="reTimeResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[120px] flex items-center text-slate-600">
+                請輸入必填項目後產生通知。
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">通知內容預覽</h3>
+                <p class="text-sm text-slate-500 mt-1">以下為自動產生的改時通知內容，可直接複製傳送。</p>
+              </div>
+              <div id="reTimeNoticePreview" class="rounded-2xl bg-white border border-slate-200 p-5 min-h-[180px] text-slate-700 font-mono text-sm whitespace-pre-line">
+                請先完成上方必填欄位後產生通知。
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button onclick="copyReTimeNotice()" class="rounded-2xl bg-slate-900 text-white px-5 py-3 font-medium hover:bg-slate-800 transition">一鍵複製通知內容</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </section>
 
       <aside class="space-y-6 min-w-0">
@@ -686,6 +766,7 @@
                 <li>中斷工時電報產生</li>
                 <li>延長工時計算</li>
                 <li>延長工時電報產生</li>
+                <li>改時通知產生器</li>
               </ul>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -772,6 +853,14 @@
           'NEW ETD 為非必填。若未輸入，系統會暫以出飯店時間 + 80 分鐘作為 NEW ETD，請務必再自行確認實際 ETD 與日夜航。',
           '延長後之新 FDP 底線仍須通過連續 24 小時上限檢查，若超限系統會明確提示。'
         ]
+      },
+      reTimeView: {
+        title: '改時通知產生器 使用說明',
+        items: [
+          '輸入航班號（數字部分）、航班日期與新的 ETD（Local Time），系統自動計算 BOT Reporting Time（新 ETD − 90 分鐘）。',
+          '若 BOT Reporting Time 跨到前一天，系統會自動正確顯示日期。',
+          '確認內容後，點選「一鍵複製通知內容」即可複製標準格式改時通知。'
+        ]
       }
     };
 
@@ -820,7 +909,7 @@
     }
 
     function showView(viewId) {
-      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView', 'extensionDutyView'];
+      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView', 'extensionDutyView', 'reTimeView'];
       viewIds.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
@@ -1948,6 +2037,117 @@
     function copyFDPMessage() { copyMessageFromBox('fdpMessageResult'); }
     function copySplitDutyMessage() { copyMessageFromBox('splitDutyMessageResult'); }
 
+    function reTimeFormatDDMON(date) {
+      const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${day}${months[date.getMonth()]}`;
+    }
+
+    function reTimeFormatHHMM(date) {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}${minutes}`;
+    }
+
+    function calculateReTimeNotice() {
+      const flightNoRaw = document.getElementById('reTimeFlightNo').value.trim();
+      const flightDateValue = document.getElementById('reTimeFlightDate').value;
+      const etdDateValue = document.getElementById('reTimeEtdDate').value;
+      const etdHour = document.getElementById('reTimeEtdHour').value;
+      const etdMinute = document.getElementById('reTimeEtdMinute').value;
+
+      if (!flightNoRaw || !flightDateValue || !etdDateValue) {
+        document.getElementById('reTimeResult').innerHTML = '<span class="text-rose-600">請完整填入航班號、航班日期與 NEW ETD。</span>';
+        const n1 = document.getElementById('reTimeNoticePreview');
+        n1.textContent = '請先完成上方必填欄位後產生通知。';
+        delete n1.dataset.ready;
+        return;
+      }
+
+      const flightNo = flightNoRaw.replace(/\D/g, '');
+      if (!flightNo) {
+        document.getElementById('reTimeResult').innerHTML = '<span class="text-rose-600">航班號請輸入數字。</span>';
+        const n2 = document.getElementById('reTimeNoticePreview');
+        n2.textContent = '請先完成上方必填欄位後產生通知。';
+        delete n2.dataset.ready;
+        return;
+      }
+
+      const flightDate = new Date(`${flightDateValue}T00:00:00`);
+      const etdDate = new Date(`${etdDateValue}T${etdHour}:${etdMinute}:00`);
+      const botDate = new Date(etdDate.getTime() - 90 * 60 * 1000);
+
+      const flightDDMON = reTimeFormatDDMON(flightDate);
+      const etdHHMM = reTimeFormatHHMM(etdDate);
+      const etdDDMON = reTimeFormatDDMON(etdDate);
+      const botHHMM = reTimeFormatHHMM(botDate);
+      const botDDMON = reTimeFormatDDMON(botDate);
+
+      const newEtdStr = `${etdHHMM}L/${etdDDMON}`;
+      const botStr = `${botHHMM}L/${botDDMON}`;
+      const flightLabel = `CI${flightNo}`;
+
+      document.getElementById('reTimeResult').innerHTML = `
+        <div class="w-full space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div>
+              <div class="text-sm text-slate-500">航班號</div>
+              <div class="text-lg font-semibold text-slate-900">${flightLabel}</div>
+            </div>
+            <div>
+              <div class="text-sm text-slate-500">航班日期</div>
+              <div class="text-lg font-semibold text-slate-900">${flightDDMON}</div>
+            </div>
+            <div>
+              <div class="text-sm text-slate-500">NEW ETD</div>
+              <div class="text-lg font-semibold text-slate-900">${newEtdStr}</div>
+            </div>
+          </div>
+          <div class="pt-1 border-t border-slate-200">
+            <div class="text-sm text-slate-500 mb-2">BOT Reporting Time</div>
+            <div class="rounded-2xl bg-amber-600 text-white px-5 py-4 shadow-lg">
+              <div class="text-sm text-amber-100">最早回報時間</div>
+              <div class="text-2xl font-bold mt-1">${botStr}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const noticeText = `*** Schedule Change Information ***\n${flightLabel}/${flightDDMON}  **RE-TIME** NOTICE\n\nNEW ETD: ${newEtdStr}\nBOT Reporting Time: ${botStr}\n\nPlease ack on eCrew, thanks!\n\nTPEOS`;
+      const noticeEl = document.getElementById('reTimeNoticePreview');
+      noticeEl.textContent = noticeText;
+      noticeEl.dataset.ready = '1';
+    }
+
+    function copyReTimeNotice() {
+      const preview = document.getElementById('reTimeNoticePreview');
+      const text = preview.textContent.trim();
+      if (!text || !preview.dataset.ready) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const existing = preview.parentElement.querySelector('.reTimeCopyStatus');
+        if (existing) existing.remove();
+        preview.insertAdjacentHTML('afterend', '<div class="reTimeCopyStatus mt-2 text-slate-500">[已複製到剪貼簿]</div>');
+      }).catch(() => {
+        const existing = preview.parentElement.querySelector('.reTimeCopyStatus');
+        if (existing) existing.remove();
+        preview.insertAdjacentHTML('afterend', '<div class="reTimeCopyStatus mt-2 text-rose-600">[複製失敗，請手動複製]</div>');
+      });
+    }
+
+    function resetReTime() {
+      document.getElementById('reTimeFlightNo').value = '';
+      document.getElementById('reTimeFlightDate').value = '';
+      document.getElementById('reTimeEtdDate').value = '';
+      document.getElementById('reTimeEtdHour').value = '00';
+      document.getElementById('reTimeEtdMinute').value = '00';
+      document.getElementById('reTimeResult').innerHTML = '請輸入必填項目後產生通知。';
+      const noticeEl = document.getElementById('reTimeNoticePreview');
+      noticeEl.textContent = '請先完成上方必填欄位後產生通知。';
+      delete noticeEl.dataset.ready;
+      const existing = document.querySelector('.reTimeCopyStatus');
+      if (existing) existing.remove();
+    }
+
     function resetTimeDiff() {
       document.getElementById('diffStartDate').value = '';
       document.getElementById('diffStartHour').value = '00';
@@ -2042,6 +2242,7 @@
       resetFDP();
       resetSplitDuty();
       resetExtensionDuty();
+      resetReTime();
       showView('homeView');
       updateLiveClocks();
       setInterval(updateLiveClocks, 1000);
