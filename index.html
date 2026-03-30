@@ -22,10 +22,10 @@
             </p>
           </div>
           <div class="flex flex-col gap-3 md:items-end">
-            <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
-              <div class="text-slate-400">目前版本</div>
-              <div class="text-lg font-semibold">v2.7</div>
-            </div>
+              <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
+                <div class="text-slate-400">目前版本</div>
+                <div class="text-lg font-semibold">v2.8</div>
+              </div>
             <div class="bg-slate-900/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm min-w-[220px]">
               <div class="grid grid-cols-1 gap-2">
                 <div>
@@ -51,45 +51,52 @@
               <h2 class="text-xl font-bold">功能選擇</h2>
               <p class="text-slate-500 mt-1">請選擇要使用的功能。</p>
             </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              <button onclick="showView('timeDiffView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 md:auto-rows-fr xl:grid-cols-3 gap-5">
+              <button onclick="showView('timeDiffView')" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 transition p-5 shadow-sm">
                 <div class="text-sm text-sky-700 font-semibold">功能 1</div>
                 <div class="text-xl font-bold mt-2">時間差計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">沒什麼厲害的，單純計算兩個時間之間的差。</p>
               </button>
 
-              <button onclick="showView('fdpView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
+              <button onclick="showView('fdpView')" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition p-5 shadow-sm">
                 <div class="text-sm text-indigo-700 font-semibold">功能 2</div>
                 <div class="text-xl font-bold mt-2">FDP 底線</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入航班資訊，計算最晚 Block In 時間，還可以產生電報。</p>
               </button>
 
-              <button onclick="showView('splitDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
+              <button onclick="showView('splitDutyView')" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 transition p-5 shadow-sm">
                 <div class="text-sm text-emerald-700 font-semibold">功能 3</div>
                 <div class="text-xl font-bold mt-2">中斷工時計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">針對後推前送飯店之情況，計算是否符合中斷工時，以及新的 FDP 底線與電報。</p>
               </button>
 
-              <button onclick="showView('extensionDutyView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 transition p-5 shadow-sm">
+              <button onclick="showView('extensionDutyView')" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 transition p-5 shadow-sm">
                 <div class="text-sm text-rose-700 font-semibold">功能 4</div>
                 <div class="text-xl font-bold mt-2">*Beta*延長工時計算</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">「還在測試中！使用請小心！」針對後推後送飯店之情況，計算延長後的新 FDP 底線、24 小時上限檢查，並可產生電報。</p>
               </button>
 
-              <button onclick="showView('reTimeView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 transition p-5 shadow-sm">
+              <button onclick="showView('reTimeView')" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 transition p-5 shadow-sm">
                 <div class="text-sm text-amber-700 font-semibold">功能 5</div>
                 <div class="text-xl font-bold mt-2">改時通知產生器</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入航班資訊，一鍵產生改時通知好傳給組員。</p>
               </button>
 
               <!-- CROSS_DAY_FLIGHT_URL: https://kycwmtw.github.io/KUATIAN/ -->
-              <a href="https://kycwmtw.github.io/KUATIAN/" target="_blank" rel="noopener noreferrer" aria-label="跨天航班搜尋" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300 transition p-5 shadow-sm flex flex-col">
+              <a href="./kuatian.html" target="_blank" rel="noopener noreferrer" aria-label="跨天航班搜尋" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300 transition p-5 shadow-sm">
                 <div class="flex items-center justify-between gap-2">
                   <div class="text-sm text-violet-700 font-semibold">功能 6</div>
-                  <span class="text-xs text-slate-400 border border-slate-200 rounded-full px-2 py-0.5">開新分頁</span>
                 </div>
                 <div class="text-xl font-bold mt-2">跨天航班搜尋</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">「一秒」就能找出跨天航班。</p>
+              </a>
+
+              <a href="./telex.html" aria-label="整理航班改時電報" class="w-full h-full flex flex-col text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-cyan-50 hover:border-cyan-300 transition p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="text-sm text-cyan-700 font-semibold">功能 7</div>
+                </div>
+                <div class="text-xl font-bold mt-2">整理航班改時電報</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">快速整理一堆改時電報並分類</p>
               </a>
             </div>
           </div>
@@ -100,15 +107,24 @@
                 <h2 class="text-lg font-bold">工作日誌</h2>
                 <p class="text-sm text-slate-500 mt-1">做了哪些東西</p>
               </div>
-              <div class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">最新 7 版</div>
+              <div class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">最新 8 版</div>
             </div>
             <div class="p-4 md:p-5">
               <div class="max-h-[360px] overflow-y-auto pr-1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <div class="flex items-center justify-between gap-3">
-                      <div class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">v2.7</div>
+                      <div class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">v2.8</div>
                       <div class="text-xs text-slate-500">最新更新</div>
+                    </div>
+                    <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-700 list-disc pl-4">
+                      <li>新增「功能 7 - 整理航班改時電報」，可直接連到電報整理工具。</li>
+                    </ul>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700">v2.7</div>
+                      <div class="text-xs text-slate-500">功能新增</div>
                     </div>
                     <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-700 list-disc pl-4">
                       <li>新增「跨天航班搜尋」功能，一秒生出資料給移民署長官！。</li>
