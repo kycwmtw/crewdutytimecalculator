@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>櫃台值勤小幫手</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="./ci_flight_master_feb2026.js"></script>
   <script src="./airport_timezones_from_ci_feb2026.js"></script>
   <script src="./ci_aircraft_master_v2.js"></script>
@@ -24,7 +25,7 @@
           <div class="flex flex-col gap-3 md:items-end">
             <div class="bg-slate-800/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm w-fit">
               <div class="text-slate-400">目前版本</div>
-              <div class="text-lg font-semibold">v2.6</div>
+              <div class="text-lg font-semibold">v2.7</div>
             </div>
             <div class="bg-slate-900/70 rounded-2xl px-4 py-3 border border-slate-700 text-sm min-w-[220px]">
               <div class="grid grid-cols-1 gap-2">
@@ -81,6 +82,12 @@
                 <div class="text-xl font-bold mt-2">改時通知產生器</div>
                 <p class="text-sm text-slate-600 mt-3 leading-relaxed">輸入航班號、日期與新的 ETD，一鍵產生改時通知標準格式訊息。</p>
               </button>
+
+              <button onclick="openUsageModal('crossDayView')" class="text-left rounded-3xl border border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300 transition p-5 shadow-sm">
+                <div class="text-sm text-violet-700 font-semibold">功能 6</div>
+                <div class="text-xl font-bold mt-2">📊 跨日航班搜尋</div>
+                <p class="text-sm text-slate-600 mt-3 leading-relaxed">上傳 Excel 班表，自動辨識 ETA 早於 ETD 的跨日（越夜）航班，快速統計並列表顯示。</p>
+              </button>
             </div>
           </div>
 
@@ -97,8 +104,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <div class="flex items-center justify-between gap-3">
-                      <div class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">v2.6</div>
+                      <div class="inline-flex rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">v2.7</div>
                       <div class="text-xs text-slate-500">最新更新</div>
+                    </div>
+                    <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-700 list-disc pl-4">
+                      <li>新增功能：📊 跨日航班搜尋（Excel 分析）。</li>
+                    </ul>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700">v2.6</div>
+                      <div class="text-xs text-slate-500">功能新增</div>
                     </div>
                     <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-700 list-disc pl-4">
                       <li>新增功能：改時通知產生器。</li>
@@ -748,6 +764,75 @@
           </div>
         </div>
 
+        <div id="crossDayView" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold">6. 📊 跨日航班搜尋（Excel 分析）</h2>
+              <p class="text-slate-500 mt-1">上傳 Excel 班表，自動辨識 ETA 早於 ETD 的跨日（越夜）航班。</p>
+            </div>
+            <button onclick="showView('homeView')" class="rounded-2xl bg-slate-200 text-slate-800 px-4 py-2 font-medium hover:bg-slate-300 transition">返回功能選單</button>
+          </div>
+          <div class="p-6 space-y-6">
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
+              <div>
+                <h3 class="text-lg font-bold">上傳 Excel 班表</h3>
+                <p class="text-sm text-slate-500 mt-1">請上傳包含航班資訊的 Excel 檔案（.xlsx / .xls）。系統會自動辨識標題列中的 ETD、ETA、STD、STA 等欄位，並找出 ETA < ETD 的跨日航班。</p>
+              </div>
+
+              <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white p-6 text-center">
+                <div class="text-3xl mb-3">📂</div>
+                <p class="text-slate-600 text-sm mb-4">點選下方按鈕選取 Excel 檔案，或直接將檔案拖曳至此區域</p>
+                <label class="inline-block cursor-pointer rounded-2xl bg-violet-600 text-white px-5 py-3 font-medium hover:bg-violet-700 transition"
+                       id="crossDayFileLabel">
+                  選取 Excel 檔案
+                  <input id="crossDayFileInput" type="file" accept=".xlsx,.xls" class="hidden" onchange="handleCrossDayFile(event)" />
+                </label>
+                <div id="crossDayFileName" class="mt-3 text-sm text-slate-500"></div>
+              </div>
+
+              <div class="rounded-2xl bg-violet-50 border border-violet-200 p-4 text-sm text-violet-800 space-y-1">
+                <div class="font-semibold">📋 Excel 格式說明</div>
+                <ul class="list-disc pl-4 space-y-1 mt-2 text-violet-700">
+                  <li>第一列須為標題列（Header Row）。</li>
+                  <li>必須包含 ETD（或 STD）與 ETA（或 STA）欄位，格式為 HHMM 或 HH:MM。</li>
+                  <li>支援選填欄位：航班號、日期、DEP（出發站）、ARR（目的站）。</li>
+                  <li>時間判斷邏輯：ETA < ETD 即視為跨日（越夜）航班。</li>
+                </ul>
+              </div>
+
+              <div id="crossDayStatus" class="text-sm"></div>
+
+              <div class="flex flex-wrap gap-3">
+                <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                  <input type="checkbox" id="crossDayOnlyToggle" class="rounded" onchange="renderCrossDayResults()" />
+                  <span>只顯示跨日航班</span>
+                </label>
+                <button onclick="resetCrossDay()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
+              </div>
+            </div>
+
+            <div id="crossDayStatsSection" class="hidden rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">統計結果</h3>
+                <p class="text-sm text-slate-500 mt-1">以下為本次班表的跨日航班統計。</p>
+              </div>
+              <div id="crossDayStats"></div>
+            </div>
+
+            <div id="crossDayResultsSection" class="hidden rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
+              <div>
+                <h3 class="text-lg font-bold">航班列表</h3>
+                <p class="text-sm text-slate-500 mt-1">以下列出所有解析到的航班資料及跨日狀態。</p>
+              </div>
+              <div id="crossDayResults">
+                請上傳 Excel 檔案後開始分析。
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </section>
 
       <aside class="space-y-6 min-w-0">
@@ -765,6 +850,7 @@
                 <li>延長工時計算</li>
                 <li>延長工時電報產生</li>
                 <li>改時通知產生器</li>
+                <li>📊 跨日航班搜尋（Excel 分析）</li>
               </ul>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -859,6 +945,15 @@
           '若 BOT Reporting Time 跨到前一天，系統會自動正確顯示日期。',
           '確認內容後，點選「一鍵複製通知內容」即可複製標準格式改時通知。'
         ]
+      },
+      crossDayView: {
+        title: '📊 跨日航班搜尋（Excel 分析）使用說明',
+        items: [
+          '上傳 Excel 格式的航班班表（.xlsx / .xls），系統會自動偵測標題列並辨識 ETD、ETA、STD、STA 等欄位。',
+          '判斷邏輯：若 ETA（到達時間）的 HHMM 數值早於 ETD（起飛時間）的 HHMM 數值，即視為「跨日航班」（越夜班）。',
+          '支援選填欄位：航班號、日期、出發站（DEP）、目的站（ARR），有填入時會一併顯示於結果表格中。',
+          '可勾選「只顯示跨日航班」以篩選結果，方便快速掌握越夜班情形。'
+        ]
       }
     };
 
@@ -907,7 +1002,7 @@
     }
 
     function showView(viewId) {
-      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView', 'extensionDutyView', 'reTimeView'];
+      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView', 'extensionDutyView', 'reTimeView', 'crossDayView'];
       viewIds.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
@@ -2241,6 +2336,7 @@
       resetSplitDuty();
       resetExtensionDuty();
       resetReTime();
+      resetCrossDay();
       showView('homeView');
       updateLiveClocks();
       setInterval(updateLiveClocks, 1000);
@@ -2288,7 +2384,304 @@
 
       const extMsgFlightDate = document.getElementById('extMsgFlightDate');
       if (extMsgFlightDate) extMsgFlightDate.addEventListener('change', syncPrimaryDateToExtension);
+
+      const crossDayDropZone = document.querySelector('#crossDayView .border-dashed');
+      if (crossDayDropZone) {
+        crossDayDropZone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          this.classList.add('border-violet-400', 'bg-violet-50');
+        });
+        crossDayDropZone.addEventListener('dragleave', function() {
+          this.classList.remove('border-violet-400', 'bg-violet-50');
+        });
+        crossDayDropZone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          this.classList.remove('border-violet-400', 'bg-violet-50');
+          const file = e.dataTransfer.files?.[0];
+          if (file) handleCrossDayFile({ target: { files: [file] } });
+        });
+      }
     });
+
+    let crossDayData = null;
+
+    const CROSS_DAY_ETD_CANDIDATES = ['etd', 'std', 'etd(utc)', 'std(utc)', 'etd(local)', 'std(local)', 'dep time', 'departure time', '起飛時間', '計劃起飛時間', 'off block', 'depart'];
+    const CROSS_DAY_ETA_CANDIDATES = ['eta', 'sta', 'eta(utc)', 'sta(utc)', 'eta(local)', 'sta(local)', 'arr time', 'arrival time', '到達時間', '計劃到達時間', 'on block', 'arrive'];
+    const CROSS_DAY_FLIGHT_CANDIDATES = ['航班號', '航班', 'flight no', 'flight', 'flt no', 'flt', 'flight number', 'flt number'];
+    const CROSS_DAY_DATE_CANDIDATES = ['日期', 'date', 'flt date', 'flight date', '飛行日期'];
+    const CROSS_DAY_DEP_CANDIDATES = ['出發地', '起飛站', '出發', 'dep', 'origin', 'from', 'departure', 'dep station'];
+    const CROSS_DAY_ARR_CANDIDATES = ['目的地', '到達站', '到達', 'arr', 'destination', 'to', 'arrival', 'arr station'];
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function buildCrossDayTableHTML(flightList, detectedColumns) {
+      if (flightList.length === 0) return '';
+      const hasFlightNo = detectedColumns.flight !== -1;
+      const hasDate = detectedColumns.date !== -1;
+      const hasDep = detectedColumns.dep !== -1;
+      const hasArr = detectedColumns.arr !== -1;
+      let stripeIndex = 0;
+      const rows = flightList.map(function(f) {
+        const rowClass = f.isCrossDay ? 'bg-rose-50' : (stripeIndex++ % 2 === 0 ? 'bg-white' : 'bg-slate-50');
+        return `<tr class="${rowClass} border-b border-slate-100">
+          ${hasFlightNo ? `<td class="px-3 py-2 font-medium text-slate-800">${escapeHTML(f.flightNo) || '—'}</td>` : ''}
+          ${hasDate ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.date) || '—'}</td>` : ''}
+          ${hasDep ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.dep) || '—'}</td>` : ''}
+          ${hasArr ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.arr) || '—'}</td>` : ''}
+          <td class="px-3 py-2 font-mono text-slate-700">${escapeHTML(f.etd)}</td>
+          <td class="px-3 py-2 font-mono text-slate-700">${escapeHTML(f.eta)}</td>
+          <td class="px-3 py-2">${f.isCrossDay ? '<span class="inline-flex items-center gap-1 text-rose-600 font-semibold">✈ 跨日</span>' : '<span class="text-emerald-600">—</span>'}</td>
+        </tr>`;
+      }).join('');
+
+      return `<div class="overflow-x-auto rounded-2xl border border-slate-200">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-100 text-left">
+              ${hasFlightNo ? '<th class="px-3 py-2 font-semibold text-slate-700">航班號</th>' : ''}
+              ${hasDate ? '<th class="px-3 py-2 font-semibold text-slate-700">日期</th>' : ''}
+              ${hasDep ? '<th class="px-3 py-2 font-semibold text-slate-700">DEP</th>' : ''}
+              ${hasArr ? '<th class="px-3 py-2 font-semibold text-slate-700">ARR</th>' : ''}
+              <th class="px-3 py-2 font-semibold text-slate-700">ETD</th>
+              <th class="px-3 py-2 font-semibold text-slate-700">ETA</th>
+              <th class="px-3 py-2 font-semibold text-slate-700">跨日</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }
+
+    function handleCrossDayFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const nameEl = document.getElementById('crossDayFileName');
+      if (nameEl) nameEl.textContent = `已選取：${file.name}`;
+
+      const statusEl = document.getElementById('crossDayStatus');
+      if (statusEl) statusEl.innerHTML = '<span class="text-slate-500">正在解析中…</span>';
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          if (typeof XLSX === 'undefined') {
+            document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">Excel 解析程式庫未載入，請確認網路連線後重試。</span>';
+            return;
+          }
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellText: true, cellDates: false });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false });
+          parseCrossDayExcel(rows);
+        } catch (err) {
+          document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">無法解析 Excel 檔案，請確認格式正確。</span>';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function findColumnIndex(headers, candidates) {
+      const lowerHeaders = headers.map(function(h) { return String(h).toLowerCase().trim(); });
+      for (let i = 0; i < candidates.length; i++) {
+        const idx = lowerHeaders.indexOf(candidates[i].toLowerCase());
+        if (idx !== -1) return idx;
+      }
+      return -1;
+    }
+
+    function parseTimeToMinutes(timeStr) {
+      if (timeStr === null || timeStr === undefined || timeStr === '') return null;
+      const str = String(timeStr).replace(/[^0-9:]/g, '');
+      if (str.includes(':')) {
+        const parts = str.split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || '0', 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+      }
+      if (str.length === 4) {
+        const h = parseInt(str.substring(0, 2), 10);
+        const m = parseInt(str.substring(2), 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+      }
+      if (str.length === 3) {
+        const h = parseInt(str.substring(0, 1), 10);
+        const m = parseInt(str.substring(1), 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+      }
+      return null;
+    }
+
+    function minutesToHHMM(minutes) {
+      const h = Math.floor(minutes / 60) % 24;
+      const m = minutes % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function parseCrossDayExcel(rows) {
+      if (!rows || rows.length < 2) {
+        document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">Excel 資料不足，至少需要標題列與一筆資料列。</span>';
+        return;
+      }
+
+      const headers = rows[0].map(function(h) { return String(h).trim(); });
+
+      const etdCol = findColumnIndex(headers, CROSS_DAY_ETD_CANDIDATES);
+      const etaCol = findColumnIndex(headers, CROSS_DAY_ETA_CANDIDATES);
+      const flightCol = findColumnIndex(headers, CROSS_DAY_FLIGHT_CANDIDATES);
+      const dateCol = findColumnIndex(headers, CROSS_DAY_DATE_CANDIDATES);
+      const depCol = findColumnIndex(headers, CROSS_DAY_DEP_CANDIDATES);
+      const arrCol = findColumnIndex(headers, CROSS_DAY_ARR_CANDIDATES);
+
+      if (etdCol === -1 || etaCol === -1) {
+        document.getElementById('crossDayStatus').innerHTML = `
+          <div class="space-y-1 text-rose-600">
+            <div>無法自動辨識 ETD/ETA 欄位，請確認 Excel 標題列包含以下欄位名稱之一：</div>
+            <div class="font-mono text-xs bg-rose-50 rounded p-2">ETD、ETA、STD、STA、起飛時間、到達時間、Dep Time、Arr Time</div>
+            <div class="text-slate-600">偵測到的標題：${headers.map(function(h) { return escapeHTML(h); }).join('、')}</div>
+          </div>
+        `;
+        return;
+      }
+
+      const flights = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.every(function(cell) { return !cell && cell !== 0; })) continue;
+
+        const etdRaw = row[etdCol];
+        const etaRaw = row[etaCol];
+        const etdMinutes = parseTimeToMinutes(etdRaw);
+        const etaMinutes = parseTimeToMinutes(etaRaw);
+        if (etdMinutes === null || etaMinutes === null) continue;
+
+        flights.push({
+          rowNum: i + 1,
+          flightNo: flightCol !== -1 ? String(row[flightCol] || '').trim() : '',
+          date: dateCol !== -1 ? String(row[dateCol] || '').trim() : '',
+          dep: depCol !== -1 ? String(row[depCol] || '').trim().toUpperCase() : '',
+          arr: arrCol !== -1 ? String(row[arrCol] || '').trim().toUpperCase() : '',
+          etd: minutesToHHMM(etdMinutes),
+          eta: minutesToHHMM(etaMinutes),
+          isCrossDay: etaMinutes < etdMinutes
+        });
+      }
+
+      if (flights.length === 0) {
+        document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">找不到可解析的時間資料，請確認 ETD/ETA 欄位格式正確（HHMM 或 HH:MM）。</span>';
+        return;
+      }
+
+      const colNames = [
+        flightCol !== -1 ? `航班號（第${flightCol + 1}欄）` : null,
+        dateCol !== -1 ? `日期（第${dateCol + 1}欄）` : null,
+        depCol !== -1 ? `DEP（第${depCol + 1}欄）` : null,
+        arrCol !== -1 ? `ARR（第${arrCol + 1}欄）` : null,
+        `ETD（第${etdCol + 1}欄）`,
+        `ETA（第${etaCol + 1}欄）`
+      ].filter(Boolean);
+
+      document.getElementById('crossDayStatus').innerHTML = `
+        <span class="text-emerald-700 font-medium">✅ 成功解析 ${flights.length} 筆資料。已識別欄位：${colNames.join('、')}</span>
+      `;
+
+      crossDayData = {
+        flights: flights,
+        detectedColumns: { flight: flightCol, date: dateCol, dep: depCol, arr: arrCol, etd: etdCol, eta: etaCol }
+      };
+
+      renderCrossDayResults();
+    }
+
+    function renderCrossDayResults() {
+      if (!crossDayData) return;
+
+      const flights = crossDayData.flights;
+      const detectedColumns = crossDayData.detectedColumns;
+      const totalCount = flights.length;
+      const crossDayCount = flights.filter(function(f) { return f.isCrossDay; }).length;
+      const normalCount = totalCount - crossDayCount;
+
+      const statsSection = document.getElementById('crossDayStatsSection');
+      const resultsSection = document.getElementById('crossDayResultsSection');
+      if (statsSection) statsSection.classList.remove('hidden');
+      if (resultsSection) resultsSection.classList.remove('hidden');
+
+      document.getElementById('crossDayStats').innerHTML = `
+        <div class="grid grid-cols-3 gap-4">
+          <div class="rounded-2xl bg-slate-100 border border-slate-200 p-4 text-center">
+            <div class="text-3xl font-bold text-slate-900">${totalCount}</div>
+            <div class="text-sm text-slate-500 mt-1">總航班數</div>
+          </div>
+          <div class="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-center">
+            <div class="text-3xl font-bold text-rose-700">${crossDayCount}</div>
+            <div class="text-sm text-rose-600 mt-1">跨日航班</div>
+          </div>
+          <div class="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-center">
+            <div class="text-3xl font-bold text-emerald-700">${normalCount}</div>
+            <div class="text-sm text-emerald-600 mt-1">非跨日航班</div>
+          </div>
+        </div>
+      `;
+
+      const showCrossDayOnly = document.getElementById('crossDayOnlyToggle')?.checked;
+      const crossDayFlights = flights.filter(function(f) { return f.isCrossDay; });
+      const normalFlights = flights.filter(function(f) { return !f.isCrossDay; });
+
+      let html = '<div class="space-y-6">';
+
+      if (crossDayFlights.length > 0) {
+        html += `<div>
+          <div class="flex items-center gap-2 mb-3">
+            <h4 class="font-semibold text-slate-800">跨日航班</h4>
+            <span class="bg-rose-100 text-rose-700 text-xs font-semibold px-2 py-0.5 rounded-full">共 ${crossDayCount} 班</span>
+          </div>
+          ${buildCrossDayTableHTML(crossDayFlights, detectedColumns)}
+        </div>`;
+      } else {
+        html += `<div class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-800 text-sm font-medium">✅ 沒有發現跨日航班。</div>`;
+      }
+
+      if (!showCrossDayOnly && normalFlights.length > 0) {
+        html += `<div>
+          <div class="flex items-center gap-2 mb-3">
+            <h4 class="font-semibold text-slate-800">非跨日航班</h4>
+            <span class="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">共 ${normalCount} 班</span>
+          </div>
+          ${buildCrossDayTableHTML(normalFlights, detectedColumns)}
+        </div>`;
+      }
+
+      html += '</div>';
+      document.getElementById('crossDayResults').innerHTML = html;
+    }
+
+    function resetCrossDay() {
+      const fileInput = document.getElementById('crossDayFileInput');
+      if (fileInput) fileInput.value = '';
+      const nameEl = document.getElementById('crossDayFileName');
+      if (nameEl) nameEl.textContent = '';
+      crossDayData = null;
+      document.getElementById('crossDayStatus').innerHTML = '';
+      document.getElementById('crossDayStats').innerHTML = '';
+      document.getElementById('crossDayResults').innerHTML = '請上傳 Excel 檔案後開始分析。';
+      const statsSection = document.getElementById('crossDayStatsSection');
+      const resultsSection = document.getElementById('crossDayResultsSection');
+      if (statsSection) statsSection.classList.add('hidden');
+      if (resultsSection) resultsSection.classList.add('hidden');
+      const toggle = document.getElementById('crossDayOnlyToggle');
+      if (toggle) toggle.checked = false;
+    }
   </script>
 </body>
 </html>
