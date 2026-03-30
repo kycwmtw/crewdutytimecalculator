@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>航班跨日檢查工具</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f7ff;
+      --panel: #ffffff;
+      --panel-2: #e8f3ff;
+      --line: #b8d4f0;
+      --text: #1a2a42;
+      --muted: #5a7a9e;
+      --accent: #2b7cd6;
+      --accent-2: #1ab8a0;
+      --danger: #d93030;
+      --warn: #c07a00;
+      --ok: #1a8a30;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(180deg, #e8f3ff 0%, #f5f9ff 100%);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(43, 124, 214, 0.08);
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .dropzone {
+      border: 2px dashed #7ab4e8;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      background: rgba(232, 243, 255, 0.7);
+      transition: 0.2s ease;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent-2);
+      background: rgba(200, 235, 255, 0.6);
+      transform: scale(1.01);
+    }
+
+    .dropzone input {
+      display: none;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button, .fake-btn {
+      background: #daeeff;
+      color: var(--text);
+      border: 1px solid #7ab4e8;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button:hover, .fake-btn:hover {
+      background: #c0dff8;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #2b7cd6 0%, #1ab8d4 100%);
+      border-color: #5aaaf0;
+      color: #ffffff;
+    }
+
+    .primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .danger {
+      background: #fde8e8;
+      border-color: #f0a0a0;
+      color: #b02020;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      background: rgba(232, 243, 255, 0.8);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .log, .output, .error-box {
+      width: 100%;
+      min-height: 200px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #f0f7ff;
+      color: var(--text);
+      padding: 14px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow: auto;
+    }
+
+    .output {
+      min-height: 360px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      border: 1px solid var(--line);
+      background: rgba(184, 212, 240, 0.4);
+      color: var(--text);
+    }
+
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .danger-text { color: var(--danger); }
+
+    .warning-box {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: #fff8e1;
+      border: 1px solid #f0c040;
+      border-radius: 12px;
+      color: #7a5000;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>✈️ 航班跨日檢查工具</h1>
+    <div class="sub">
+      上傳檔案，系統會自動篩選 <strong>TPE 起訖、74Y / 77X</strong> 的航班，
+      檢查 STD/STA 與 ETD/ETA/ATD/ATA 是否跨日，並輸出最終清單。
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h2 style="margin:0 0 14px; font-size:20px;">📋 使用說明</h2>
+      <ol style="margin:0; padding-left:22px; line-height:2;">
+        <li>使用 <strong>WebJC</strong>，選取日期時間區間</li>
+        <li>BY 選 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong></li>
+        <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
+        <li>按 <strong>Query</strong></li>
+        <li>按 <strong>Export Excel</strong></li>
+        <li>將產出的檔案直接拖入本系統即可分析</li>
+      </ol>
+      <div class="warning-box">
+        ⚠️ <strong>注意：</strong>最好是 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong>兩種條件都各 Query 一次，並分別產出 Excel 檔，<strong>兩個檔都拖進來分析！</strong>（因為兩種條件下包含的航班可能有不一樣）
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>1. 上傳檔案</h2>
+        <div id="dropzone" class="dropzone">
+          <p style="font-size:18px; margin:0 0 10px;">拖曳 Excel 檔到這裡，或點按下方按鈕選擇檔案</p>
+          <p class="hint" style="margin-top:0;">支援副檔名：.xls、.xlsx</p>
+          <label class="fake-btn" for="fileInput">選擇 Excel 檔案</label>
+          <input id="fileInput" type="file" accept=".xls,.xlsx" />
+          <div id="uploadStatus" class="hint" style="margin-top:14px; font-size:14px;">尚未選擇檔案。</div>
+          <div id="progressWrap" style="margin-top:14px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span id="progressText" class="hint" style="margin:0;">等待中</span>
+              <span id="progressPercent" class="hint" style="margin:0;">0%</span>
+            </div>
+            <div style="width:100%; height:12px; background:#daeeff; border:1px solid var(--line); border-radius:999px; overflow:hidden;">
+              <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #3971d8 0%, #8df0d1 100%); transition:width 0.25s ease;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="analyzeBtn" class="primary" disabled>開始分析</button>
+          <button id="copyBtn" disabled>複製結果</button>
+          <button id="downloadBtn" disabled>下載 TXT</button>
+          <button id="clearBtn" class="danger">清空</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="label">原始資料筆數</div><div id="rawCount" class="value">0</div></div>
+          <div class="stat"><div class="label">去重後筆數</div><div id="dedupCount" class="value">0</div></div>
+          <div class="stat"><div class="label">符合篩選筆數</div><div id="filteredCount" class="value">0</div></div>
+          <div class="stat"><div class="label">跨日輸出筆數</div><div id="resultCount" class="value">0</div></div>
+        </div>
+
+        <h2 style="margin-top:20px;">2. 處理紀錄</h2>
+        <div id="logBox" class="log">尚未載入檔案。</div>
+      </div>
+
+      <div class="card">
+        <h2>3. 最終輸出</h2>
+        <div id="outputBox" class="output">分析完成後，結果會顯示在這裡。</div>
+        <div class="hint">
+          輸出格式：<br>
+          <strong>CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)</strong>
+        </div>
+
+        <h2 style="margin-top:20px;">4. 錯誤 / 忽略說明</h2>
+        <div id="errorBox" class="error-box">目前沒有資料。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const REQUIRED_COLUMNS = [
+      'LATEST_DEP_ARP_CD',
+      'LATEST_ARV_ARP_CD',
+      'LATEST_EQP_CD',
+      'ACF_OPER',
+      'PUB_SCH_DEP_DT_LCL',
+      'SCH_ETD_LCL',
+      'ACTUAL_OFFBLOCKS_LCL',
+      'PUB_SCH_ARV_DT_LCL',
+      'SCH_ETA_LCL',
+      'ACTUAL_ONBLOCKS_LCL'
+    ];
+
+    const FLIGHT_NUMBER_CANDIDATES = [
+      'FLT_NO', 'FLT_NBR', 'FLT_NR', 'FLT', 'FLIGHT', 'FLIGHT_NO', 'FLIGHT_NUMBER', 'FLT_NUM'
+    ];
+
+    const DEP_ARP_CANDIDATES = ['DEP_ARP_CD', 'SCH_DEP_ARP_CD', 'ORIG_ARP_CD', 'DEP', 'LATEST_DEP_ARP_CD'];
+    const ARV_ARP_CANDIDATES = ['ARV_ARP_CD', 'SCH_ARV_ARP_CD', 'DEST_ARP_CD', 'ARV', 'LATEST_ARV_ARP_CD'];
+
+    let selectedFile = null;
+    let lastOutput = '';
+
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const logBox = document.getElementById('logBox');
+    const outputBox = document.getElementById('outputBox');
+    const errorBox = document.getElementById('errorBox');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressBar = document.getElementById('progressBar');
+
+    const rawCount = document.getElementById('rawCount');
+    const dedupCount = document.getElementById('dedupCount');
+    const filteredCount = document.getElementById('filteredCount');
+    const resultCount = document.getElementById('resultCount');
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        selectedFile = e.target.files[0];
+        uploadStatus.innerHTML = `<span class="ok">✅ 檔案上傳成功：</span> ${selectedFile.name}`;
+        log(`已選擇檔案：${selectedFile.name}`);
+        analyzeBtn.disabled = false;
+        resetProgress();
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files && files[0]) {
+        selectedFile = files[0];
+        fileInput.files = files;
+        uploadStatus.innerHTML = `<span class="ok">✅ 檔案上傳成功：</span> ${selectedFile.name}`;
+        log(`已拖入檔案：${selectedFile.name}`);
+        analyzeBtn.disabled = false;
+        resetProgress();
+      }
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      try {
+        resetResultArea();
+        startFakeProgress();
+        outputBox.textContent = '正在分析…';
+        log(`開始讀取檔案：${selectedFile.name}`);
+
+        const data = await selectedFile.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        log(`工作表：${firstSheetName}`);
+
+        const rows = XLSX.utils.sheet_to_json(worksheet, {
+          defval: '',
+          raw: false
+        });
+
+        rawCount.textContent = String(rows.length);
+        log(`原始資料筆數：${rows.length}`);
+
+        if (!rows.length) {
+          error('檔案內容為空，無法分析。');
+          return;
+        }
+
+        const normalizedRows = rows.map((row, index) => normalizeKeys(row, index + 2));
+        const missing = findMissingColumns(normalizedRows[0]);
+        if (missing.length > 0) {
+          error(`缺少必要欄位：${missing.join(', ')}`);
+          return;
+        }
+
+        const flightNoKey = detectExistingKey(normalizedRows[0], FLIGHT_NUMBER_CANDIDATES);
+        const depKey = detectExistingKey(normalizedRows[0], DEP_ARP_CANDIDATES);
+        const arvKey = detectExistingKey(normalizedRows[0], ARV_ARP_CANDIDATES);
+
+        log(`航班號欄位：${flightNoKey || '未找到'}`);
+        log(`起飛機場欄位：${depKey || '改用 LATEST_DEP_ARP_CD'}`);
+        log(`到達機場欄位：${arvKey || '改用 LATEST_ARV_ARP_CD'}`);
+
+        if (!flightNoKey) {
+          error('找不到航班號欄位。請確認檔案中存在 FLT_NBR / FLT_NO / FLIGHT_NO 等欄位。');
+          return;
+        }
+
+        const deduped = dedupeRows(normalizedRows, flightNoKey, depKey, arvKey);
+        dedupCount.textContent = String(deduped.length);
+        log(`去重後筆數：${deduped.length}`);
+
+        const filtered = deduped.filter(row => {
+          const depTPE = valueOf(row['LATEST_DEP_ARP_CD']) === 'TPE';
+          const arvTPE = valueOf(row['LATEST_ARV_ARP_CD']) === 'TPE';
+          const eqpOk = ['74Y', '77X'].includes(valueOf(row['LATEST_EQP_CD']));
+          const operOk = valueOf(row['ACF_OPER']) === 'CI';
+          return (depTPE || arvTPE) && eqpOk && operOk;
+        });
+
+        filteredCount.textContent = String(filtered.length);
+        log(`符合篩選條件筆數：${filtered.length}`);
+
+        const results = [];
+        const ignored = [];
+
+        for (const row of filtered) {
+          const analysis = analyzeRow(row, { flightNoKey, depKey, arvKey });
+          if (analysis.status === 'result') results.push(analysis.output);
+          if (analysis.status === 'ignored') ignored.push(analysis.reason);
+        }
+
+        resultCount.textContent = String(results.length);
+        lastOutput = results.join('\n');
+
+        outputBox.textContent = lastOutput || '沒有符合跨日條件的航班。';
+        errorBox.textContent = ignored.length ? ignored.join('\n') : '沒有忽略資料或錯誤。';
+
+        copyBtn.disabled = !results.length;
+        downloadBtn.disabled = !results.length;
+
+        finishProgress('分析完成');
+        log(`跨日輸出筆數：${results.length}`);
+        log('分析完成。');
+      } catch (err) {
+        console.error(err);
+        error(`處理失敗：${err.message || err}`);
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!lastOutput) return;
+      await navigator.clipboard.writeText(lastOutput);
+      log('已複製結果到剪貼簿。');
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!lastOutput) return;
+      const blob = new Blob([lastOutput], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kuatian_result.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      log('已下載 TXT。');
+    });
+
+    clearBtn.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      lastOutput = '';
+      analyzeBtn.disabled = true;
+      uploadStatus.textContent = '尚未選擇檔案。';
+      resetProgress();
+      copyBtn.disabled = true;
+      downloadBtn.disabled = true;
+      rawCount.textContent = '0';
+      dedupCount.textContent = '0';
+      filteredCount.textContent = '0';
+      resultCount.textContent = '0';
+      logBox.textContent = '尚未載入檔案。';
+      outputBox.textContent = '分析完成後，結果會顯示在這裡。';
+      errorBox.textContent = '目前沒有資料。';
+    });
+
+    function analyzeRow(row, keys) {
+      const flightNo = cleanFlightNo(valueOf(row[keys.flightNoKey]));
+      const dep = keys.depKey ? valueOf(row[keys.depKey]) : valueOf(row['LATEST_DEP_ARP_CD']);
+      const arv = keys.arvKey ? valueOf(row[keys.arvKey]) : valueOf(row['LATEST_ARV_ARP_CD']);
+      const depTPE = valueOf(row['LATEST_DEP_ARP_CD']) === 'TPE';
+      const arvTPE = valueOf(row['LATEST_ARV_ARP_CD']) === 'TPE';
+
+      if (depTPE) {
+        const std = parseDateTime(row['PUB_SCH_DEP_DT_LCL']);
+        const etd = parseDateTime(row['SCH_ETD_LCL']);
+        const atd = parseDateTime(row['ACTUAL_OFFBLOCKS_LCL']);
+
+        const hasComparable = (etd && etd.hasTime) || (atd && atd.hasTime);
+        if (!hasComparable) {
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：出發航班缺少可比對 HHMM（ETD/ATD）。`);
+        }
+        if (!std || !std.hasDate) {
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：STD 無法解析。`);
+        }
+
+        const etdCross = etd && etd.hasDate && isDifferentDate(std.date, etd.date);
+        const atdCross = atd && atd.hasDate && isDifferentDate(std.date, atd.date);
+
+        if (etdCross || atdCross) {
+          const chosenActual = atd && atd.hasDate && atd.hasTime ? atd : etd;
+          const chosenLabel = atd && atd.hasDate && atd.hasTime ? 'ATD' : 'ETD';
+          if (!chosenActual || !chosenActual.hasDate || !chosenActual.hasTime) {
+            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用時間欄位不足。`);
+          }
+          return result(formatOutput({
+            flightNo,
+            baseDate: std.date,
+            route: `${dep}-${arv}`,
+            leftLabel: 'STD',
+            leftDate: std.date,
+            rightLabel: chosenLabel,
+            rightDate: chosenActual.date
+          }));
+        }
+      }
+
+      if (arvTPE) {
+        const sta = parseDateTime(row['PUB_SCH_ARV_DT_LCL']);
+        const eta = parseDateTime(row['SCH_ETA_LCL']);
+        const ata = parseDateTime(row['ACTUAL_ONBLOCKS_LCL']);
+
+        const hasComparable = (eta && eta.hasTime) || (ata && ata.hasTime);
+        if (!hasComparable) {
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：到達航班缺少可比對 HHMM（ETA/ATA）。`);
+        }
+        if (!sta || !sta.hasDate) {
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：STA 無法解析。`);
+        }
+
+        const etaCross = eta && eta.hasDate && isDifferentDate(sta.date, eta.date);
+        const ataCross = ata && ata.hasDate && isDifferentDate(sta.date, ata.date);
+
+        if (etaCross || ataCross) {
+          const chosenActual = ata && ata.hasDate && ata.hasTime ? ata : eta;
+          const chosenLabel = ata && ata.hasDate && ata.hasTime ? 'ATA' : 'ETA';
+          if (!chosenActual || !chosenActual.hasDate || !chosenActual.hasTime) {
+            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用時間欄位不足。`);
+          }
+          return result(formatOutput({
+            flightNo,
+            baseDate: sta.date,
+            route: `${dep}-${arv}`,
+            leftLabel: 'STA',
+            leftDate: sta.date,
+            rightLabel: chosenLabel,
+            rightDate: chosenActual.date
+          }));
+        }
+      }
+
+      return { status: 'none' };
+    }
+
+    function formatOutput({ flightNo, baseDate, route, leftLabel, leftDate, rightLabel, rightDate }) {
+      return `${flightNo}/${formatDDMMM(baseDate)}/${route} ${leftLabel}${formatDDHHMM(leftDate)}(L) ${rightLabel}${formatDDHHMM(rightDate)}(L)`;
+    }
+
+    function dedupeRows(rows, flightNoKey, depKey, arvKey) {
+      const map = new Map();
+      for (const row of rows) {
+        const dep = depKey ? valueOf(row[depKey]) : valueOf(row['LATEST_DEP_ARP_CD']);
+        const arv = arvKey ? valueOf(row[arvKey]) : valueOf(row['LATEST_ARV_ARP_CD']);
+        const key = [
+          cleanFlightNo(valueOf(row[flightNoKey])),
+          dep,
+          arv,
+          valueOf(row['PUB_SCH_DEP_DT_LCL']),
+          valueOf(row['PUB_SCH_ARV_DT_LCL'])
+        ].join('|');
+        if (!map.has(key)) map.set(key, row);
+      }
+      return [...map.values()];
+    }
+
+    function normalizeKeys(row, rowNumber) {
+      const obj = { __ROW_NUMBER__: rowNumber };
+      for (const [key, value] of Object.entries(row)) {
+        obj[String(key).trim().toUpperCase()] = value;
+      }
+      return obj;
+    }
+
+    function findMissingColumns(sample) {
+      return REQUIRED_COLUMNS.filter(col => !(col in sample));
+    }
+
+    function detectExistingKey(sample, candidates) {
+      return candidates.find(key => key in sample) || null;
+    }
+
+    function parseDateTime(value) {
+      if (value === null || value === undefined) return null;
+      let s = String(value).trim();
+      if (!s || /^NULL$/i.test(s)) return null;
+
+      s = s.replace(/\s+/g, ' ');
+      const upper = s.toUpperCase();
+
+      const native = new Date(s);
+      if (!Number.isNaN(native.getTime())) {
+        return {
+          date: native,
+          hasDate: true,
+          hasTime: hasMeaningfulTimeInOriginal(upper, native),
+          raw: value
+        };
+      }
+
+      const compact = upper.replace(/[^A-Z0-9]/g, '');
+
+      let m = compact.match(/^(\d{4})(\d{2})(\d{2})(\d{4})$/);
+      if (m) {
+        const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4].slice(0,2)), Number(m[4].slice(2,4)));
+        return { date: dt, hasDate: true, hasTime: true, raw: value };
+      }
+
+      m = compact.match(/^(\d{4})(\d{2})(\d{2})$/);
+      if (m) {
+        const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0);
+        return { date: dt, hasDate: true, hasTime: false, raw: value };
+      }
+
+      m = compact.match(/^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{4})$/);
+      if (m) {
+        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0,2)), Number(m[3].slice(2,4)));
+        return { date: dt, hasDate: true, hasTime: true, raw: value };
+      }
+
+      m = compact.match(/^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{2})$/);
+      if (m) {
+        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), 0, 0);
+        return { date: dt, hasDate: true, hasTime: false, raw: value };
+      }
+
+      m = upper.match(/(\d{1,2})\s*([A-Z]{3})\s*(\d{4})/);
+      if (m && monthMap(m[2]) >= 0) {
+        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0,2)), Number(m[3].slice(2,4)));
+        return { date: dt, hasDate: true, hasTime: true, raw: value };
+      }
+
+      m = upper.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+      if (m) {
+        const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0);
+        const timeMatch = upper.match(/(\d{2}):(\d{2})|(\d{4})/);
+        if (timeMatch) {
+          let hh = 0, mm = 0;
+          if (timeMatch[1] && timeMatch[2]) {
+            hh = Number(timeMatch[1]);
+            mm = Number(timeMatch[2]);
+          } else if (timeMatch[3]) {
+            hh = Number(timeMatch[3].slice(0,2));
+            mm = Number(timeMatch[3].slice(2,4));
+          }
+          dt.setHours(hh, mm, 0, 0);
+          return { date: dt, hasDate: true, hasTime: true, raw: value };
+        }
+        return { date: dt, hasDate: true, hasTime: false, raw: value };
+      }
+
+      return null;
+    }
+
+    function hasMeaningfulTimeInOriginal(original, parsedDate) {
+      if (/(\d{1,2}:\d{2})/.test(original)) return true;
+      if (/(\d{4})/.test(original.replace(/[^0-9]/g, ''))) return true;
+      return !(parsedDate.getHours() === 0 && parsedDate.getMinutes() === 0 && !/(0000|00:00)/.test(original));
+    }
+
+    function isDifferentDate(a, b) {
+      return a.getFullYear() !== b.getFullYear() || a.getMonth() !== b.getMonth() || a.getDate() !== b.getDate();
+    }
+
+    function formatDDMMM(date) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][date.getMonth()];
+      return `${dd}${mon}`;
+    }
+
+    function formatDDHHMM(date) {
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      return `${dd}${hh}${mm}`;
+    }
+
+    function monthMap(mon) {
+      return ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].indexOf(mon);
+    }
+
+    function valueOf(v) {
+      return String(v ?? '').trim().toUpperCase();
+    }
+
+    function cleanFlightNo(v) {
+      return String(v || '').trim().toUpperCase().replace(/\s+/g, '');
+    }
+
+    function result(output) {
+      return { status: 'result', output };
+    }
+
+    function ignored(reason) {
+      return { status: 'ignored', reason };
+    }
+
+    function resetResultArea() {
+      lastOutput = '';
+      outputBox.textContent = '分析中...';
+      errorBox.textContent = '整理中...';
+      copyBtn.disabled = true;
+      downloadBtn.disabled = true;
+    }
+
+    function log(message) {
+      const now = new Date();
+      const stamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const prev = logBox.textContent === '尚未載入檔案。' ? '' : logBox.textContent + '\n';
+      logBox.textContent = `${prev}[${stamp}] ${message}`;
+    }
+
+    let fakeProgressTimer = null;
+
+    function startFakeProgress() {
+      progressWrap.style.display = 'block';
+      let value = 0;
+      setProgress(0, '正在準備分析…');
+      if (fakeProgressTimer) clearInterval(fakeProgressTimer);
+      fakeProgressTimer = setInterval(() => {
+        if (value < 18) value += 6;
+        else if (value < 42) value += 4;
+        else if (value < 68) value += 3;
+        else if (value < 86) value += 2;
+        else if (value < 93) value += 1;
+        setProgress(Math.min(value, 93), progressMessageByValue(value));
+      }, 180);
+    }
+
+    function finishProgress(label = '完成') {
+      if (fakeProgressTimer) {
+        clearInterval(fakeProgressTimer);
+        fakeProgressTimer = null;
+      }
+      setProgress(100, label);
+    }
+
+    function resetProgress() {
+      if (fakeProgressTimer) {
+        clearInterval(fakeProgressTimer);
+        fakeProgressTimer = null;
+      }
+      progressWrap.style.display = selectedFile ? 'block' : 'none';
+      setProgress(0, selectedFile ? '已載入檔案，等待分析' : '等待中');
+    }
+
+    function setProgress(value, text) {
+      progressBar.style.width = `${value}%`;
+      progressPercent.textContent = `${Math.round(value)}%`;
+      progressText.textContent = text;
+    }
+
+    function progressMessageByValue(value) {
+      if (value < 20) return '正在讀取 Excel…';
+      if (value < 45) return '正在檢查欄位…';
+      if (value < 70) return '正在篩選航班…';
+      if (value < 90) return '正在比對跨日資料…';
+      return '正在整理輸出…';
+    }
+
+    function error(message) {
+      finishProgress('處理失敗');
+      outputBox.textContent = '處理失敗。';
+      errorBox.textContent = message;
+      log(`錯誤：${message}`);
+    }
+  </script>
+</body>
+</html>
