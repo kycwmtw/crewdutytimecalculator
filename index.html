@@ -777,7 +777,7 @@
             <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
               <div>
                 <h3 class="text-lg font-bold">上傳 Excel 班表</h3>
-                <p class="text-sm text-slate-500 mt-1">請上傳包含航班資訊的 Excel 檔案（.xlsx / .xls）。系統會自動辨識標題列中的 ETD、ETA、STD、STA 等欄位，並找出 ETA < ETD 的跨日航班。</p>
+                <p class="text-sm text-slate-500 mt-1">請上傳包含航班資訊的 Excel 檔案（.xlsx / .xls）。系統會自動辨識標題列中的 STD、ETD、ATD、STA、ETA、ATA 等欄位，並找出日期不同的跨日航班。</p>
               </div>
 
               <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white p-6 text-center">
@@ -795,9 +795,9 @@
                 <div class="font-semibold">📋 Excel 格式說明</div>
                 <ul class="list-disc pl-4 space-y-1 mt-2 text-violet-700">
                   <li>第一列須為標題列（Header Row）。</li>
-                  <li>必須包含 ETD（或 STD）與 ETA（或 STA）欄位，格式為 HHMM 或 HH:MM。</li>
-                  <li>支援選填欄位：航班號、日期、DEP（出發站）、ARR（目的站）。</li>
-                  <li>時間判斷邏輯：ETA < ETD 即視為跨日（越夜）航班。</li>
+                  <li>必須包含帶有<strong>日期</strong>資訊的欄位，例如 STD、STA、ETD、ETA、ATD、ATA，格式支援「YYYY-MM-DD HH:MM」或 Excel 日期格式。</li>
+                  <li>跨日判斷邏輯：STD 日期 ≠ ETD 或 ATD 日期（起飛日期改變），或 STA 日期 ≠ ETA 或 ATA 日期（到達日期改變）。</li>
+                  <li>選填欄位：航班號（Flight / 航班號 / FLT）。</li>
                 </ul>
               </div>
 
@@ -949,10 +949,10 @@
       crossDayView: {
         title: '📊 跨日航班搜尋（Excel 分析）使用說明',
         items: [
-          '上傳 Excel 格式的航班班表（.xlsx / .xls），系統會自動偵測標題列並辨識 ETD、ETA、STD、STA 等欄位。',
-          '判斷邏輯：若 ETA（到達時間）的 HHMM 數值早於 ETD（起飛時間）的 HHMM 數值，即視為「跨日航班」（越夜班）。',
-          '支援選填欄位：航班號、日期、出發站（DEP）、目的站（ARR），有填入時會一併顯示於結果表格中。',
-          '可勾選「只顯示跨日航班」以篩選結果，方便快速掌握越夜班情形。'
+          '上傳 Excel 格式的航班班表（.xlsx / .xls），系統會自動偵測標題列並辨識 STD、ETD、ATD、STA、ETA、ATA 等欄位。',
+          '跨日判斷邏輯：STD 日期 ≠ ETD 或 ATD 日期（起飛日期改變），或 STA 日期 ≠ ETA 或 ATA 日期（到達日期改變）。',
+          '時間欄位必須包含完整日期（例如 2025-03-30 22:00），僅含 HHMM 的時間欄位無法進行日期比對。',
+          '可勾選「只顯示跨日航班」以篩選結果，方便快速掌握日期異動班次。'
         ]
       }
     };
@@ -2405,12 +2405,13 @@
 
     let crossDayData = null;
 
-    const CROSS_DAY_ETD_CANDIDATES = ['etd', 'std', 'etd(utc)', 'std(utc)', 'etd(local)', 'std(local)', 'dep time', 'departure time', '起飛時間', '計劃起飛時間', 'off block', 'depart'];
-    const CROSS_DAY_ETA_CANDIDATES = ['eta', 'sta', 'eta(utc)', 'sta(utc)', 'eta(local)', 'sta(local)', 'arr time', 'arrival time', '到達時間', '計劃到達時間', 'on block', 'arrive'];
+    const CROSS_DAY_STD_CANDIDATES = ['std', '計劃起飛', '計劃起飛時間', '預定起飛', '預定起飛時間', 'scheduled departure', 'scheduled dep', 'sched dep', 'std datetime', 'std date time'];
+    const CROSS_DAY_ETD_CANDIDATES = ['etd', '預計起飛', '預計起飛時間', '預估起飛時間', 'estimated departure', 'estimated dep', 'est dep', 'etd datetime', 'etd date time'];
+    const CROSS_DAY_ATD_CANDIDATES = ['atd', '實際起飛', '實際起飛時間', 'actual departure', 'actual dep', 'act dep', 'atd datetime', 'atd date time', 'off block', 'off'];
+    const CROSS_DAY_STA_CANDIDATES = ['sta', '計劃到達', '計劃落地', '計劃到達時間', '預定到達', '預定到達時間', 'scheduled arrival', 'scheduled arr', 'sched arr', 'sta datetime', 'sta date time'];
+    const CROSS_DAY_ETA_CANDIDATES = ['eta', '預計到達', '預計落地', '預計到達時間', '預估到達時間', 'estimated arrival', 'estimated arr', 'est arr', 'eta datetime', 'eta date time'];
+    const CROSS_DAY_ATA_CANDIDATES = ['ata', '實際到達', '實際落地', '實際到達時間', 'actual arrival', 'actual arr', 'act arr', 'ata datetime', 'ata date time', 'on block', 'on'];
     const CROSS_DAY_FLIGHT_CANDIDATES = ['航班號', '航班', 'flight no', 'flight', 'flt no', 'flt', 'flight number', 'flt number'];
-    const CROSS_DAY_DATE_CANDIDATES = ['日期', 'date', 'flt date', 'flight date', '飛行日期'];
-    const CROSS_DAY_DEP_CANDIDATES = ['出發地', '起飛站', '出發', 'dep', 'origin', 'from', 'departure', 'dep station'];
-    const CROSS_DAY_ARR_CANDIDATES = ['目的地', '到達站', '到達', 'arr', 'destination', 'to', 'arrival', 'arr station'];
 
     function escapeHTML(str) {
       return String(str || '')
@@ -2421,23 +2422,85 @@
         .replace(/'/g, '&#039;');
     }
 
-    function buildCrossDayTableHTML(flightList, detectedColumns) {
+    function extractDateStr(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return null;
+        const y = val.getFullYear();
+        const m = val.getMonth() + 1;
+        const d = val.getDate();
+        if (y < 1900 || y > 2200) return null;
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      }
+      const str = String(val).trim();
+      if (!str) return null;
+      let mo = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (mo) {
+        const y = parseInt(mo[1], 10);
+        if (y >= 1900 && y <= 2200) {
+          return `${mo[1]}-${String(parseInt(mo[2], 10)).padStart(2, '0')}-${String(parseInt(mo[3], 10)).padStart(2, '0')}`;
+        }
+      }
+      mo = str.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+      if (mo) {
+        return `${mo[1]}-${String(parseInt(mo[2], 10)).padStart(2, '0')}-${String(parseInt(mo[3], 10)).padStart(2, '0')}`;
+      }
+      mo = str.match(/^(\d{4})(\d{2})(\d{2})$/);
+      if (mo) {
+        const y = parseInt(mo[1], 10);
+        if (y >= 1900 && y <= 2200) return `${mo[1]}-${mo[2]}-${mo[3]}`;
+      }
+      mo = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (mo) {
+        const y = parseInt(mo[3], 10);
+        if (y >= 1900 && y <= 2200) {
+          return `${y}-${String(parseInt(mo[2], 10)).padStart(2, '0')}-${String(parseInt(mo[1], 10)).padStart(2, '0')}`;
+        }
+      }
+      return null;
+    }
+
+    function formatCellDisplay(val) {
+      if (val === null || val === undefined || val === '') return '';
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return '';
+        const y = val.getFullYear();
+        const mo = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        const hh = String(val.getHours()).padStart(2, '0');
+        const mm = String(val.getMinutes()).padStart(2, '0');
+        return `${y}-${mo}-${d} ${hh}:${mm}`;
+      }
+      return String(val).trim();
+    }
+
+    function buildCrossDayTableHTML(flightList, detectedCols) {
       if (flightList.length === 0) return '';
-      const hasFlightNo = detectedColumns.flight !== -1;
-      const hasDate = detectedColumns.date !== -1;
-      const hasDep = detectedColumns.dep !== -1;
-      const hasArr = detectedColumns.arr !== -1;
+      const hasFlightNo = detectedCols.flight !== -1;
+      const showStd = detectedCols.std !== -1;
+      const showEtd = detectedCols.etd !== -1;
+      const showAtd = detectedCols.atd !== -1;
+      const showSta = detectedCols.sta !== -1;
+      const showEta = detectedCols.eta !== -1;
+      const showAta = detectedCols.ata !== -1;
       let stripeIndex = 0;
       const rows = flightList.map(function(f) {
         const rowClass = f.isCrossDay ? 'bg-rose-50' : (stripeIndex++ % 2 === 0 ? 'bg-white' : 'bg-slate-50');
+        function dateCell(display, isMismatch) {
+          const cls = isMismatch ? 'text-rose-600 font-semibold' : 'text-slate-700';
+          return `<td class="px-3 py-2 font-mono text-sm ${cls}">${escapeHTML(display) || '—'}</td>`;
+        }
         return `<tr class="${rowClass} border-b border-slate-100">
           ${hasFlightNo ? `<td class="px-3 py-2 font-medium text-slate-800">${escapeHTML(f.flightNo) || '—'}</td>` : ''}
-          ${hasDate ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.date) || '—'}</td>` : ''}
-          ${hasDep ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.dep) || '—'}</td>` : ''}
-          ${hasArr ? `<td class="px-3 py-2 text-slate-600">${escapeHTML(f.arr) || '—'}</td>` : ''}
-          <td class="px-3 py-2 font-mono text-slate-700">${escapeHTML(f.etd)}</td>
-          <td class="px-3 py-2 font-mono text-slate-700">${escapeHTML(f.eta)}</td>
-          <td class="px-3 py-2">${f.isCrossDay ? '<span class="inline-flex items-center gap-1 text-rose-600 font-semibold">✈ 跨日</span>' : '<span class="text-emerald-600">—</span>'}</td>
+          ${showStd ? dateCell(f.stdDisplay, false) : ''}
+          ${showEtd ? dateCell(f.etdDisplay, f.stdEtdMismatch) : ''}
+          ${showAtd ? dateCell(f.atdDisplay, f.stdAtdMismatch) : ''}
+          ${showSta ? dateCell(f.staDisplay, false) : ''}
+          ${showEta ? dateCell(f.etaDisplay, f.staEtaMismatch) : ''}
+          ${showAta ? dateCell(f.ataDisplay, f.staAtaMismatch) : ''}
+          <td class="px-3 py-2 text-sm">${f.isCrossDay
+            ? `<span class="inline-flex flex-wrap gap-1">${f.reasons.map(function(r) { return `<span class="bg-rose-100 text-rose-700 rounded px-1.5 py-0.5 text-xs font-semibold">${escapeHTML(r)}</span>`; }).join('')}</span>`
+            : '<span class="text-emerald-600">—</span>'}</td>
         </tr>`;
       }).join('');
 
@@ -2445,13 +2508,14 @@
         <table class="w-full text-sm border-collapse">
           <thead>
             <tr class="bg-slate-100 text-left">
-              ${hasFlightNo ? '<th class="px-3 py-2 font-semibold text-slate-700">航班號</th>' : ''}
-              ${hasDate ? '<th class="px-3 py-2 font-semibold text-slate-700">日期</th>' : ''}
-              ${hasDep ? '<th class="px-3 py-2 font-semibold text-slate-700">DEP</th>' : ''}
-              ${hasArr ? '<th class="px-3 py-2 font-semibold text-slate-700">ARR</th>' : ''}
-              <th class="px-3 py-2 font-semibold text-slate-700">ETD</th>
-              <th class="px-3 py-2 font-semibold text-slate-700">ETA</th>
-              <th class="px-3 py-2 font-semibold text-slate-700">跨日</th>
+              ${hasFlightNo ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">航班號</th>' : ''}
+              ${showStd ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">STD（計劃起飛）</th>' : ''}
+              ${showEtd ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">ETD（預計起飛）</th>' : ''}
+              ${showAtd ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">ATD（實際起飛）</th>' : ''}
+              ${showSta ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">STA（計劃到達）</th>' : ''}
+              ${showEta ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">ETA（預計到達）</th>' : ''}
+              ${showAta ? '<th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">ATA（實際到達）</th>' : ''}
+              <th class="px-3 py-2 font-semibold text-slate-700 whitespace-nowrap">跨日情形</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -2477,9 +2541,9 @@
             return;
           }
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array', cellText: true, cellDates: false });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false });
+          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: true });
           parseCrossDayExcel(rows);
         } catch (err) {
           document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">無法解析 Excel 檔案，請確認格式正確。</span>';
@@ -2497,109 +2561,110 @@
       return -1;
     }
 
-    function parseTimeToMinutes(timeStr) {
-      if (timeStr === null || timeStr === undefined || timeStr === '') return null;
-      const str = String(timeStr).replace(/[^0-9:]/g, '');
-      if (str.includes(':')) {
-        const parts = str.split(':');
-        const h = parseInt(parts[0], 10);
-        const m = parseInt(parts[1] || '0', 10);
-        if (isNaN(h) || isNaN(m)) return null;
-        return h * 60 + m;
-      }
-      if (str.length === 4) {
-        const h = parseInt(str.substring(0, 2), 10);
-        const m = parseInt(str.substring(2), 10);
-        if (isNaN(h) || isNaN(m)) return null;
-        return h * 60 + m;
-      }
-      if (str.length === 3) {
-        const h = parseInt(str.substring(0, 1), 10);
-        const m = parseInt(str.substring(1), 10);
-        if (isNaN(h) || isNaN(m)) return null;
-        return h * 60 + m;
-      }
-      return null;
-    }
-
-    function minutesToHHMM(minutes) {
-      const h = Math.floor(minutes / 60) % 24;
-      const m = minutes % 60;
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    }
-
     function parseCrossDayExcel(rows) {
       if (!rows || rows.length < 2) {
         document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">Excel 資料不足，至少需要標題列與一筆資料列。</span>';
         return;
       }
 
-      const headers = rows[0].map(function(h) { return String(h).trim(); });
+      const headers = rows[0].map(function(h) { return String(h === null || h === undefined ? '' : h).trim(); });
 
+      const stdCol = findColumnIndex(headers, CROSS_DAY_STD_CANDIDATES);
       const etdCol = findColumnIndex(headers, CROSS_DAY_ETD_CANDIDATES);
+      const atdCol = findColumnIndex(headers, CROSS_DAY_ATD_CANDIDATES);
+      const staCol = findColumnIndex(headers, CROSS_DAY_STA_CANDIDATES);
       const etaCol = findColumnIndex(headers, CROSS_DAY_ETA_CANDIDATES);
+      const ataCol = findColumnIndex(headers, CROSS_DAY_ATA_CANDIDATES);
       const flightCol = findColumnIndex(headers, CROSS_DAY_FLIGHT_CANDIDATES);
-      const dateCol = findColumnIndex(headers, CROSS_DAY_DATE_CANDIDATES);
-      const depCol = findColumnIndex(headers, CROSS_DAY_DEP_CANDIDATES);
-      const arrCol = findColumnIndex(headers, CROSS_DAY_ARR_CANDIDATES);
 
-      if (etdCol === -1 || etaCol === -1) {
+      const hasDepComparison = stdCol !== -1 && (etdCol !== -1 || atdCol !== -1);
+      const hasArrComparison = staCol !== -1 && (etaCol !== -1 || ataCol !== -1);
+
+      if (!hasDepComparison && !hasArrComparison) {
         document.getElementById('crossDayStatus').innerHTML = `
           <div class="space-y-1 text-rose-600">
-            <div>無法自動辨識 ETD/ETA 欄位，請確認 Excel 標題列包含以下欄位名稱之一：</div>
-            <div class="font-mono text-xs bg-rose-50 rounded p-2">ETD、ETA、STD、STA、起飛時間、到達時間、Dep Time、Arr Time</div>
-            <div class="text-slate-600">偵測到的標題：${headers.map(function(h) { return escapeHTML(h); }).join('、')}</div>
+            <div>無法找到足夠的欄位進行日期比對。需要以下欄位組合之一：</div>
+            <div class="font-mono text-xs bg-rose-50 rounded p-2">
+              起飛比對：STD ＋ ETD 或 ATD<br>
+              到達比對：STA ＋ ETA 或 ATA
+            </div>
+            <div class="text-slate-600 text-xs mt-1">偵測到的標題：${headers.filter(Boolean).map(function(h) { return escapeHTML(h); }).join('、')}</div>
           </div>
         `;
         return;
       }
 
+      function getColVal(row, col) { return col !== -1 && row ? row[col] : null; }
+
       const flights = [];
+      let noDateCount = 0;
+
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        if (!row || row.every(function(cell) { return !cell && cell !== 0; })) continue;
+        if (!row || row.every(function(c) { return c === null || c === undefined || c === ''; })) continue;
 
-        const etdRaw = row[etdCol];
-        const etaRaw = row[etaCol];
-        const etdMinutes = parseTimeToMinutes(etdRaw);
-        const etaMinutes = parseTimeToMinutes(etaRaw);
-        if (etdMinutes === null || etaMinutes === null) continue;
+        const stdDate = extractDateStr(getColVal(row, stdCol));
+        const etdDate = extractDateStr(getColVal(row, etdCol));
+        const atdDate = extractDateStr(getColVal(row, atdCol));
+        const staDate = extractDateStr(getColVal(row, staCol));
+        const etaDate = extractDateStr(getColVal(row, etaCol));
+        const ataDate = extractDateStr(getColVal(row, ataCol));
+
+        const hasAnyDate = stdDate || etdDate || atdDate || staDate || etaDate || ataDate;
+        if (!hasAnyDate) { noDateCount++; continue; }
+
+        const stdEtdMismatch = !!(stdDate && etdDate && stdDate !== etdDate);
+        const stdAtdMismatch = !!(stdDate && atdDate && stdDate !== atdDate);
+        const staEtaMismatch = !!(staDate && etaDate && staDate !== etaDate);
+        const staAtaMismatch = !!(staDate && ataDate && staDate !== ataDate);
+        const isCrossDay = stdEtdMismatch || stdAtdMismatch || staEtaMismatch || staAtaMismatch;
+
+        const reasons = [];
+        if (stdEtdMismatch) reasons.push('STD→ETD改日');
+        if (stdAtdMismatch) reasons.push('STD→ATD改日');
+        if (staEtaMismatch) reasons.push('STA→ETA改日');
+        if (staAtaMismatch) reasons.push('STA→ATA改日');
 
         flights.push({
           rowNum: i + 1,
-          flightNo: flightCol !== -1 ? String(row[flightCol] || '').trim() : '',
-          date: dateCol !== -1 ? String(row[dateCol] || '').trim() : '',
-          dep: depCol !== -1 ? String(row[depCol] || '').trim().toUpperCase() : '',
-          arr: arrCol !== -1 ? String(row[arrCol] || '').trim().toUpperCase() : '',
-          etd: minutesToHHMM(etdMinutes),
-          eta: minutesToHHMM(etaMinutes),
-          isCrossDay: etaMinutes < etdMinutes
+          flightNo: flightCol !== -1 && row[flightCol] !== null && row[flightCol] !== undefined ? String(row[flightCol]).trim() : '',
+          stdDisplay: formatCellDisplay(getColVal(row, stdCol)),
+          etdDisplay: formatCellDisplay(getColVal(row, etdCol)),
+          atdDisplay: formatCellDisplay(getColVal(row, atdCol)),
+          staDisplay: formatCellDisplay(getColVal(row, staCol)),
+          etaDisplay: formatCellDisplay(getColVal(row, etaCol)),
+          ataDisplay: formatCellDisplay(getColVal(row, ataCol)),
+          stdEtdMismatch, stdAtdMismatch, staEtaMismatch, staAtaMismatch,
+          isCrossDay, reasons
         });
       }
 
       if (flights.length === 0) {
-        document.getElementById('crossDayStatus').innerHTML = '<span class="text-rose-600">找不到可解析的時間資料，請確認 ETD/ETA 欄位格式正確（HHMM 或 HH:MM）。</span>';
+        const hint = noDateCount > 0
+          ? `（共 ${noDateCount} 列因欄位無日期資料而略過。請確認時間欄包含完整日期，例如「2025-03-30 22:00」）`
+          : '';
+        document.getElementById('crossDayStatus').innerHTML = `<span class="text-rose-600">找不到含有日期資訊的資料列。${hint}</span>`;
         return;
       }
 
+      const detectedCols = { flight: flightCol, std: stdCol, etd: etdCol, atd: atdCol, sta: staCol, eta: etaCol, ata: ataCol };
+
       const colNames = [
         flightCol !== -1 ? `航班號（第${flightCol + 1}欄）` : null,
-        dateCol !== -1 ? `日期（第${dateCol + 1}欄）` : null,
-        depCol !== -1 ? `DEP（第${depCol + 1}欄）` : null,
-        arrCol !== -1 ? `ARR（第${arrCol + 1}欄）` : null,
-        `ETD（第${etdCol + 1}欄）`,
-        `ETA（第${etaCol + 1}欄）`
+        stdCol !== -1 ? `STD（第${stdCol + 1}欄）` : null,
+        etdCol !== -1 ? `ETD（第${etdCol + 1}欄）` : null,
+        atdCol !== -1 ? `ATD（第${atdCol + 1}欄）` : null,
+        staCol !== -1 ? `STA（第${staCol + 1}欄）` : null,
+        etaCol !== -1 ? `ETA（第${etaCol + 1}欄）` : null,
+        ataCol !== -1 ? `ATA（第${ataCol + 1}欄）` : null
       ].filter(Boolean);
 
+      const noDateNote = noDateCount > 0 ? `（${noDateCount} 列因無日期資料略過）` : '';
       document.getElementById('crossDayStatus').innerHTML = `
-        <span class="text-emerald-700 font-medium">✅ 成功解析 ${flights.length} 筆資料。已識別欄位：${colNames.join('、')}</span>
+        <span class="text-emerald-700 font-medium">✅ 成功解析 ${flights.length} 筆資料${noDateNote}。已識別欄位：${colNames.join('、')}</span>
       `;
 
-      crossDayData = {
-        flights: flights,
-        detectedColumns: { flight: flightCol, date: dateCol, dep: depCol, arr: arrCol, etd: etdCol, eta: etaCol }
-      };
-
+      crossDayData = { flights: flights, detectedCols: detectedCols };
       renderCrossDayResults();
     }
 
@@ -2607,7 +2672,7 @@
       if (!crossDayData) return;
 
       const flights = crossDayData.flights;
-      const detectedColumns = crossDayData.detectedColumns;
+      const detectedCols = crossDayData.detectedCols;
       const totalCount = flights.length;
       const crossDayCount = flights.filter(function(f) { return f.isCrossDay; }).length;
       const normalCount = totalCount - crossDayCount;
@@ -2646,7 +2711,7 @@
             <h4 class="font-semibold text-slate-800">跨日航班</h4>
             <span class="bg-rose-100 text-rose-700 text-xs font-semibold px-2 py-0.5 rounded-full">共 ${crossDayCount} 班</span>
           </div>
-          ${buildCrossDayTableHTML(crossDayFlights, detectedColumns)}
+          ${buildCrossDayTableHTML(crossDayFlights, detectedCols)}
         </div>`;
       } else {
         html += `<div class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-800 text-sm font-medium">✅ 沒有發現跨日航班。</div>`;
@@ -2658,7 +2723,7 @@
             <h4 class="font-semibold text-slate-800">非跨日航班</h4>
             <span class="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">共 ${normalCount} 班</span>
           </div>
-          ${buildCrossDayTableHTML(normalFlights, detectedColumns)}
+          ${buildCrossDayTableHTML(normalFlights, detectedCols)}
         </div>`;
       }
 
