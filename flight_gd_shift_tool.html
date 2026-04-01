@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CI / AE 值班航班整理工具</title>
+  <title>值班時段航班整理工具</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -697,13 +697,13 @@
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
                 <div>
                   <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5f7fa7; margin-bottom:4px;">Duty Flight Sheet</div>
-                  <div style="font-size:18px; font-weight:800; line-height:1.1;">CI / AE 值班航班列表</div>
+                  <div style="font-size:18px; font-weight:800; line-height:1.1;">值班時段航班報到列表</div>
                   <div style="margin-top:4px; font-size:10px; color:#597290; line-height:1.5;">CI / AE、TPE / TSA 出發，且松訓報到時間 / BOT報到時間包含在上班時段內</div>
                 </div>
                 <div style="text-align:right; font-size:10px; color:#56708f; line-height:1.5; min-width:190px;">
                   <div><strong>上班日期</strong> ${dateInput.value || '--'}</div>
                   <div><strong>班別</strong> ${shift.label}</div>
-                  <div><strong>值班區間</strong> ${windowObj ? `${formatDateTime(windowObj.start)} → ${formatDateTime(windowObj.end)}` : '--'}</div>
+                  <div><strong>時段</strong> ${windowObj ? `${formatDateTime(windowObj.start)} → ${formatDateTime(windowObj.end)}` : '--'}</div>
                 </div>
               </div>
             </div>
