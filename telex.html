@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>航班改時電報整理工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, 0.22), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(253, 230, 138, 0.28), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.14), transparent 24%),
+        linear-gradient(180deg, #fffaf0 0%, #fffdf7 34%, #f8fafc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -10rem;
+      left: -8rem;
+      background: rgba(245, 158, 11, 0.26);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(250, 204, 21, 0.2);
+    }
+
+    body > div {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::selection {
+      background: rgba(245, 158, 11, 0.18);
+      color: #0f172a;
+    }
+
+    @media (max-width: 767px) {
+      body::before,
+      body::after {
+        width: 16rem;
+        height: 16rem;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 32px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 32px;
+      box-shadow: 0 28px 80px -44px rgba(120, 53, 15, 0.34);
+      overflow: hidden;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel-head {
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+      background: linear-gradient(180deg, rgba(255, 251, 235, 0.92), rgba(255, 255, 255, 0.82));
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .panel-head p {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .panel-body {
+      padding: 20px 28px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      resize: vertical;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 20px;
+      font: 14px/1.8 "Consolas", "Courier New", monospace;
+      color: #18222e;
+      background: #ffffff;
+      outline: none;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      vertical-align: top;
+    }
+
+    textarea::placeholder {
+      color: #94a3b8;
+      font-style: normal;
+      line-height: 1.8;
+    }
+
+    textarea:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      white-space: nowrap;
+    }
+
+    
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+    }
+
+    
+
+    .btn-soft { background: #fef3c7; color: #92400e; }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #fffbeb 0%, #fff7ed 100%);
+    }
+
+    .stat .k {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+      color: #92400e;
+    }
+
+    .stat .s {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .box {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .warn {
+      border-color: #f1d0c9;
+      background: #fff7f5;
+      color: #7a271a;
+    }
+
+    .ok {
+      border-color: #cae9dc;
+      background: #f4fcf8;
+      color: #0b5f3d;
+    }
+
+    .hidden { display: none; }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 640px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border-bottom: 1px solid #e5edf5;
+      padding: 12px 10px;
+      text-align: center;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #fffbeb;
+      color: #78350f;
+      font-weight: 800;
+    }
+
+    tr.group-start td {
+      border-top: 2px solid #f59e0b;
+    }
+
+    tr:hover td { background: #fffbeb; }
+
+    .meta {
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 12px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      textarea { min-height: 360px; }
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .wrap { padding: 12px 16px; }
+      .page-header-inner { padding: 28px 24px; }
+      .panel-head { padding: 16px 20px; }
+      .panel-body { padding: 16px 20px; }
+            .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .toolbar button {
+        width: auto;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 10px 12px; }
+    }
+
+    .page-header-inner {
+      position: relative;
+      overflow: hidden;
+      border-radius: 32px;
+      border: 1px solid rgba(120, 53, 15, 0.8);
+      background: linear-gradient(135deg, #422006 0%, #78350f 52%, #92400e 100%);
+      color: white;
+      box-shadow: 0 32px 90px -42px rgba(120, 53, 15, 0.72);
+      padding: 40px 48px;
+    }
+
+    .page-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .page-header-text {
+      max-width: 600px;
+    }
+
+    .page-header-label {
+      color: #fde68a;
+      font-size: 14px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .page-header-title {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 700;
+      margin: 12px 0 0;
+      line-height: 1.2;
+    }
+
+    .page-header-desc {
+      color: rgba(254, 215, 170, 0.9);
+      margin-top: 16px;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .btn-back {
+      flex-shrink: 0;
+      display: inline-block;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      padding: 12px 20px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-decoration: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased">
+  <div class="wrap">
+    <header style="margin-bottom: 18px;">
+      <div class="page-header-inner">
+        <div class="page-header-row">
+          <div class="page-header-text">
+            <p class="page-header-label">Function 7</p>
+            <h1 class="page-header-title">航班改時電報整理工具</h1>
+            <p class="page-header-desc">把電報貼上來，幫你一次整理好！</p>
+          </div>
+          <a href="./index.html" class="btn-back">返回功能選單</a>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel" style="margin-bottom: 18px;">
+      <div class="panel-head">
+        <h2>使用說明</h2>
+      </div>
+      <div class="panel-body">
+        <ol style="margin:0; padding-left: 1.25rem; color: #64748b; line-height: 1.8;">
+          <li>1. 在 WebTTY 裡面，勾選所有要整理的電報</li>
+          <li>2. 按 Print</li>
+          <li>3. 全選所有的電報文字並複製</li>
+          <li>4. 到這裡貼上</li>
+        </ol>
+        <div class="box warn" style="margin-top: 14px;">⚠ 請留意在 WebTTY 勾了幾筆電報，並確認本系統讀取到的電報筆數與剛剛勾選的筆數一致，避免有電報遺漏。</div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>原始電報貼上區</h2>
+          <p>支援一次貼上多則電報</p>
+        </div>
+        <div class="panel-body">
+          <textarea id="sourceInput" spellcheck="false" placeholder="請貼上 ASM 電報內容..."></textarea>
+          <div class="toolbar">
+            <button id="parseBtn" class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition">整理電報</button>
+            <button id="clearBtn" class="rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 px-5 py-3 font-medium hover:bg-rose-100 transition">清空</button>
+            <button id="copyBtn" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">複製表格 TSV</button>
+            <button id="csvBtn" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">匯出 CSV</button>
+          </div>
+          <div class="fake-progress" id="fakeProgress">
+            <div class="fake-progress-bar" id="fakeProgressBar"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>整理結果</h2>
+          <p>已依照航段分組排序</p>
+        </div>
+        <div class="panel-body">
+          <div class="stats">
+            <div class="stat">
+              <div class="k">解析筆數</div>
+              <div class="v" id="countFlights">0</div>
+              <div class="s">抓到的 TIM OPER 航段總數</div>
+            </div>
+            <div class="stat">
+              <div class="k">分組數</div>
+              <div class="v" id="countGroups">0</div>
+              <div class="s">依規則保持同組航段排列在一起</div>
+            </div>
+            <div class="stat">
+              <div class="k">需人工覆核</div>
+              <div class="v" id="countWarnings">0</div>
+              <div class="s">分組或接續關係不夠明確時提醒</div>
+            </div>
+          </div>
+
+          <div class="box ok" id="statusBox">尚未整理。請先貼上電報後按「整理電報」。</div>
+          <div class="box warn hidden" id="warningBox"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 180px;">航班號/日期</th>
+                  <th style="width: 140px;">航段</th>
+                  <th style="width: 130px;">起飛時間</th>
+                  <th style="width: 130px;">抵達時間</th>
+                </tr>
+              </thead>
+              <tbody id="resultBody">
+                <tr>
+                  <td colspan="4" style="padding: 24px; color: #6a7987;">尚無資料</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const sourceInput = document.getElementById('sourceInput');
+    const parseBtn = document.getElementById('parseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const csvBtn = document.getElementById('csvBtn');
+    const resultBody = document.getElementById('resultBody');
+    const countFlights = document.getElementById('countFlights');
+    const countGroups = document.getElementById('countGroups');
+    const countWarnings = document.getElementById('countWarnings');
+    const statusBox = document.getElementById('statusBox');
+    const warningBox = document.getElementById('warningBox');
+    const fakeProgress = document.getElementById('fakeProgress');
+    const fakeProgressBar = document.getElementById('fakeProgressBar');
+
+    let currentRows = [];
+    let currentWarnings = [];
+
+    function sanitizeSourceText(text) {
+      return String(text || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\u3000/g, ' ')
+        .replace(/\d{4}\/\d{1,2}\/\d{1,2}\s+(?:上午|下午)\d{1,2}:\d{2}\s+網路電報查詢系統\s+https?:\/\/\S+\s+\d+\/\d+/g, ' ')
+        .replace(/網路電報查詢系統/g, ' ')
+        .replace(/https?:\/\/\S+/g, ' ')
+        .replace(/@\s*NNNN@+/g, ' ')
+        .replace(/NNNN\s+\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+GMT/g, ' NNNN ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function normalizeLines(text) {
+      return sanitizeSourceText(text)
+        .replace(/\s+TIM OPER\b/gi, '\nTIM OPER ')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function parseFlightLine(line) {
+      const m = String(line || '').trim().match(/^([A-Z]{2}\d+)\/(\d{1,2})$/i);
+      if (!m) return null;
+      return {
+        full: `${m[1].toUpperCase()}/${m[2]}`,
+        flightNo: m[1].toUpperCase(),
+        datePart: m[2]
+      };
+    }
+
+    function parseSectorLine(line) {
+      const m = String(line || '').trim().match(/^([A-Z]{3})(\d+)\s+([A-Z]{3})(\d+)$/i);
+      if (!m) return null;
+      return {
+        depAirport: m[1].toUpperCase(),
+        depTime: m[2],
+        arrAirport: m[3].toUpperCase(),
+        arrTime: m[4]
+      };
+    }
+
+    function deriveSortParts(rawTime, fallbackDay) {
+      const value = String(rawTime || '').trim();
+      if (/^\d{5,}$/.test(value)) {
+        return {
+          day: parseInt(value.slice(0, -4), 10),
+          clock: value.slice(-4)
+        };
+      }
+      return {
+        day: parseInt(fallbackDay, 10) || 0,
+        clock: value
+      };
+    }
+
+    function buildSortNumber(day, clock) {
+      const dayStr = String(Number.isFinite(day) ? day : 0).padStart(2, '0');
+      const clockStr = String(clock || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+      return Number(`${dayStr}${clockStr}`);
+    }
+
+    function extractRecordFromChunk(chunk) {
+      const normalized = String(chunk || '').replace(/\s+/g, ' ').trim();
+      if (!normalized) return null;
+
+      const flightMatch = normalized.match(/\b([A-Z]{2}\d+\/\d{1,2})\b/i);
+      if (!flightMatch) return null;
+
+      const flight = parseFlightLine(flightMatch[1]);
+      if (!flight) return null;
+
+      const sectorMatch = normalized
+        .slice(flightMatch.index + flightMatch[0].length)
+        .match(/\b([A-Z]{3})(\d{3,6})\s+([A-Z]{3})(\d{3,6})\b/i);
+      if (!sectorMatch) return null;
+
+      const sector = {
+        depAirport: sectorMatch[1].toUpperCase(),
+        depTime: sectorMatch[2],
+        arrAirport: sectorMatch[3].toUpperCase(),
+        arrTime: sectorMatch[4]
+      };
+
+      return { flight, sector };
+    }
+
+    function parseAsmText(text) {
+      const lines = normalizeLines(text);
+      const records = [];
+      const warnings = [];
+      const seenKeys = new Set();
+
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].toUpperCase().startsWith('TIM OPER')) continue;
+
+        const nextTimOperIndex = lines.findIndex((line, index) => index > i && line.toUpperCase().startsWith('TIM OPER'));
+        const chunkEnd = nextTimOperIndex === -1 ? lines.length : nextTimOperIndex;
+        const chunk = lines.slice(i, chunkEnd).join(' ');
+        const parsed = extractRecordFromChunk(chunk);
+
+        if (!parsed) {
+          warnings.push(`第 ${i + 1} 行附近的 TIM OPER 資料不完整，該筆已略過。`);
+          continue;
+        }
+
+        const { flight, sector } = parsed;
+
+        const depMeta = deriveSortParts(sector.depTime, flight.datePart);
+        const arrMeta = deriveSortParts(sector.arrTime, flight.datePart);
+        const airlinePrefix = (flight.flightNo.match(/^[A-Z]+/) || [''])[0];
+        const flightNumNumeric = parseInt(flight.flightNo.replace(/^[A-Z]+/, ''), 10);
+        const uniqueKey = [flight.full, sector.depAirport, sector.arrAirport, sector.depTime, sector.arrTime].join('|');
+
+        if (seenKeys.has(uniqueKey)) continue;
+        seenKeys.add(uniqueKey);
+
+        records.push({
+          id: `${uniqueKey}|${records.length}`,
+          flightDisplay: flight.full,
+          flightNo: flight.flightNo,
+          flightDate: flight.datePart,
+          airlinePrefix,
+          flightNumNumeric,
+          sectorDisplay: `${sector.depAirport}-${sector.arrAirport}`,
+          depAirport: sector.depAirport,
+          arrAirport: sector.arrAirport,
+          depTimeDisplay: sector.depTime,
+          arrTimeDisplay: sector.arrTime,
+          depDay: depMeta.day,
+          depClock: depMeta.clock,
+          arrDay: arrMeta.day,
+          arrClock: arrMeta.clock,
+          depSortKey: buildSortNumber(depMeta.day, depMeta.clock),
+          arrSortKey: buildSortNumber(arrMeta.day, arrMeta.clock),
+          sourceRange: `${i + 1}-${chunkEnd}`,
+          groupStart: false,
+          groupId: null
+        });
+
+        i = chunkEnd - 1;
+      }
+
+      return { records, warnings };
+    }
+
+    function likelySameOperation(a, b) {
+      if (a.id === b.id) return false;
+      if (a.flightNo === b.flightNo) return true;
+      if (a.airlinePrefix !== b.airlinePrefix) return false;
+      const diff = Math.abs((a.flightNumNumeric || 0) - (b.flightNumNumeric || 0));
+      if (diff !== 1) return false;
+
+      const reversePair = a.depAirport === b.arrAirport && a.arrAirport === b.depAirport;
+      const chainedForward = a.arrAirport === b.depAirport;
+      const chainedBackward = b.arrAirport === a.depAirport;
+      const closeByDate = Math.abs((a.depDay || 0) - (b.depDay || 0)) <= 2 || Math.abs((a.arrDay || 0) - (b.arrDay || 0)) <= 2;
+
+      return closeByDate && (reversePair || chainedForward || chainedBackward);
+    }
+
+    function buildGroups(records) {
+      const visited = new Set();
+      const groups = [];
+
+      for (const record of records) {
+        if (visited.has(record.id)) continue;
+        const stack = [record];
+        const group = [];
+        visited.add(record.id);
+
+        while (stack.length) {
+          const current = stack.pop();
+          group.push(current);
+          for (const other of records) {
+            if (visited.has(other.id)) continue;
+            if (likelySameOperation(current, other)) {
+              visited.add(other.id);
+              stack.push(other);
+            }
+          }
+        }
+        groups.push(group);
+      }
+      return groups;
+    }
+
+    function chooseStartNode(group) {
+      const incoming = new Map(group.map(item => [item.id, 0]));
+      for (const a of group) {
+        for (const b of group) {
+          if (a.id === b.id) continue;
+          if (a.arrAirport === b.depAirport && a.depSortKey <= b.depSortKey) {
+            incoming.set(b.id, (incoming.get(b.id) || 0) + 1);
+          }
+        }
+      }
+      return group
+        .filter(item => (incoming.get(item.id) || 0) === 0)
+        .sort((a, b) => a.depSortKey - b.depSortKey || a.flightNo.localeCompare(b.flightNo))[0] ||
+        group.slice().sort((a, b) => a.depSortKey - b.depSortKey || a.flightNo.localeCompare(b.flightNo))[0];
+    }
+
+    function orderGroup(group) {
+      if (group.length <= 1) return group.slice();
+
+      const remaining = new Map(group.map(item => [item.id, item]));
+      const ordered = [];
+      let current = chooseStartNode(group);
+
+      while (current) {
+        ordered.push(current);
+        remaining.delete(current.id);
+
+        const next = Array.from(remaining.values())
+          .sort((a, b) => {
+            const aScore = scoreConnection(current, a);
+            const bScore = scoreConnection(current, b);
+            if (aScore !== bScore) return aScore - bScore;
+            if (a.depSortKey !== b.depSortKey) return a.depSortKey - b.depSortKey;
+            return a.flightNo.localeCompare(b.flightNo);
+          })[0];
+
+        current = next || null;
+      }
+
+      return ordered;
+    }
+
+    function scoreConnection(a, b) {
+      const sameFlight = a.flightNo === b.flightNo ? 0 : 20;
+      const exactChain = a.arrAirport === b.depAirport ? 0 : 50;
+      const reversePair = (a.depAirport === b.arrAirport && a.arrAirport === b.depAirport) ? 5 : 25;
+      const timeGap = Math.max(0, b.depSortKey - a.depSortKey);
+      return sameFlight + Math.min(exactChain, reversePair) + timeGap / 100000;
+    }
+
+    function analyzeGroup(group, groupIndex) {
+      const warnings = [];
+      for (let i = 0; i < group.length - 1; i++) {
+        const a = group[i];
+        const b = group[i + 1];
+        const linked = a.arrAirport === b.depAirport || a.depAirport === b.arrAirport || a.flightNo === b.flightNo;
+        if (!linked) {
+          warnings.push(`第 ${groupIndex} 組中，${a.flightDisplay} ${a.sectorDisplay} 與 ${b.flightDisplay} ${b.sectorDisplay} 的接續關係不明確。`);
+        }
+      }
+      return warnings;
+    }
+
+    function prepareRows(records) {
+      const groups = buildGroups(records).map(orderGroup);
+      groups.sort((a, b) => {
+        const aFirst = a[0];
+        const bFirst = b[0];
+        if (aFirst.depSortKey !== bFirst.depSortKey) return aFirst.depSortKey - bFirst.depSortKey;
+        return aFirst.flightNo.localeCompare(bFirst.flightNo);
+      });
+
+      const rows = [];
+      const warnings = [];
+      groups.forEach((group, idx) => {
+        const groupWarnings = analyzeGroup(group, idx + 1);
+        warnings.push(...groupWarnings);
+        group.forEach((row, rowIndex) => {
+          rows.push({ ...row, groupId: idx + 1, groupStart: rowIndex === 0 });
+        });
+      });
+
+      return { rows, groups, warnings };
+    }
+
+    function renderRows(rows) {
+      resultBody.innerHTML = '';
+      if (!rows.length) {
+        resultBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; color: #6a7987;">沒有抓到有效的 TIM OPER 資料</td></tr>';
+        return;
+      }
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        if (row.groupStart) tr.classList.add('group-start');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.flightDisplay)}</td>
+          <td>${escapeHtml(row.sectorDisplay)}</td>
+          <td>${escapeHtml(row.depTimeDisplay)}</td>
+          <td>${escapeHtml(row.arrTimeDisplay)}</td>
+        `;
+        resultBody.appendChild(tr);
+      });
+    }
+
+    function refreshStats(rowCount, groupCount, warningCount) {
+      countFlights.textContent = rowCount;
+      countGroups.textContent = groupCount;
+      countWarnings.textContent = warningCount;
+    }
+
+    function refreshMessages(rows, warnings) {
+      currentWarnings = warnings.slice();
+      if (warnings.length) {
+        warningBox.classList.remove('hidden');
+        warningBox.innerHTML = '<strong>人工覆核提醒：</strong><br>' + warnings.map(item => `• ${escapeHtml(item)}`).join('<br>');
+      } else {
+        warningBox.classList.add('hidden');
+        warningBox.innerHTML = '';
+      }
+
+      if (rows.length) {
+        statusBox.innerHTML = `已完成整理，共 <strong>${rows.length}</strong> 筆航段。`;
+      } else {
+        statusBox.innerHTML = '沒有抓到有效資料。請確認內容是否包含 TIM OPER、航班號/日期行，以及航段時間行。若文字來自網頁查詢系統，本版已會自動忽略頁碼與網址干擾。';
+      }
+    }
+
+
+    let fakeProgressTimer = null;
+
+    function resetFakeProgress() {
+      if (fakeProgressTimer) {
+        clearInterval(fakeProgressTimer);
+        fakeProgressTimer = null;
+      }
+      fakeProgress.classList.remove('show');
+      fakeProgressBar.style.width = '0%';
+    }
+
+    function startFakeProgress(onComplete) {
+      if (fakeProgressTimer) clearInterval(fakeProgressTimer);
+      fakeProgress.classList.add('show');
+      let progress = 0;
+      fakeProgressBar.style.width = '0%';
+
+      fakeProgressTimer = setInterval(() => {
+        if (progress < 78) {
+          progress += Math.random() * 18;
+          if (progress > 78) progress = 78;
+          fakeProgressBar.style.width = `${progress}%`;
+          return;
+        }
+
+        clearInterval(fakeProgressTimer);
+        fakeProgressTimer = null;
+
+        setTimeout(() => {
+          fakeProgressBar.style.width = '100%';
+          setTimeout(() => {
+            fakeProgress.classList.remove('show');
+            fakeProgressBar.style.width = '0%';
+            onComplete();
+          }, 260);
+        }, 160);
+      }, 120);
+    }
+
+    function runParse() {
+      const { records, warnings: parseWarnings } = parseAsmText(sourceInput.value);
+      const { rows, groups, warnings: groupWarnings } = prepareRows(records);
+      currentRows = rows;
+      renderRows(rows);
+      refreshStats(rows.length, groups.length, parseWarnings.length + groupWarnings.length);
+      refreshMessages(rows, [...parseWarnings, ...groupWarnings]);
+    }
+
+    function toTSV(rows) {
+      const lines = [['航班號/日期', '航段', '起飛時間', '抵達時間']];
+      rows.forEach(row => lines.push([row.flightDisplay, row.sectorDisplay, row.depTimeDisplay, row.arrTimeDisplay]));
+      return lines.map(line => line.join('\t')).join('\n');
+    }
+
+    function toCSV(rows) {
+      const esc = value => `"${String(value).replace(/"/g, '""')}"`;
+      const lines = [['航班號/日期', '航段', '起飛時間', '抵達時間']];
+      rows.forEach(row => lines.push([row.flightDisplay, row.sectorDisplay, row.depTimeDisplay, row.arrTimeDisplay]));
+      return lines.map(line => line.map(esc).join(',')).join('\n');
+    }
+
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    parseBtn.addEventListener('click', () => {
+      startFakeProgress(runParse);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      sourceInput.value = '';
+      currentRows = [];
+      currentWarnings = [];
+      resultBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; color: #6a7987;">尚無資料</td></tr>';
+      refreshStats(0, 0, 0);
+      statusBox.innerHTML = '尚未整理。請先貼上電報後按「整理電報」。';
+      warningBox.classList.add('hidden');
+      warningBox.innerHTML = '';
+      resetFakeProgress();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!currentRows.length) {
+        alert('目前沒有可複製的整理結果。');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(toTSV(currentRows));
+        statusBox.innerHTML = '已複製表格內容，可直接貼到 Excel。';
+      } catch (error) {
+        alert('複製失敗，請改用匯出 CSV。');
+      }
+    });
+
+    csvBtn.addEventListener('click', () => {
+      if (!currentRows.length) {
+        alert('目前沒有可匯出的整理結果。');
+        return;
+      }
+      downloadFile('flight_asm_result.csv', '\uFEFF' + toCSV(currentRows), 'text/csv;charset=utf-8;');
+    });
+  </script>
+</body>
+</html>
