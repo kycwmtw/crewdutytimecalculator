@@ -416,10 +416,9 @@
     <section class="card">
       <div class="hero">
         <div class="eyebrow">Duty Window Filter</div>
-        <h1>CI / AE 值班航班整理工具</h1>
+        <h1>值班航班整理工具</h1>
         <div class="subtitle">
-          匯入航班資料後，自動篩選 <strong>CI / AE</strong> 且由 <strong>TPE / TSA</strong> 出發的航班，
-          再依上班日期 + 班別，抓出值班期間內會遇到的航班。
+          匯入航班資料後，自動抓出值班期間內會遇到的航班。
         </div>
       </div>
       <div class="card-inner">
@@ -465,7 +464,7 @@
 
         <div class="actions">
           <button id="processBtn">生成航班列表</button>
-          <button id="printBtn" class="warn">A4 列印</button>
+          <button id="printBtn" class="warn">列印</button>
           <button id="clearBtn" class="secondary">清空</button>
         </div>
 
@@ -485,7 +484,7 @@
         <div class="eyebrow">Generated Flight Sheet</div>
         <h1>值班航班列表</h1>
         <div class="subtitle">
-          列表判斷規則為：只要你選擇的 <strong>上班日期 + 班別時段</strong> 內，<strong>松訓報到時間</strong> 或 <strong>BOT 報到時間</strong> 任一時間落入，即列入表格。
+          列表判斷規則為：只要你選擇的 <strong>班別時段</strong> 內，<strong>松訓報到時間</strong> 或 <strong>BOT 報到時間</strong> 任一時間落入，即列入表格。
         </div>
       </div>
       <div class="card-inner">
@@ -507,7 +506,7 @@
           </table>
         </div>
         <div class="footnote">
-          條件固定為：<strong>CI / AE</strong>、<strong>TPE / TSA 出發</strong>。松訓報到時間 = ETD - 140 分鐘，BOT 報到時間 = ETD - 90 分鐘。
+          條件：<strong>CI / AE</strong>、<strong>TPE / TSA 出發</strong>。松訓報到時間 = ETD - 140 分鐘，BOT 報到時間 = ETD - 90 分鐘。
         </div>
       </div>
       <div class="print-shell" id="printShell"></div>
@@ -676,16 +675,21 @@
       const totalPages = pages.length || 1;
 
       printShell.innerHTML = pages.map((pageRows, pageIndex) => {
-        const rowsHtml = pageRows.map((row, idx) => `
-          <tr>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; text-align:center; vertical-align:middle;">${pageIndex * chunkSize + idx + 1}</td>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; font-weight:700; text-align:center; vertical-align:middle;">${row.flightNo}</td>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; text-align:center; vertical-align:middle;">${row.route}</td>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; text-align:center; vertical-align:middle;">${row.songxun} □GD</td>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; text-align:center; vertical-align:middle;">${row.bot} □點名</td>
-            <td style="padding:4px 6px; border:1px solid #cfe0f5; text-align:center; vertical-align:middle;">${row.etd}</td>
+        const rowsHtml = pageRows.map((row, idx) => {
+          const rowBg = idx % 2 === 0 ? '#ffffff' : '#eef2f7';
+          const rowStyle = `background:${rowBg}; -webkit-print-color-adjust:exact; print-color-adjust:exact;`;
+          const cellStyle = `padding:4px 6px; border:1px solid #cfe0f5; vertical-align:middle; background:${rowBg}; -webkit-print-color-adjust:exact; print-color-adjust:exact;`;
+          return `
+          <tr style="${rowStyle}">
+            <td style="${cellStyle} text-align:center;">${pageIndex * chunkSize + idx + 1}</td>
+            <td style="${cellStyle} font-weight:700; text-align:center;">${row.flightNo}</td>
+            <td style="${cellStyle} text-align:center;">${row.route}</td>
+            <td style="${cellStyle} text-align:center;">${row.songxun} □GD</td>
+            <td style="${cellStyle} text-align:center;">${row.bot} □點名</td>
+            <td style="${cellStyle} text-align:center;">${row.etd}</td>
+            <td style="${cellStyle} text-align:left;">&nbsp;</td>
           </tr>
-        `).join('');
+        `}).join('');
 
         return `
           <section class="print-page" style="width:100%; color:#10233b; font-family:Inter, 'Noto Sans TC', sans-serif;">
@@ -704,23 +708,25 @@
               </div>
             </div>
 
-            <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:10px; table-layout:fixed;">
+            <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:10px; table-layout:fixed; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
               <colgroup>
                 <col style="width:7%">
-                <col style="width:16%">
-                <col style="width:18%">
-                <col style="width:22%">
-                <col style="width:22%">
+                <col style="width:14%">
                 <col style="width:15%">
+                <col style="width:18%">
+                <col style="width:18%">
+                <col style="width:12%">
+                <col style="width:16%">
               </colgroup>
               <thead>
                 <tr>
-                  <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">#</th>
+                  <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">筆次</th>
                   <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">航班號</th>
                   <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">航線</th>
                   <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">松訓報到時間</th>
                   <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">BOT報到時間</th>
                   <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">ETD</th>
+                  <th style="padding:5px 6px; border:1px solid #cfe0f5; background:#edf5ff; text-align:center; vertical-align:middle;">備註</th>
                 </tr>
               </thead>
               <tbody>${rowsHtml}</tbody>
