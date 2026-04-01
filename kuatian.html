@@ -5,287 +5,207 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>航班跨日檢查工具</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg: #f0f7ff;
-      --panel: #ffffff;
-      --panel-2: #e8f3ff;
-      --line: #b8d4f0;
-      --text: #1a2a42;
-      --muted: #5a7a9e;
-      --accent: #2b7cd6;
-      --accent-2: #1ab8a0;
-      --danger: #d93030;
-      --warn: #c07a00;
-      --ok: #1a8a30;
+    html {
+      scroll-behavior: smooth;
     }
 
-    * { box-sizing: border-box; }
     body {
-      margin: 0;
-      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
-      background: linear-gradient(180deg, #e8f3ff 0%, #f5f9ff 100%);
-      color: var(--text);
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, 0.22), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(253, 230, 138, 0.28), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.14), transparent 24%),
+        linear-gradient(180deg, #fffaf0 0%, #fffdf7 34%, #f8fafc 100%);
     }
 
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 30px;
-      line-height: 1.2;
+    body::before {
+      top: -10rem;
+      left: -8rem;
+      background: rgba(245, 158, 11, 0.26);
     }
 
-    .sub {
-      color: var(--muted);
-      margin-bottom: 24px;
-      line-height: 1.6;
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(250, 204, 21, 0.2);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 20px;
+    body > div {
+      position: relative;
+      z-index: 1;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.97);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(43, 124, 214, 0.08);
+    ::selection {
+      background: rgba(245, 158, 11, 0.18);
+      color: #0f172a;
     }
 
-    .card h2 {
-      margin: 0 0 14px;
-      font-size: 20px;
-    }
-
-    .dropzone {
-      border: 2px dashed #7ab4e8;
-      border-radius: 16px;
-      padding: 28px;
-      text-align: center;
-      background: rgba(232, 243, 255, 0.7);
-      transition: 0.2s ease;
-    }
-
-    .dropzone.dragover {
-      border-color: var(--accent-2);
-      background: rgba(200, 235, 255, 0.6);
-      transform: scale(1.01);
-    }
-
-    .dropzone input {
-      display: none;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    button, .fake-btn {
-      background: #daeeff;
-      color: var(--text);
-      border: 1px solid #7ab4e8;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-
-    button:hover, .fake-btn:hover {
-      background: #c0dff8;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .primary {
-      background: linear-gradient(135deg, #2b7cd6 0%, #1ab8d4 100%);
-      border-color: #5aaaf0;
-      color: #ffffff;
-    }
-
-    .primary:hover {
-      filter: brightness(1.08);
-    }
-
-    .danger {
-      background: #fde8e8;
-      border-color: #f0a0a0;
-      color: #b02020;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .stat {
-      background: rgba(232, 243, 255, 0.8);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-
-    .stat .label {
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-
-    .stat .value {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .log, .output, .error-box {
-      width: 100%;
-      min-height: 200px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: #f0f7ff;
-      color: var(--text);
-      padding: 14px;
-      font-family: Consolas, Monaco, monospace;
-      font-size: 13px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow: auto;
-    }
-
-    .output {
-      min-height: 360px;
-    }
-
-    .hint {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 10px;
-      line-height: 1.6;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      margin-right: 8px;
-      margin-bottom: 8px;
-      border: 1px solid var(--line);
-      background: rgba(184, 212, 240, 0.4);
-      color: var(--text);
-    }
-
-    .ok { color: var(--ok); }
-    .warn { color: var(--warn); }
-    .danger-text { color: var(--danger); }
-
-    .warning-box {
-      margin-top: 14px;
-      padding: 12px 16px;
-      background: #fff8e1;
-      border: 1px solid #f0c040;
-      border-radius: 12px;
-      color: #7a5000;
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    @media (max-width: 980px) {
-      .grid {
-        grid-template-columns: 1fr;
+    @media (max-width: 767px) {
+      body::before,
+      body::after {
+        width: 16rem;
+        height: 16rem;
       }
+    }
+
+    /* Classes injected by JavaScript */
+    .ok { color: #1a8a30; }
+    .warn { color: #c07a00; }
+    .danger-text { color: #d93030; }
+
+    #dropzone.dragover {
+      border-color: #d97706;
+      background: rgba(253, 230, 138, 0.35);
+      transform: scale(1.01);
     }
   </style>
 </head>
-<body>
-  <div class="wrap">
-    <h1>✈️ 航班跨日檢查工具</h1>
-    <div class="sub">
-      上傳檔案，系統會自動篩選 <strong>TPE 起訖、74Y / 77X</strong> 的航班，
-      檢查 STD/STA 與 ETD/ETA/ATD/ATA 是否跨日，並輸出最終清單。
-    </div>
+<body class="min-h-screen text-slate-800 antialiased">
+  <div class="w-full xl:max-w-[72vw] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10">
 
-    <div class="card" style="margin-bottom:20px;">
-      <h2 style="margin:0 0 14px; font-size:20px;">📋 使用說明</h2>
-      <ol style="margin:0; padding-left:22px; line-height:2;">
-        <li>使用 <strong>WebJC</strong>，選取日期時間區間</li>
-        <li>BY 選 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong></li>
-        <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
-        <li>按 <strong>Query</strong></li>
-        <li>按 <strong>Export Excel</strong></li>
-        <li>將產出的檔案直接拖入本系統即可分析</li>
-      </ol>
-      <div class="warning-box">
-        ⚠️ <strong>注意：</strong>最好是 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong>兩種條件都各 Query 一次，並分別產出 Excel 檔，<strong>兩個檔都拖進來分析！</strong>（因為兩種條件下包含的航班可能有不一樣）
+    <header class="mb-8 md:mb-10">
+      <div class="relative overflow-hidden rounded-[32px] border border-amber-900/80 bg-[linear-gradient(135deg,#422006_0%,#78350f_52%,#92400e_100%)] text-white shadow-[0_32px_90px_-42px_rgba(120,53,15,0.72)] p-6 md:p-8 lg:p-10">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <p class="text-amber-200 text-sm tracking-[0.25em] uppercase">Function 6</p>
+            <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">✈️ 航班跨日檢查工具</h1>
+            <p class="text-amber-100/90 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
+              上傳檔案，系統會自動篩選 <strong>TPE 起訖、74Y / 77X</strong> 的航班，
+              檢查 STD/STA 與 ETD/ETA/ATD/ATA 是否跨日，並輸出最終清單。
+            </p>
+          </div>
+          <a href="./index.html" class="shrink-0 rounded-2xl bg-white/12 text-white px-5 py-3 font-medium border border-white/15 hover:bg-white/18 transition shadow-lg backdrop-blur-md">
+            返回功能選單
+          </a>
+        </div>
       </div>
-    </div>
+    </header>
 
-    <div class="grid">
-      <div class="card">
-        <h2>1. 上傳檔案</h2>
-        <div id="dropzone" class="dropzone">
-          <p style="font-size:18px; margin:0 0 10px;">拖曳 Excel 檔到這裡，或點按下方按鈕選擇檔案</p>
-          <p class="hint" style="margin-top:0;">支援副檔名：.xls、.xlsx</p>
-          <label class="fake-btn" for="fileInput">選擇 Excel 檔案</label>
-          <input id="fileInput" type="file" accept=".xls,.xlsx" />
-          <div id="uploadStatus" class="hint" style="margin-top:14px; font-size:14px;">尚未選擇檔案。</div>
-          <div id="progressWrap" style="margin-top:14px; display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span id="progressText" class="hint" style="margin:0;">等待中</span>
-              <span id="progressPercent" class="hint" style="margin:0;">0%</span>
-            </div>
-            <div style="width:100%; height:12px; background:#daeeff; border:1px solid var(--line); border-radius:999px; overflow:hidden;">
-              <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #3971d8 0%, #8df0d1 100%); transition:width 0.25s ease;"></div>
-            </div>
+    <main class="space-y-6">
+
+      <!-- Instructions -->
+      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
+        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
+          <h2 class="text-xl font-bold">📋 使用說明</h2>
+        </div>
+        <div class="p-5 md:p-6 lg:p-7">
+          <ol class="list-decimal pl-5 space-y-1 leading-8 text-slate-700">
+            <li>使用 <strong>WebJC</strong>，選取日期時間區間</li>
+            <li>BY 選 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong></li>
+            <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
+            <li>按 <strong>Query</strong></li>
+            <li>按 <strong>Export Excel</strong></li>
+            <li>將產出的檔案直接拖入本系統即可分析</li>
+          </ol>
+          <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm leading-7">
+            ⚠️ <strong>注意：</strong>最好是 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong> 兩種條件都各 Query 一次，並分別產出 Excel 檔，<strong>兩個檔都拖進來分析！</strong>（因為兩種條件下包含的航班可能有不一樣）
           </div>
         </div>
+      </section>
 
-        <div class="btn-row">
-          <button id="analyzeBtn" class="primary" disabled>開始分析</button>
-          <button id="copyBtn" disabled>複製結果</button>
-          <button id="downloadBtn" disabled>下載 TXT</button>
-          <button id="clearBtn" class="danger">清空</button>
+      <!-- Upload & Controls -->
+      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
+        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
+          <h2 class="text-xl font-bold">1. 上傳檔案</h2>
+          <p class="text-slate-500 mt-1">支援副檔名：.xls、.xlsx</p>
         </div>
+        <div class="p-5 md:p-6 lg:p-7 space-y-5">
 
-        <div class="stats">
-          <div class="stat"><div class="label">原始資料筆數</div><div id="rawCount" class="value">0</div></div>
-          <div class="stat"><div class="label">去重後筆數</div><div id="dedupCount" class="value">0</div></div>
-          <div class="stat"><div class="label">符合篩選筆數</div><div id="filteredCount" class="value">0</div></div>
-          <div class="stat"><div class="label">跨日輸出筆數</div><div id="resultCount" class="value">0</div></div>
+          <div id="dropzone" class="border-2 border-dashed border-amber-300 rounded-2xl p-8 text-center bg-amber-50/60 transition duration-200 cursor-pointer">
+            <p class="text-lg text-slate-700 mb-4">拖曳 Excel 檔到這裡，或點按下方按鈕選擇檔案</p>
+            <label for="fileInput" class="inline-block cursor-pointer rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition">選擇 Excel 檔案</label>
+            <input id="fileInput" type="file" accept=".xls,.xlsx" class="hidden" />
+            <div id="uploadStatus" class="mt-4 text-sm text-slate-500">尚未選擇檔案。</div>
+            <div id="progressWrap" class="mt-4" style="display:none;">
+              <div class="flex justify-between items-center mb-2">
+                <span id="progressText" class="text-sm text-slate-500">等待中</span>
+                <span id="progressPercent" class="text-sm text-slate-500">0%</span>
+              </div>
+              <div class="w-full h-3 bg-slate-200 border border-slate-300 rounded-full overflow-hidden">
+                <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg,#d97706 0%,#fbbf24 100%); transition:width 0.25s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <button id="analyzeBtn" disabled class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed">開始分析</button>
+            <button id="copyBtn" disabled class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">複製結果</button>
+            <button id="downloadBtn" disabled class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">下載 TXT</button>
+            <button id="clearBtn" class="rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 px-5 py-3 font-medium hover:bg-rose-100 transition">清空</button>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-sm text-slate-500 mb-1">原始資料筆數</div>
+              <div id="rawCount" class="text-2xl font-bold text-slate-900">0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-sm text-slate-500 mb-1">去重後筆數</div>
+              <div id="dedupCount" class="text-2xl font-bold text-slate-900">0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-sm text-slate-500 mb-1">符合篩選筆數</div>
+              <div id="filteredCount" class="text-2xl font-bold text-slate-900">0</div>
+            </div>
+            <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4">
+              <div class="text-sm text-amber-700 mb-1">跨日輸出筆數</div>
+              <div id="resultCount" class="text-2xl font-bold text-amber-600">0</div>
+            </div>
+          </div>
+
         </div>
+      </section>
 
-        <h2 style="margin-top:20px;">2. 處理紀錄</h2>
-        <div id="logBox" class="log">尚未載入檔案。</div>
-      </div>
-
-      <div class="card">
-        <h2>3. 最終輸出</h2>
-        <div id="outputBox" class="output">分析完成後，結果會顯示在這裡。</div>
-        <div class="hint">
-          輸出格式：<br>
-          <strong>CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)</strong>
+      <!-- Processing Log -->
+      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
+        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
+          <h2 class="text-xl font-bold">2. 處理紀錄</h2>
         </div>
+        <div class="p-5 md:p-6 lg:p-7">
+          <div id="logBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[160px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">尚未載入檔案。</div>
+        </div>
+      </section>
 
-        <h2 style="margin-top:20px;">4. 錯誤 / 忽略說明</h2>
-        <div id="errorBox" class="error-box">目前沒有資料。</div>
-      </div>
-    </div>
+      <!-- Output -->
+      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
+        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
+          <h2 class="text-xl font-bold">3. 最終輸出</h2>
+          <p class="text-slate-500 mt-1 font-mono text-sm">CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)</p>
+        </div>
+        <div class="p-5 md:p-6 lg:p-7">
+          <div id="outputBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[280px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">分析完成後，結果會顯示在這裡。</div>
+        </div>
+      </section>
+
+      <!-- Errors / Ignored -->
+      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
+        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
+          <h2 class="text-xl font-bold">4. 錯誤 / 忽略說明</h2>
+        </div>
+        <div class="p-5 md:p-6 lg:p-7">
+          <div id="errorBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[120px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">目前沒有資料。</div>
+        </div>
+      </section>
+
+    </main>
   </div>
 
   <script>
