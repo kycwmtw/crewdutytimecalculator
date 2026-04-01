@@ -4,59 +4,83 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>航班改時電報整理工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --line: #d7e0ea;
-      --line-strong: #b6c5d6;
-      --text: #16202a;
-      --muted: #5c6b78;
-      --accent: #114a8d;
-      --accent-soft: #eaf2ff;
-      --warn: #a63b21;
-      --ok: #0a6d46;
-      --shadow: 0 10px 30px rgba(16, 39, 68, 0.08);
-      --radius: 18px;
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(251, 191, 36, 0.22), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(253, 230, 138, 0.28), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.14), transparent 24%),
+        linear-gradient(180deg, #fffaf0 0%, #fffdf7 34%, #f8fafc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -10rem;
+      left: -8rem;
+      background: rgba(245, 158, 11, 0.26);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(250, 204, 21, 0.2);
+    }
+
+    body > div {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::selection {
+      background: rgba(245, 158, 11, 0.18);
+      color: #0f172a;
+    }
+
+    @media (max-width: 767px) {
+      body::before,
+      body::after {
+        width: 16rem;
+        height: 16rem;
+      }
     }
 
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: linear-gradient(180deg, #eef4fb 0%, #f7f9fc 100%);
-      color: var(--text);
-      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
-    }
 
     .wrap {
       max-width: 1320px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 24px 32px;
     }
 
-    .hero, .panel {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-    }
-
-    .hero {
-      padding: 24px;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: 30px;
-      line-height: 1.2;
-    }
-
-    .sub {
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.7;
-      margin: 0;
+    .panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 32px;
+      box-shadow: 0 28px 80px -44px rgba(120, 53, 15, 0.34);
+      overflow: hidden;
     }
 
     .grid {
@@ -67,38 +91,45 @@
     }
 
     .panel-head {
-      padding: 16px 18px;
-      border-bottom: 1px solid var(--line);
-      background: #fbfdff;
-      border-radius: 24px 24px 0 0;
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+      background: linear-gradient(180deg, rgba(255, 251, 235, 0.92), rgba(255, 255, 255, 0.82));
     }
 
     .panel-head h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 700;
     }
 
     .panel-head p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 14px;
       line-height: 1.6;
     }
 
     .panel-body {
-      padding: 18px;
+      padding: 20px 28px;
     }
 
     textarea {
       width: 100%;
       min-height: 560px;
       resize: vertical;
-      border: 1px solid var(--line-strong);
-      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
       padding: 16px;
       font: 14px/1.6 "Consolas", "Courier New", monospace;
       color: #18222e;
-      background: #fcfeff;
+      background: #ffffff;
+      outline: none;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    textarea:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
     }
 
     .toolbar {
@@ -110,18 +141,21 @@
 
     button {
       border: 0;
-      border-radius: 12px;
-      padding: 11px 16px;
+      border-radius: 16px;
+      padding: 12px 20px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 600;
       cursor: pointer;
       transition: transform .12s ease, opacity .12s ease, background .12s ease;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
     }
 
     button:hover { transform: translateY(-1px); }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-soft { background: #eef4fa; color: #17324a; }
-    .btn-ghost { background: #fff; color: #17324a; border: 1px solid var(--line-strong); }
+    .btn-primary { background: #d97706; color: #fff; }
+    .btn-primary:hover { background: #b45309; }
+    .btn-soft { background: #fef3c7; color: #92400e; }
+    .btn-ghost { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+    .btn-ghost:hover { background: #f8fafc; }
 
     .stats {
       display: grid;
@@ -131,14 +165,14 @@
     }
 
     .stat {
-      border: 1px solid var(--line);
-      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
       padding: 14px;
-      background: linear-gradient(180deg, #ffffff 0%, #f9fbfe 100%);
+      background: linear-gradient(180deg, #fffbeb 0%, #fff7ed 100%);
     }
 
     .stat .k {
-      color: var(--muted);
+      color: #64748b;
       font-size: 12px;
       margin-bottom: 6px;
     }
@@ -147,17 +181,18 @@
       font-size: 26px;
       font-weight: 800;
       line-height: 1;
+      color: #92400e;
     }
 
     .stat .s {
-      color: var(--muted);
+      color: #64748b;
       font-size: 12px;
       margin-top: 6px;
       line-height: 1.5;
     }
 
     .box {
-      border: 1px solid var(--line);
+      border: 1px solid #e2e8f0;
       border-radius: 14px;
       background: #fff;
       padding: 12px 14px;
@@ -182,7 +217,7 @@
 
     .table-wrap {
       overflow: auto;
-      border: 1px solid var(--line);
+      border: 1px solid #e2e8f0;
       border-radius: 14px;
       background: #fff;
     }
@@ -205,19 +240,19 @@
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #f3f7fc;
-      color: #18324a;
+      background: #fffbeb;
+      color: #78350f;
       font-weight: 800;
     }
 
     tr.group-start td {
-      border-top: 2px solid #8fb3dd;
+      border-top: 2px solid #f59e0b;
     }
 
-    tr:hover td { background: #f9fbff; }
+    tr:hover td { background: #fffbeb; }
 
     .meta {
-      color: var(--muted);
+      color: #64748b;
       font-size: 12px;
       line-height: 1.7;
       margin-top: 12px;
@@ -227,8 +262,8 @@
       display: inline-block;
       padding: 2px 8px;
       border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
+      background: #fef3c7;
+      color: #92400e;
       font-size: 12px;
       font-weight: 700;
       margin-right: 6px;
@@ -239,21 +274,98 @@
       textarea { min-height: 360px; }
       .stats { grid-template-columns: 1fr; }
     }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 16px; }
+    }
+
+    .page-header-inner {
+      position: relative;
+      overflow: hidden;
+      border-radius: 32px;
+      border: 1px solid rgba(120, 53, 15, 0.8);
+      background: linear-gradient(135deg, #422006 0%, #78350f 52%, #92400e 100%);
+      color: white;
+      box-shadow: 0 32px 90px -42px rgba(120, 53, 15, 0.72);
+      padding: 40px 48px;
+    }
+
+    .page-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .page-header-text {
+      max-width: 600px;
+    }
+
+    .page-header-label {
+      color: #fde68a;
+      font-size: 14px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .page-header-title {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 700;
+      margin: 12px 0 0;
+      line-height: 1.2;
+    }
+
+    .page-header-desc {
+      color: rgba(254, 215, 170, 0.9);
+      margin-top: 16px;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .btn-back {
+      flex-shrink: 0;
+      display: inline-block;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      padding: 12px 20px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-decoration: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
-<body>
+<body class="min-h-screen text-slate-800 antialiased">
   <div class="wrap">
-    <section class="hero">
-      <h1>航班改時電報整理工具</h1>
-      <p class="sub">把電報貼上來，幫你一次整理好！</p>
-    </section>
+    <header style="margin-bottom: 18px;">
+      <div class="page-header-inner">
+        <div class="page-header-row">
+          <div class="page-header-text">
+            <p class="page-header-label">Function 7</p>
+            <h1 class="page-header-title">航班改時電報整理工具</h1>
+            <p class="page-header-desc">把電報貼上來，幫你一次整理好！</p>
+          </div>
+          <a href="./index.html" class="btn-back">返回功能選單</a>
+        </div>
+      </div>
+    </header>
 
-    <section class="panel">
+    <section class="panel" style="margin-bottom: 18px;">
       <div class="panel-head">
         <h2>使用說明</h2>
       </div>
       <div class="panel-body">
-        <ol style="margin:0; padding-left: 1.25rem; color: var(--muted); line-height: 1.8;">
+        <ol style="margin:0; padding-left: 1.25rem; color: #64748b; line-height: 1.8;">
           <li>在 WebTTY 裡面，勾選所有要整理的電報</li>
           <li>按 Print</li>
           <li>全選所有的電報文字並複製</li>
