@@ -101,7 +101,6 @@
     }
 
     #homeView > div,
-    #timeDiffView,
     #fdpView,
     #splitDutyView,
     #extensionDutyView,
@@ -175,7 +174,6 @@
     }
 
     #homeView > div:nth-child(2) .grid > div,
-    #timeDiffResult,
     #fdpResult,
     #splitDutyResult,
     #extensionDutyResult,
@@ -187,7 +185,6 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px -36px rgba(15, 23, 42, 0.28);
     }
 
-    #timeDiffView .rounded-3xl.border.border-slate-200,
     #fdpView .rounded-3xl.border.border-slate-200,
     #splitDutyView .rounded-3xl.border.border-slate-200,
     #extensionDutyView .rounded-3xl.border.border-slate-200 {
@@ -279,12 +276,6 @@
               <p class="text-slate-500 mt-1">請選擇要使用的功能。</p>
             </div>
             <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 md:auto-rows-fr xl:grid-cols-3 gap-4 md:gap-5">
-              <button onclick="showView('timeDiffView')" class="group w-full h-full flex flex-col text-left rounded-[28px] border border-white/80 bg-white/90 hover:bg-white transition-all duration-300 p-5 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.35)] hover:-translate-y-1.5 hover:border-sky-200">
-                <div class="text-sm text-sky-700 font-semibold">功能 1</div>
-                <div class="text-xl font-bold mt-2">時間差計算</div>
-                <p class="text-sm text-slate-600 mt-3 leading-relaxed">沒什麼厲害的，單純計算兩個時間之間的差。</p>
-              </button>
-
               <button onclick="showView('fdpView')" class="group w-full h-full flex flex-col text-left rounded-[28px] border border-white/80 bg-white/90 hover:bg-white transition-all duration-300 p-5 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.35)] hover:-translate-y-1.5 hover:border-indigo-200">
                 <div class="text-sm text-indigo-700 font-semibold">功能 2</div>
                 <div class="text-xl font-bold mt-2">FDP 底線</div>
@@ -430,53 +421,6 @@
           </div>
         </div>
 
-        <div id="timeDiffView" class="hidden bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(15,23,42,0.42)] border border-white/80 overflow-hidden">
-          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 class="text-xl font-bold">1. 時間差計算</h2>
-              <p class="text-slate-500 mt-1">輸入任務開始與結束時間，計算兩者之間的時間差。</p>
-            </div>
-            <button onclick="showView('homeView')" class="shrink-0 rounded-2xl bg-white text-slate-700 px-4 py-2.5 font-medium border border-slate-200 hover:bg-slate-50 transition shadow-sm">返回功能選單</button>
-          </div>
-          <div class="p-5 md:p-6 lg:p-7 space-y-5">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div class="min-w-0">
-                <label class="block text-sm font-medium mb-2">任務開始時間</label>
-                <div class="flex flex-col sm:flex-row gap-2">
-                  <input id="diffStartDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                  <select id="diffStartHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                  </select>
-                  <select id="diffStartMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="min-w-0">
-                <label class="block text-sm font-medium mb-2">任務結束時間</label>
-                <div class="flex flex-col sm:flex-row gap-2">
-                  <input id="diffEndDate" type="date" class="w-full sm:flex-[1.8] min-w-0 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                  <select id="diffEndHour" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                  </select>
-                  <select id="diffEndMinute" class="w-full sm:flex-1 rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-              <button onclick="calculateTimeDiff()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">計算時間差</button>
-              <button onclick="resetTimeDiff()" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">清除</button>
-            </div>
-
-            <div id="timeDiffResult" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[96px] flex items-center text-slate-600">
-              請輸入開始與結束時間。
-            </div>
-          </div>
-        </div>
 
         <div id="fdpView" class="hidden bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(15,23,42,0.42)] border border-white/80 overflow-hidden">
           <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -973,7 +917,7 @@
     }
 
     function showView(viewId) {
-      const viewIds = ['homeView', 'timeDiffView', 'fdpView', 'splitDutyView', 'extensionDutyView'];
+      const viewIds = ['homeView', 'fdpView', 'splitDutyView', 'extensionDutyView'];
       viewIds.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
@@ -1444,28 +1388,6 @@
       const tail = document.getElementById('extMsgTailSuffix').value.trim();
       const { route } = buildRouteFromInputs('extMsgRoute1', 'extMsgRoute2', 'extMsgRoute3');
       return !!(latestExtensionDutyData && flightNo && flightDate && tail && route);
-    }
-
-    function calculateTimeDiff() {
-      const start = buildDateFromParts('diffStartDate', 'diffStartHour', 'diffStartMinute');
-      const end = buildDateFromParts('diffEndDate', 'diffEndHour', 'diffEndMinute');
-      const resultBox = document.getElementById('timeDiffResult');
-      if (!start || !end) {
-        resultBox.innerHTML = '<span class="text-rose-600">請完整輸入開始與結束時間。</span>';
-        return;
-      }
-      const diffMinutes = getMinutesDifference(start, end);
-      if (diffMinutes < 0) {
-        resultBox.innerHTML = '<span class="text-rose-600">結束時間不能早於開始時間。</span>';
-        return;
-      }
-      resultBox.innerHTML = `
-        <div class="space-y-2">
-          <div><span class="font-semibold text-slate-900">任務開始：</span>${formatDateTime(start)}</div>
-          <div><span class="font-semibold text-slate-900">任務結束：</span>${formatDateTime(end)}</div>
-          <div class="text-lg font-bold text-sky-700 pt-1">時間差：${formatDuration(diffMinutes)}</div>
-        </div>
-      `;
     }
 
     function calculateFDPDeadline() {
@@ -2101,16 +2023,6 @@
     function copyFDPMessage() { copyMessageFromBox('fdpMessageResult'); }
     function copySplitDutyMessage() { copyMessageFromBox('splitDutyMessageResult'); }
 
-    function resetTimeDiff() {
-      document.getElementById('diffStartDate').value = '';
-      document.getElementById('diffStartHour').value = '00';
-      document.getElementById('diffStartMinute').value = '00';
-      document.getElementById('diffEndDate').value = '';
-      document.getElementById('diffEndHour').value = '00';
-      document.getElementById('diffEndMinute').value = '00';
-      document.getElementById('timeDiffResult').innerHTML = '請輸入開始與結束時間。';
-    }
-
     function resetFDP() {
       document.getElementById('fdpStartDate').value = '';
       document.getElementById('fdpStartHour').value = '00';
@@ -2191,7 +2103,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-      resetTimeDiff();
       resetFDP();
       resetSplitDuty();
       resetExtensionDuty();
