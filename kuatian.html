@@ -162,10 +162,6 @@
               <div id="rawCount" class="text-2xl font-bold text-slate-900">0</div>
             </div>
             <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <div class="text-sm text-slate-500 mb-1">去重後筆數</div>
-              <div id="dedupCount" class="text-2xl font-bold text-slate-900">0</div>
-            </div>
-            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
               <div class="text-sm text-slate-500 mb-1">符合時段與條件筆數</div>
               <div id="filteredCount" class="text-2xl font-bold text-slate-900">0</div>
             </div>
@@ -260,7 +256,6 @@
     const progressBar = document.getElementById('progressBar');
 
     const rawCount = document.getElementById('rawCount');
-    const dedupCount = document.getElementById('dedupCount');
     const filteredCount = document.getElementById('filteredCount');
     const resultCount = document.getElementById('resultCount');
 
@@ -362,8 +357,6 @@
         }
 
         const deduped = dedupeRows(normalizedRows, flightNoKey, depKey, arvKey);
-        dedupCount.textContent = String(deduped.length);
-        log(`去重後筆數：${deduped.length}`);
 
         const filtered = deduped.filter(row => {
           const depTPE = valueOf(row['LATEST_DEP_ARP_CD']) === 'TPE';
@@ -435,7 +428,6 @@
       copyBtn.disabled = true;
       downloadBtn.disabled = true;
       rawCount.textContent = '0';
-      dedupCount.textContent = '0';
       filteredCount.textContent = '0';
       resultCount.textContent = '0';
       logBox.textContent = '尚未載入檔案。';
