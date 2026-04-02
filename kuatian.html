@@ -10,9 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html {
-      scroll-behavior: smooth;
-    }
+    html { scroll-behavior: smooth; }
 
     body {
       font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
@@ -66,7 +64,6 @@
       }
     }
 
-    /* Classes injected by JavaScript */
     .ok { color: #1a8a30; }
     .warn { color: #c07a00; }
     .danger-text { color: #d93030; }
@@ -88,8 +85,8 @@
             <p class="text-amber-200 text-sm tracking-[0.25em] uppercase">Function 6</p>
             <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">✈️ 航班跨日檢查工具</h1>
             <p class="text-amber-100/90 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
-              上傳檔案，系統會自動篩選 <strong>TPE 起訖、74Y / 77X</strong> 的航班，
-              檢查 STD/STA 與 ETD/ETA/ATD/ATA 是否跨日，並輸出最終清單。
+              上傳檔案後，系統會依 <strong>TPE 起訖、74Y / 77X、CI 營運</strong> 的條件，
+              再依你選擇的 <strong>上班日期 07:00L ~ 隔天 07:00L</strong> 篩出需要檢查的航班，最後判斷是否跨日。
             </p>
           </div>
           <a href="./index.html" class="shrink-0 rounded-2xl bg-white/12 text-white px-5 py-3 font-medium border border-white/15 hover:bg-white/18 transition shadow-lg backdrop-blur-md">
@@ -100,20 +97,19 @@
     </header>
 
     <main class="space-y-6">
-
-      <!-- Instructions -->
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">📋 使用說明</h2>
         </div>
         <div class="p-5 md:p-6 lg:p-7">
           <ol class="list-decimal pl-5 space-y-1 leading-8 text-slate-700">
-            <li>使用 <strong>WebJC</strong>，選取日期時間區間</li>
-            <li>BY 選 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong></li>
+            <li>使用 <strong>WebJC</strong>，選取日期時間區間(範圍可以前後加大好幾天)</li>
             <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
             <li>按 <strong>Query</strong></li>
             <li>按 <strong>Export Excel</strong></li>
-            <li>將產出的檔案直接拖入本系統即可分析</li>
+            <li>將產出的檔案直接拖入本系統</li>
+            <li>選擇今天上班的日期，系統會自動篩選 <strong>今天07:00L ~ 隔天 07:00L</strong></li>
+            <li>按 <strong>開始分析</strong></li>
           </ol>
           <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm leading-7">
             ⚠️ <strong>注意：</strong>最好是 <strong>STD(LOCAL)</strong>、<strong>STA(LOCAL)</strong> 兩種條件都各 Query 一次，並分別產出 Excel 檔，<strong>兩個檔都拖進來分析！</strong>（因為兩種條件下包含的航班可能有不一樣）
@@ -121,7 +117,6 @@
         </div>
       </section>
 
-      <!-- Upload & Controls -->
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">1. 上傳檔案</h2>
@@ -145,6 +140,18 @@
             </div>
           </div>
 
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+              <label for="workDate" class="block text-sm font-semibold text-amber-900 mb-2">上班日期</label>
+              <input id="workDate" type="date" class="w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-slate-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+              <p class="mt-2 text-sm text-amber-900/80">系統會自動檢查當天 07:00L 到隔天 07:00L 的航班。</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-sm font-semibold text-slate-700 mb-2">檢查時段</div>
+              <div id="windowDisplay" class="text-sm leading-7 text-slate-600">尚未選擇上班日期。</div>
+            </div>
+          </div>
+
           <div class="flex flex-wrap gap-3">
             <button id="analyzeBtn" disabled class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed">開始分析</button>
             <button id="copyBtn" disabled class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">複製結果</button>
@@ -162,7 +169,7 @@
               <div id="dedupCount" class="text-2xl font-bold text-slate-900">0</div>
             </div>
             <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <div class="text-sm text-slate-500 mb-1">符合篩選筆數</div>
+              <div class="text-sm text-slate-500 mb-1">符合時段與條件筆數</div>
               <div id="filteredCount" class="text-2xl font-bold text-slate-900">0</div>
             </div>
             <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4">
@@ -174,7 +181,6 @@
         </div>
       </section>
 
-      <!-- Processing Log -->
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">2. 處理紀錄</h2>
@@ -184,7 +190,6 @@
         </div>
       </section>
 
-      <!-- Output -->
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">3. 最終輸出</h2>
@@ -195,7 +200,6 @@
         </div>
       </section>
 
-      <!-- Errors / Ignored -->
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">4. 錯誤 / 忽略說明</h2>
@@ -228,9 +232,18 @@
 
     const DEP_ARP_CANDIDATES = ['DEP_ARP_CD', 'SCH_DEP_ARP_CD', 'ORIG_ARP_CD', 'DEP', 'LATEST_DEP_ARP_CD'];
     const ARV_ARP_CANDIDATES = ['ARV_ARP_CD', 'SCH_ARV_ARP_CD', 'DEST_ARP_CD', 'ARV', 'LATEST_ARV_ARP_CD'];
+    const TIME_WINDOW_KEYS = [
+      'PUB_SCH_DEP_DT_LCL',
+      'PUB_SCH_ARV_DT_LCL',
+      'SCH_ETD_LCL',
+      'SCH_ETA_LCL',
+      'ACTUAL_OFFBLOCKS_LCL',
+      'ACTUAL_ONBLOCKS_LCL'
+    ];
 
     let selectedFile = null;
     let lastOutput = '';
+    let fakeProgressTimer = null;
 
     const fileInput = document.getElementById('fileInput');
     const dropzone = document.getElementById('dropzone');
@@ -238,6 +251,8 @@
     const copyBtn = document.getElementById('copyBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const workDate = document.getElementById('workDate');
+    const windowDisplay = document.getElementById('windowDisplay');
     const logBox = document.getElementById('logBox');
     const outputBox = document.getElementById('outputBox');
     const errorBox = document.getElementById('errorBox');
@@ -251,6 +266,8 @@
     const dedupCount = document.getElementById('dedupCount');
     const filteredCount = document.getElementById('filteredCount');
     const resultCount = document.getElementById('resultCount');
+
+    workDate.addEventListener('change', updateWindowDisplay);
 
     fileInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
@@ -293,14 +310,21 @@
     analyzeBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
 
+      const windowRange = getSelectedWindow();
+      if (!windowRange) {
+        error('請先選擇上班日期。');
+        return;
+      }
+
       try {
         resetResultArea();
         startFakeProgress();
         outputBox.textContent = '正在分析…';
         log(`開始讀取檔案：${selectedFile.name}`);
+        log(`檢查時段：${formatWindow(windowRange.start)} ~ ${formatWindow(windowRange.end)}`);
 
         const data = await selectedFile.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: true });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
 
@@ -308,7 +332,8 @@
 
         const rows = XLSX.utils.sheet_to_json(worksheet, {
           defval: '',
-          raw: false
+          raw: false,
+          cellDates: true
         });
 
         rawCount.textContent = String(rows.length);
@@ -348,11 +373,12 @@
           const arvTPE = valueOf(row['LATEST_ARV_ARP_CD']) === 'TPE';
           const eqpOk = ['74Y', '77X'].includes(valueOf(row['LATEST_EQP_CD']));
           const operOk = valueOf(row['ACF_OPER']) === 'CI';
-          return (depTPE || arvTPE) && eqpOk && operOk;
+          const timeOk = isRowInWindow(row, windowRange.start, windowRange.end);
+          return (depTPE || arvTPE) && eqpOk && operOk && timeOk;
         });
 
         filteredCount.textContent = String(filtered.length);
-        log(`符合篩選條件筆數：${filtered.length}`);
+        log(`符合時段與條件筆數：${filtered.length}`);
 
         const results = [];
         const ignored = [];
@@ -363,17 +389,18 @@
           if (analysis.status === 'ignored') ignored.push(analysis.reason);
         }
 
-        resultCount.textContent = String(results.length);
-        lastOutput = results.join('\n');
+        const uniqueResults = [...new Set(results)];
+        resultCount.textContent = String(uniqueResults.length);
+        lastOutput = uniqueResults.map((line, index) => `${index + 1}. ${line}`).join('\n');
 
         outputBox.textContent = lastOutput || '沒有符合跨日條件的航班。';
         errorBox.textContent = ignored.length ? ignored.join('\n') : '沒有忽略資料或錯誤。';
 
-        copyBtn.disabled = !results.length;
-        downloadBtn.disabled = !results.length;
+        copyBtn.disabled = !uniqueResults.length;
+        downloadBtn.disabled = !uniqueResults.length;
 
         finishProgress('分析完成');
-        log(`跨日輸出筆數：${results.length}`);
+        log(`跨日輸出筆數：${uniqueResults.length}`);
         log('分析完成。');
       } catch (err) {
         console.error(err);
@@ -402,9 +429,11 @@
     clearBtn.addEventListener('click', () => {
       selectedFile = null;
       fileInput.value = '';
+      workDate.value = '';
       lastOutput = '';
       analyzeBtn.disabled = true;
       uploadStatus.textContent = '尚未選擇檔案。';
+      updateWindowDisplay();
       resetProgress();
       copyBtn.disabled = true;
       downloadBtn.disabled = true;
@@ -417,8 +446,32 @@
       errorBox.textContent = '目前沒有資料。';
     });
 
+    function getSelectedWindow() {
+      if (!workDate.value) return null;
+      const start = new Date(`${workDate.value}T07:00:00`);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      return { start, end };
+    }
+
+    function updateWindowDisplay() {
+      const range = getSelectedWindow();
+      if (!range) {
+        windowDisplay.textContent = '尚未選擇上班日期。';
+        return;
+      }
+      windowDisplay.innerHTML = `開始：<strong>${formatWindow(range.start)}</strong><br>結束：<strong>${formatWindow(range.end)}</strong>`;
+    }
+
+    function isRowInWindow(row, start, end) {
+      return TIME_WINDOW_KEYS.some((key) => {
+        const parsed = parseDateTime(row[key]);
+        return parsed && parsed.hasDate && parsed.date >= start && parsed.date < end;
+      });
+    }
+
     function analyzeRow(row, keys) {
-      const flightNo = cleanFlightNo(valueOf(row[keys.flightNoKey]));
+      const flightNo = normalizeFlightDisplay(cleanFlightNo(valueOf(row[keys.flightNoKey])));
       const dep = keys.depKey ? valueOf(row[keys.depKey]) : valueOf(row['LATEST_DEP_ARP_CD']);
       const arv = keys.arvKey ? valueOf(row[keys.arvKey]) : valueOf(row['LATEST_ARV_ARP_CD']);
       const depTPE = valueOf(row['LATEST_DEP_ARP_CD']) === 'TPE';
@@ -429,9 +482,9 @@
         const etd = parseDateTime(row['SCH_ETD_LCL']);
         const atd = parseDateTime(row['ACTUAL_OFFBLOCKS_LCL']);
 
-        const hasComparable = (etd && etd.hasTime) || (atd && atd.hasTime);
+        const hasComparable = (etd && etd.hasDate) || (atd && atd.hasDate);
         if (!hasComparable) {
-          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：出發航班缺少可比對 HHMM（ETD/ATD）。`);
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：出發航班缺少可比對日期（ETD/ATD）。`);
         }
         if (!std || !std.hasDate) {
           return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：STD 無法解析。`);
@@ -441,10 +494,10 @@
         const atdCross = atd && atd.hasDate && isDifferentDate(std.date, atd.date);
 
         if (etdCross || atdCross) {
-          const chosenActual = atd && atd.hasDate && atd.hasTime ? atd : etd;
-          const chosenLabel = atd && atd.hasDate && atd.hasTime ? 'ATD' : 'ETD';
-          if (!chosenActual || !chosenActual.hasDate || !chosenActual.hasTime) {
-            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用時間欄位不足。`);
+          const chosenActual = atd && atd.hasDate ? atd : etd;
+          const chosenLabel = atd && atd.hasDate ? 'ATD' : 'ETD';
+          if (!chosenActual || !chosenActual.hasDate) {
+            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用日期欄位不足。`);
           }
           return result(formatOutput({
             flightNo,
@@ -463,9 +516,9 @@
         const eta = parseDateTime(row['SCH_ETA_LCL']);
         const ata = parseDateTime(row['ACTUAL_ONBLOCKS_LCL']);
 
-        const hasComparable = (eta && eta.hasTime) || (ata && ata.hasTime);
+        const hasComparable = (eta && eta.hasDate) || (ata && ata.hasDate);
         if (!hasComparable) {
-          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：到達航班缺少可比對 HHMM（ETA/ATA）。`);
+          return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：到達航班缺少可比對日期（ETA/ATA）。`);
         }
         if (!sta || !sta.hasDate) {
           return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：STA 無法解析。`);
@@ -475,10 +528,10 @@
         const ataCross = ata && ata.hasDate && isDifferentDate(sta.date, ata.date);
 
         if (etaCross || ataCross) {
-          const chosenActual = ata && ata.hasDate && ata.hasTime ? ata : eta;
-          const chosenLabel = ata && ata.hasDate && ata.hasTime ? 'ATA' : 'ETA';
-          if (!chosenActual || !chosenActual.hasDate || !chosenActual.hasTime) {
-            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用時間欄位不足。`);
+          const chosenActual = ata && ata.hasDate ? ata : eta;
+          const chosenLabel = ata && ata.hasDate ? 'ATA' : 'ETA';
+          if (!chosenActual || !chosenActual.hasDate) {
+            return ignored(`${flightNo || '[NO FLT]'} ${dep}-${arv} 忽略：雖判定跨日，但輸出用日期欄位不足。`);
           }
           return result(formatOutput({
             flightNo,
@@ -533,7 +586,20 @@
     }
 
     function parseDateTime(value) {
-      if (value === null || value === undefined) return null;
+      if (value === null || value === undefined || value === '') return null;
+
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return { date: value, hasDate: true, hasTime: true, raw: value };
+      }
+
+      if (typeof value === 'number' && !Number.isNaN(value)) {
+        const excelDate = XLSX.SSF.parse_date_code(value);
+        if (excelDate) {
+          const dt = new Date(excelDate.y, excelDate.m - 1, excelDate.d, excelDate.H || 0, excelDate.M || 0, excelDate.S || 0);
+          return { date: dt, hasDate: true, hasTime: true, raw: value };
+        }
+      }
+
       let s = String(value).trim();
       if (!s || /^NULL$/i.test(s)) return null;
 
@@ -542,19 +608,15 @@
 
       const native = new Date(s);
       if (!Number.isNaN(native.getTime())) {
-        return {
-          date: native,
-          hasDate: true,
-          hasTime: hasMeaningfulTimeInOriginal(upper, native),
-          raw: value
-        };
+        return { date: native, hasDate: true, hasTime: hasMeaningfulTimeInOriginal(upper, native), raw: value };
       }
 
       const compact = upper.replace(/[^A-Z0-9]/g, '');
+      let m = null;
 
-      let m = compact.match(/^(\d{4})(\d{2})(\d{2})(\d{4})$/);
+      m = compact.match(/^(\d{4})(\d{2})(\d{2})(\d{4})$/);
       if (m) {
-        const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4].slice(0,2)), Number(m[4].slice(2,4)));
+        const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4].slice(0, 2)), Number(m[4].slice(2, 4)));
         return { date: dt, hasDate: true, hasTime: true, raw: value };
       }
 
@@ -566,7 +628,7 @@
 
       m = compact.match(/^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{4})$/);
       if (m) {
-        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0,2)), Number(m[3].slice(2,4)));
+        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0, 2)), Number(m[3].slice(2, 4)));
         return { date: dt, hasDate: true, hasTime: true, raw: value };
       }
 
@@ -578,7 +640,7 @@
 
       m = upper.match(/(\d{1,2})\s*([A-Z]{3})\s*(\d{4})/);
       if (m && monthMap(m[2]) >= 0) {
-        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0,2)), Number(m[3].slice(2,4)));
+        const dt = new Date(new Date().getFullYear(), monthMap(m[2]), Number(m[1]), Number(m[3].slice(0, 2)), Number(m[3].slice(2, 4)));
         return { date: dt, hasDate: true, hasTime: true, raw: value };
       }
 
@@ -587,13 +649,14 @@
         const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0);
         const timeMatch = upper.match(/(\d{2}):(\d{2})|(\d{4})/);
         if (timeMatch) {
-          let hh = 0, mm = 0;
+          let hh = 0;
+          let mm = 0;
           if (timeMatch[1] && timeMatch[2]) {
             hh = Number(timeMatch[1]);
             mm = Number(timeMatch[2]);
           } else if (timeMatch[3]) {
-            hh = Number(timeMatch[3].slice(0,2));
-            mm = Number(timeMatch[3].slice(2,4));
+            hh = Number(timeMatch[3].slice(0, 2));
+            mm = Number(timeMatch[3].slice(2, 4));
           }
           dt.setHours(hh, mm, 0, 0);
           return { date: dt, hasDate: true, hasTime: true, raw: value };
@@ -616,7 +679,7 @@
 
     function formatDDMMM(date) {
       const dd = String(date.getDate()).padStart(2, '0');
-      const mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][date.getMonth()];
+      const mon = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][date.getMonth()];
       return `${dd}${mon}`;
     }
 
@@ -627,8 +690,17 @@
       return `${dd}${hh}${mm}`;
     }
 
+    function formatWindow(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mi = String(date.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${mi}L`;
+    }
+
     function monthMap(mon) {
-      return ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'].indexOf(mon);
+      return ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'].indexOf(mon);
     }
 
     function valueOf(v) {
@@ -637,6 +709,11 @@
 
     function cleanFlightNo(v) {
       return String(v || '').trim().toUpperCase().replace(/\s+/g, '');
+    }
+
+    function normalizeFlightDisplay(flightNo) {
+      if (!flightNo) return '';
+      return flightNo.startsWith('CI') ? flightNo : 'CI' + flightNo;
     }
 
     function result(output) {
@@ -661,8 +738,6 @@
       const prev = logBox.textContent === '尚未載入檔案。' ? '' : logBox.textContent + '\n';
       logBox.textContent = `${prev}[${stamp}] ${message}`;
     }
-
-    let fakeProgressTimer = null;
 
     function startFakeProgress() {
       progressWrap.style.display = 'block';
