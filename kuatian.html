@@ -15,10 +15,10 @@
     body {
       font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(251, 191, 36, 0.22), transparent 30%),
-        radial-gradient(circle at 88% 12%, rgba(253, 230, 138, 0.28), transparent 24%),
-        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.14), transparent 24%),
-        linear-gradient(180deg, #fffaf0 0%, #fffdf7 34%, #f8fafc 100%);
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(191, 219, 254, 0.3), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.2), transparent 24%),
+        linear-gradient(180deg, #f8fcff 0%, #eef7ff 34%, #f8fafc 100%);
     }
 
     body::before,
@@ -37,13 +37,13 @@
     body::before {
       top: -10rem;
       left: -8rem;
-      background: rgba(245, 158, 11, 0.26);
+      background: rgba(56, 189, 248, 0.22);
     }
 
     body::after {
       right: -8rem;
       bottom: -10rem;
-      background: rgba(250, 204, 21, 0.2);
+      background: rgba(96, 165, 250, 0.18);
     }
 
     body > div {
@@ -52,8 +52,59 @@
     }
 
     ::selection {
-      background: rgba(245, 158, 11, 0.18);
+      background: rgba(14, 165, 233, 0.18);
       color: #0f172a;
+    }
+
+    .responsive-shell {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .crossday-workbench {
+      display: grid;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .crossday-main,
+    .crossday-sidebar {
+      display: grid;
+      gap: 1.5rem;
+      min-width: 0;
+    }
+
+    .crossday-log-box {
+      max-height: clamp(220px, 28vh, 320px);
+      overflow: auto;
+    }
+
+    .crossday-output-box {
+      min-height: clamp(320px, 44vh, 520px);
+      max-height: clamp(360px, 52vh, 620px);
+      overflow: auto;
+    }
+
+    .crossday-error-box {
+      max-height: clamp(180px, 24vh, 280px);
+      overflow: auto;
+    }
+
+    @media (min-width: 1280px) {
+      .responsive-shell {
+        max-width: min(1680px, calc(100vw - 48px));
+      }
+
+      .crossday-workbench {
+        grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+      }
+
+      .crossday-sidebar {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+      }
     }
 
     @media (max-width: 767px) {
@@ -64,144 +115,147 @@
       }
     }
 
-    .ok { color: #1a8a30; }
-    .warn { color: #c07a00; }
-    .danger-text { color: #d93030; }
+    .ok { color: #0369a1; }
+    .warn { color: #0284c7; }
+    .danger-text { color: #1d4ed8; }
 
     #dropzone.dragover {
-      border-color: #d97706;
-      background: rgba(253, 230, 138, 0.35);
+      border-color: #38bdf8;
+      background: rgba(224, 242, 254, 0.8);
       transform: scale(1.01);
     }
   </style>
 </head>
 <body class="min-h-screen text-slate-800 antialiased">
-  <div class="w-full xl:max-w-[50vw] mx-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10">
+  <div class="responsive-shell px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10">
 
     <header class="mb-8 md:mb-10">
-      <div class="relative overflow-hidden rounded-[32px] border border-amber-900/80 bg-[linear-gradient(135deg,#422006_0%,#78350f_52%,#92400e_100%)] text-white shadow-[0_32px_90px_-42px_rgba(120,53,15,0.72)] p-6 md:p-8 lg:p-10">
+      <div class="relative overflow-hidden rounded-[32px] border border-sky-200/90 bg-[linear-gradient(135deg,#f8fcff_0%,#e0f2fe_52%,#dbeafe_100%)] text-slate-900 shadow-[0_32px_90px_-42px_rgba(59,130,246,0.24)] p-6 md:p-8 lg:p-10">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
-            <p class="text-amber-200 text-sm tracking-[0.25em] uppercase">Function 6</p>
+            <p class="text-sky-700 text-sm tracking-[0.25em] uppercase">Function 6</p>
             <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">✈️ 航班跨日檢查工具</h1>
-            <p class="text-amber-100/90 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
+            <p class="text-slate-600 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
               上傳檔案後，系統會依 <strong>TPE 起訖、74Y / 77X、CI 營運</strong> 的條件，
               再依你選擇的 <strong>上班日期 07:00L ~ 隔天 07:00L</strong> 篩出需要檢查的航班，最後判斷是否跨日。
             </p>
           </div>
-          <a href="./index.html" class="shrink-0 rounded-2xl bg-white/12 text-white px-5 py-3 font-medium border border-white/15 hover:bg-white/18 transition shadow-lg backdrop-blur-md">
+          <a href="./index.html" class="shrink-0 rounded-2xl bg-white/70 text-sky-900 px-5 py-3 font-medium border border-sky-100 hover:bg-white/90 transition shadow-lg backdrop-blur-md">
             返回功能選單
           </a>
         </div>
       </div>
     </header>
 
-    <main class="space-y-6">
-      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
-        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
-          <h2 class="text-xl font-bold">📋 使用說明</h2>
-        </div>
-        <div class="p-5 md:p-6 lg:p-7">
-          <ol class="list-decimal pl-5 space-y-1 leading-8 text-slate-700">
-            <li>使用 <strong>WebJC</strong>，選取日期時間區間(範圍可以前後加大好幾天)</li>
-            <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
-            <li>按 <strong>Query</strong></li>
-            <li>按 <strong>Export Excel</strong></li>
-            <li>將產出的檔案直接拖入本系統</li>
-            <li>選擇今天上班的日期，系統會自動篩選 <strong>今天07:00L ~ 隔天 07:00L</strong></li>
-            <li>按 <strong>開始分析</strong></li>
-          </ol>
-        </div>
-      </section>
+    <main class="crossday-workbench">
+      <div class="crossday-main">
+        <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">📋 使用說明</h2>
+          </div>
+          <div class="p-5 md:p-6 lg:p-7">
+            <ol class="list-decimal pl-5 space-y-1 leading-8 text-slate-700">
+              <li>使用 <strong>WebJC</strong>，選取日期時間區間(範圍可以前後加大好幾天)</li>
+              <li>TIME_TYPE 選 <strong>LOCAL</strong></li>
+              <li>按 <strong>Query</strong></li>
+              <li>按 <strong>Export Excel</strong></li>
+              <li>將產出的檔案直接拖入本系統</li>
+              <li>選擇今天上班的日期，系統會自動篩選 <strong>今天07:00L ~ 隔天 07:00L</strong></li>
+              <li>按 <strong>開始分析</strong></li>
+            </ol>
+          </div>
+        </section>
 
-      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
-        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
-          <h2 class="text-xl font-bold">1. 上傳檔案</h2>
-          <p class="text-slate-500 mt-1">支援副檔名：.xls、.xlsx</p>
-        </div>
-        <div class="p-5 md:p-6 lg:p-7 space-y-5">
+        <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">1. 上傳檔案</h2>
+            <p class="text-slate-500 mt-1">支援副檔名：.xls、.xlsx</p>
+          </div>
+          <div class="p-5 md:p-6 lg:p-7 space-y-5">
 
-          <div id="dropzone" class="border-2 border-dashed border-amber-300 rounded-2xl p-8 text-center bg-amber-50/60 transition duration-200 cursor-pointer">
-            <p class="text-lg text-slate-700 mb-4">拖曳 Excel 檔到這裡，或點按下方按鈕選擇檔案</p>
-            <label for="fileInput" class="inline-block cursor-pointer rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition">選擇 Excel 檔案</label>
-            <input id="fileInput" type="file" accept=".xls,.xlsx" class="hidden" />
-            <div id="uploadStatus" class="mt-4 text-sm text-slate-500">尚未選擇檔案。</div>
-            <div id="progressWrap" class="mt-4" style="display:none;">
-              <div class="flex justify-between items-center mb-2">
-                <span id="progressText" class="text-sm text-slate-500">等待中</span>
-                <span id="progressPercent" class="text-sm text-slate-500">0%</span>
+            <div id="dropzone" class="border-2 border-dashed border-sky-300 rounded-2xl p-8 text-center bg-sky-50/70 transition duration-200 cursor-pointer">
+              <p class="text-lg text-slate-700 mb-4">拖曳 Excel 檔到這裡，或點按下方按鈕選擇檔案</p>
+              <label for="fileInput" class="inline-block cursor-pointer rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">選擇 Excel 檔案</label>
+              <input id="fileInput" type="file" accept=".xls,.xlsx" class="hidden" />
+              <div id="uploadStatus" class="mt-4 text-sm text-slate-500">尚未選擇檔案。</div>
+              <div id="progressWrap" class="mt-4" style="display:none;">
+                <div class="flex justify-between items-center mb-2">
+                  <span id="progressText" class="text-sm text-slate-500">等待中</span>
+                  <span id="progressPercent" class="text-sm text-slate-500">0%</span>
+                </div>
+                <div class="w-full h-3 bg-slate-200 border border-slate-300 rounded-full overflow-hidden">
+                  <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg,#38bdf8 0%,#60a5fa 100%); transition:width 0.25s ease;"></div>
+                </div>
               </div>
-              <div class="w-full h-3 bg-slate-200 border border-slate-300 rounded-full overflow-hidden">
-                <div id="progressBar" style="width:0%; height:100%; background:linear-gradient(90deg,#d97706 0%,#fbbf24 100%); transition:width 0.25s ease;"></div>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              <div class="rounded-2xl border border-sky-200 bg-sky-50/80 p-4">
+                <label for="workDate" class="block text-sm font-semibold text-sky-900 mb-2">上班日期</label>
+                <input id="workDate" type="date" class="w-full rounded-xl border border-sky-300 bg-white px-4 py-3 text-slate-800 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+                <p class="mt-2 text-sm text-sky-900/80">系統會自動檢查當天 07:00L 到隔天 07:00L 的航班。</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-sm font-semibold text-slate-700 mb-2">檢查時段</div>
+                <div id="windowDisplay" class="text-sm leading-7 text-slate-600">尚未選擇上班日期。</div>
               </div>
             </div>
+
+            <div class="flex flex-wrap gap-3">
+              <button id="analyzeBtn" disabled class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition disabled:opacity-50 disabled:cursor-not-allowed">開始分析</button>
+              <button id="copyBtn" disabled class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition disabled:opacity-50 disabled:cursor-not-allowed">複製結果</button>
+              <button id="downloadBtn" disabled class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition disabled:opacity-50 disabled:cursor-not-allowed">下載 TXT</button>
+              <button id="clearBtn" class="rounded-2xl bg-cyan-50 text-cyan-800 border border-cyan-200 px-5 py-3 font-medium hover:bg-cyan-100 transition">清空</button>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <div class="text-sm text-slate-500 mb-1">原始資料航班數</div>
+                <div id="rawCount" class="text-2xl font-bold text-slate-900">0</div>
+              </div>
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                <div class="text-sm text-slate-500 mb-1">指定時段內CI貨機航班數</div>
+                <div id="filteredCount" class="text-2xl font-bold text-slate-900">0</div>
+              </div>
+              <div class="rounded-2xl bg-sky-50 border border-sky-200 p-4">
+                <div class="text-sm text-sky-700 mb-1">符合跨日條件貨機航班數</div>
+                <div id="resultCount" class="text-2xl font-bold text-sky-600">0</div>
+              </div>
+            </div>
+
           </div>
+        </section>
+      </div>
 
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-              <label for="workDate" class="block text-sm font-semibold text-amber-900 mb-2">上班日期</label>
-              <input id="workDate" type="date" class="w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-slate-800 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-              <p class="mt-2 text-sm text-amber-900/80">系統會自動檢查當天 07:00L 到隔天 07:00L 的航班。</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-sm font-semibold text-slate-700 mb-2">檢查時段</div>
-              <div id="windowDisplay" class="text-sm leading-7 text-slate-600">尚未選擇上班日期。</div>
-            </div>
+      <div class="crossday-sidebar">
+        <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">2. 處理紀錄</h2>
           </div>
-
-          <div class="flex flex-wrap gap-3">
-            <button id="analyzeBtn" disabled class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed">開始分析</button>
-            <button id="copyBtn" disabled class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">複製結果</button>
-            <button id="downloadBtn" disabled class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed">下載 TXT</button>
-            <button id="clearBtn" class="rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 px-5 py-3 font-medium hover:bg-rose-100 transition">清空</button>
+          <div class="p-5 md:p-6 lg:p-7">
+            <div id="logBox" class="crossday-log-box rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[160px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">尚未載入檔案。</div>
           </div>
+        </section>
 
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <div class="text-sm text-slate-500 mb-1">原始資料航班數</div>
-              <div id="rawCount" class="text-2xl font-bold text-slate-900">0</div>
-            </div>
-            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <div class="text-sm text-slate-500 mb-1">指定時段內CI貨機航班數</div>
-              <div id="filteredCount" class="text-2xl font-bold text-slate-900">0</div>
-            </div>
-            <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4">
-              <div class="text-sm text-amber-700 mb-1">符合跨日條件貨機航班數</div>
-              <div id="resultCount" class="text-2xl font-bold text-amber-600">0</div>
-            </div>
+        <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">3. 最終輸出</h2>
+            <p class="text-slate-500 mt-1 font-mono text-sm">CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)</p>
           </div>
+          <div class="p-5 md:p-6 lg:p-7">
+            <div id="outputBox" class="crossday-output-box rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[280px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">分析完成後，結果會顯示在這裡。</div>
+          </div>
+        </section>
 
-        </div>
-      </section>
-
-      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
-        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
-          <h2 class="text-xl font-bold">2. 處理紀錄</h2>
-        </div>
-        <div class="p-5 md:p-6 lg:p-7">
-          <div id="logBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[160px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">尚未載入檔案。</div>
-        </div>
-      </section>
-
-      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
-        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
-          <h2 class="text-xl font-bold">3. 最終輸出</h2>
-          <p class="text-slate-500 mt-1 font-mono text-sm">CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)</p>
-        </div>
-        <div class="p-5 md:p-6 lg:p-7">
-          <div id="outputBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[280px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">分析完成後，結果會顯示在這裡。</div>
-        </div>
-      </section>
-
-      <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(120,53,15,0.34)] border border-white/80 overflow-hidden">
-        <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.82))]">
-          <h2 class="text-xl font-bold">4. 錯誤 / 忽略說明</h2>
-        </div>
-        <div class="p-5 md:p-6 lg:p-7">
-          <div id="errorBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[120px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">目前沒有資料。</div>
-        </div>
-      </section>
-
+        <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">4. 錯誤 / 忽略說明</h2>
+          </div>
+          <div class="p-5 md:p-6 lg:p-7">
+            <div id="errorBox" class="crossday-error-box rounded-2xl bg-slate-50 border border-slate-200 p-5 min-h-[120px] font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto text-slate-700">目前沒有資料。</div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 

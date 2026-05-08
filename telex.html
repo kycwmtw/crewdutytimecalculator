@@ -16,10 +16,10 @@
     body {
       font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(251, 191, 36, 0.22), transparent 30%),
-        radial-gradient(circle at 88% 12%, rgba(253, 230, 138, 0.28), transparent 24%),
-        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.14), transparent 24%),
-        linear-gradient(180deg, #fffaf0 0%, #fffdf7 34%, #f8fafc 100%);
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(191, 219, 254, 0.3), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.2), transparent 24%),
+        linear-gradient(180deg, #f8fcff 0%, #eef7ff 34%, #f8fafc 100%);
     }
 
     body::before,
@@ -38,13 +38,13 @@
     body::before {
       top: -10rem;
       left: -8rem;
-      background: rgba(245, 158, 11, 0.26);
+      background: rgba(56, 189, 248, 0.22);
     }
 
     body::after {
       right: -8rem;
       bottom: -10rem;
-      background: rgba(250, 204, 21, 0.2);
+      background: rgba(96, 165, 250, 0.18);
     }
 
     body > div {
@@ -53,7 +53,7 @@
     }
 
     ::selection {
-      background: rgba(245, 158, 11, 0.18);
+      background: rgba(14, 165, 233, 0.18);
       color: #0f172a;
     }
 
@@ -68,9 +68,10 @@
     * { box-sizing: border-box; }
 
     .wrap {
-      max-width: 900px;
+      width: 100%;
       margin: 0 auto;
-      padding: 24px 32px;
+      padding: 24px 16px;
+      max-width: 100%;
     }
 
     .panel {
@@ -79,8 +80,9 @@
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.8);
       border-radius: 32px;
-      box-shadow: 0 28px 80px -44px rgba(120, 53, 15, 0.34);
+      box-shadow: 0 28px 80px -44px rgba(59, 130, 246, 0.22);
       overflow: hidden;
+      min-width: 0;
     }
 
     .grid {
@@ -90,10 +92,27 @@
       align-items: start;
     }
 
+    .feature-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .feature-layout > * {
+      min-width: 0;
+    }
+
+    .left-stack {
+      display: grid;
+      gap: 18px;
+      align-items: start;
+    }
+
     .panel-head {
       padding: 20px 28px;
       border-bottom: 1px solid rgba(226, 232, 240, 0.7);
-      background: linear-gradient(180deg, rgba(255, 251, 235, 0.92), rgba(255, 255, 255, 0.82));
+      background: linear-gradient(180deg, rgba(240, 249, 255, 0.92), rgba(255, 255, 255, 0.82));
     }
 
     .panel-head h2 {
@@ -115,7 +134,7 @@
 
     textarea {
       width: 100%;
-      min-height: 360px;
+      min-height: 320px;
       resize: vertical;
       border: 1px solid #cbd5e1;
       border-radius: 16px;
@@ -135,8 +154,8 @@
     }
 
     textarea:focus {
-      border-color: #f59e0b;
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
     }
 
     .toolbar {
@@ -162,7 +181,7 @@
 
     
 
-    .btn-soft { background: #fef3c7; color: #92400e; }
+    .btn-soft { background: #e0f2fe; color: #0369a1; }
 
     button:disabled {
       opacity: 0.5;
@@ -182,7 +201,7 @@
       border: 1px solid #e2e8f0;
       border-radius: 16px;
       padding: 14px;
-      background: linear-gradient(180deg, #fffbeb 0%, #fff7ed 100%);
+      background: linear-gradient(180deg, #f0f9ff 0%, #eff6ff 100%);
     }
 
     .stat .k {
@@ -195,7 +214,7 @@
       font-size: 26px;
       font-weight: 800;
       line-height: 1;
-      color: #92400e;
+      color: #0369a1;
     }
 
     .stat .s {
@@ -216,15 +235,15 @@
     }
 
     .warn {
-      border-color: #f1d0c9;
-      background: #fff7f5;
-      color: #7a271a;
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
     }
 
     .ok {
-      border-color: #cae9dc;
-      background: #f4fcf8;
-      color: #0b5f3d;
+      border-color: #bae6fd;
+      background: #f0f9ff;
+      color: #0369a1;
     }
 
     .hidden { display: none; }
@@ -236,34 +255,152 @@
       background: #fff;
     }
 
+    .result-panel {
+      height: 100%;
+    }
+
+    .result-panel .panel-body {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .result-panel .table-wrap {
+      flex: 1 1 auto;
+      min-height: 320px;
+      max-height: clamp(440px, 62vh, 780px);
+    }
+
     table {
       width: 100%;
-      min-width: 640px;
+      min-width: 0;
       border-collapse: collapse;
+      table-layout: fixed;
     }
 
     th, td {
       border-bottom: 1px solid #e5edf5;
-      padding: 12px 10px;
+      padding: 10px 8px;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       vertical-align: middle;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     th {
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #fffbeb;
-      color: #78350f;
+      background: #eff6ff;
+      color: #0f4c81;
       font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .result-panel th:nth-child(1),
+    .result-panel td:nth-child(1) {
+      width: 29%;
+    }
+
+    .result-panel th:nth-child(2),
+    .result-panel td:nth-child(2) {
+      width: 25%;
+    }
+
+    .result-panel th:nth-child(3),
+    .result-panel td:nth-child(3),
+    .result-panel th:nth-child(4),
+    .result-panel td:nth-child(4) {
+      width: 23%;
     }
 
     tr.group-start td {
-      border-top: 2px solid #f59e0b;
+      border-top: 2px solid #38bdf8;
     }
 
-    tr:hover td { background: #fffbeb; }
+    tr:hover td { background: #f0f9ff; }
+
+    .result-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #0f172a;
+      font: inherit;
+      font-weight: 700;
+      line-height: 1.45;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .result-toggle:hover {
+      background: rgba(224, 242, 254, 0.65);
+      border-color: rgba(125, 211, 252, 0.7);
+    }
+
+    .result-toggle:focus-visible {
+      outline: none;
+      border-color: rgba(14, 165, 233, 0.85);
+      box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.24);
+    }
+
+    .result-toggle-label {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .handled-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+      color: #0369a1;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .sector-toggle {
+      font-weight: 600;
+    }
+
+    tr.row-handled td:nth-child(1),
+    tr.row-handled td:nth-child(2) {
+      background: #f0fdf4;
+    }
+
+    tr.row-handled:hover td:nth-child(1),
+    tr.row-handled:hover td:nth-child(2) {
+      background: #f0fdf4;
+    }
+
+    tr.row-handled .result-toggle {
+      color: #166534;
+    }
+
+    tr.row-handled .result-toggle:hover {
+      background: rgba(220, 252, 231, 0.9);
+      border-color: rgba(134, 239, 172, 0.95);
+    }
+
+    tr.row-handled .handled-pill {
+      border-color: #86efac;
+      background: #dcfce7;
+      color: #166534;
+    }
 
     .meta {
       color: #64748b;
@@ -276,8 +413,8 @@
       display: inline-block;
       padding: 2px 8px;
       border-radius: 999px;
-      background: #fef3c7;
-      color: #92400e;
+      background: #e0f2fe;
+      color: #0369a1;
       font-size: 12px;
       font-weight: 700;
       margin-right: 6px;
@@ -285,12 +422,40 @@
 
     @media (max-width: 980px) {
       .grid { grid-template-columns: 1fr; }
+      .feature-layout { grid-template-columns: 1fr; }
       textarea { min-height: 360px; }
       .stats { grid-template-columns: 1fr; }
     }
 
+    @media (min-width: 768px) {
+      .wrap {
+        padding: 32px 24px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .wrap {
+        padding: 40px 32px;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .wrap {
+        max-width: min(1680px, calc(100vw - 48px));
+      }
+
+      .page-header-inner {
+        padding: 32px 38px;
+      }
+
+      .result-panel {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+      }
+    }
+
     @media (max-width: 768px) {
-      .wrap { padding: 12px 16px; }
       .page-header-inner { padding: 28px 24px; }
       .panel-head { padding: 16px 20px; }
       .panel-body { padding: 16px 20px; }
@@ -306,17 +471,17 @@
     }
 
     @media (max-width: 640px) {
-      .wrap { padding: 10px 12px; }
+      .wrap { padding: 24px 12px; }
     }
 
     .page-header-inner {
       position: relative;
       overflow: hidden;
       border-radius: 32px;
-      border: 1px solid rgba(120, 53, 15, 0.8);
-      background: linear-gradient(135deg, #422006 0%, #78350f 52%, #92400e 100%);
-      color: white;
-      box-shadow: 0 32px 90px -42px rgba(120, 53, 15, 0.72);
+      border: 1px solid rgba(186, 230, 253, 0.95);
+      background: linear-gradient(135deg, #f8fcff 0%, #e0f2fe 52%, #dbeafe 100%);
+      color: #0f172a;
+      box-shadow: 0 32px 90px -42px rgba(59, 130, 246, 0.24);
       padding: 40px 48px;
     }
 
@@ -333,7 +498,7 @@
     }
 
     .page-header-label {
-      color: #fde68a;
+      color: #0369a1;
       font-size: 14px;
       letter-spacing: 0.25em;
       text-transform: uppercase;
@@ -348,7 +513,7 @@
     }
 
     .page-header-desc {
-      color: rgba(254, 215, 170, 0.9);
+      color: #475569;
       margin-top: 16px;
       line-height: 1.7;
       font-size: 1rem;
@@ -358,11 +523,11 @@
       flex-shrink: 0;
       display: inline-block;
       border-radius: 16px;
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
+      background: rgba(255, 255, 255, 0.72);
+      color: #0369a1;
       padding: 12px 20px;
       font-weight: 500;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(186, 230, 253, 0.95);
       text-decoration: none;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -371,7 +536,7 @@
     }
 
     .btn-back:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.92);
     }
 
     .fake-progress {
@@ -392,7 +557,7 @@
       margin-bottom: 8px;
       font-size: 13px;
       font-weight: 600;
-      color: #92400e;
+      color: #0369a1;
     }
 
     .fake-progress-track {
@@ -413,10 +578,10 @@
       height: 100%;
       border-radius: inherit;
       background:
-        linear-gradient(90deg, #f59e0b 0%, #fbbf24 35%, #fde68a 50%, #fbbf24 65%, #f59e0b 100%);
+        linear-gradient(90deg, #38bdf8 0%, #60a5fa 35%, #bfdbfe 50%, #60a5fa 65%, #38bdf8 100%);
       background-size: 220% 100%;
       box-shadow:
-        0 0 16px rgba(245, 158, 11, 0.28),
+        0 0 16px rgba(56, 189, 248, 0.22),
         inset 0 1px 0 rgba(255, 255, 255, 0.45);
       transition: width 0.08s linear;
       animation: fakeProgressShimmer 0.8s linear infinite;
@@ -443,48 +608,50 @@
       </div>
     </header>
 
-    <section class="panel" style="margin-bottom: 18px;">
-      <div class="panel-head">
-        <h2>使用說明</h2>
-      </div>
-      <div class="panel-body">
-        <ol style="margin:0; padding-left: 1.25rem; color: #64748b; line-height: 1.8;">
-          <li>1. 在 WebTTY 裡面，勾選所有要整理的電報</li>
-          <li>2. 按 Print</li>
-          <li>3. 全選所有的電報文字並複製</li>
-          <li>4. 到這裡貼上</li>
-        </ol>
-        <div class="box warn" style="margin-top: 14px;">⚠ 請留意在 WebTTY 勾了幾筆電報，並確認本系統讀取到的電報筆數與剛剛勾選的筆數一致，避免有電報遺漏。</div>
-      </div>
-    </section>
-
-    <div class="grid">
-      <section class="panel">
-        <div class="panel-head">
-          <h2>原始電報貼上區</h2>
-          <p>支援一次貼上多則電報</p>
-        </div>
-        <div class="panel-body">
-          <textarea id="sourceInput" spellcheck="false" placeholder="請貼上 ASM 電報內容..."></textarea>
-          <div class="toolbar">
-            <button id="parseBtn" class="rounded-2xl bg-amber-600 text-white px-5 py-3 font-medium hover:bg-amber-700 transition">整理電報</button>
-            <button id="clearBtn" class="rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 px-5 py-3 font-medium hover:bg-rose-100 transition">清空</button>
-            <button id="copyBtn" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">複製表格 TSV</button>
-            <button id="csvBtn" class="rounded-2xl bg-slate-200 text-slate-800 px-5 py-3 font-medium hover:bg-slate-300 transition">匯出 CSV</button>
+    <div class="feature-layout">
+      <div class="left-stack">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>使用說明</h2>
           </div>
-          <div class="fake-progress" id="fakeProgress">
-            <div class="fake-progress-meta">
-              <span id="fakeProgressLabel">電報整理中...</span>
-              <span id="fakeProgressPercent">0%</span>
+          <div class="panel-body">
+            <ol style="margin:0; padding-left: 1.25rem; color: #64748b; line-height: 1.8;">
+              <li>1. 在 WebTTY 裡面，勾選所有要整理的電報</li>
+              <li>2. 按 Print</li>
+              <li>3. 全選所有的電報文字並複製</li>
+              <li>4. 到這裡貼上</li>
+            </ol>
+            <div class="box warn" style="margin-top: 14px;">⚠ 請留意在 WebTTY 勾了幾筆電報，並確認本系統讀取到的電報筆數與剛剛勾選的筆數一致，避免有電報遺漏。</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>原始電報貼上區</h2>
+            <p>支援一次貼上多則電報</p>
+          </div>
+          <div class="panel-body">
+            <textarea id="sourceInput" spellcheck="false" placeholder="請貼上 ASM 電報內容..."></textarea>
+            <div class="toolbar">
+              <button id="parseBtn" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">整理電報</button>
+              <button id="clearBtn" class="rounded-2xl bg-cyan-50 text-cyan-800 border border-cyan-200 px-5 py-3 font-medium hover:bg-cyan-100 transition">清空</button>
+              <button id="copyBtn" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">複製表格 TSV</button>
+              <button id="csvBtn" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">匯出 CSV</button>
             </div>
-            <div class="fake-progress-track">
-              <div class="fake-progress-bar" id="fakeProgressBar"></div>
+            <div class="fake-progress" id="fakeProgress">
+              <div class="fake-progress-meta">
+                <span id="fakeProgressLabel">電報整理中...</span>
+                <span id="fakeProgressPercent">0%</span>
+              </div>
+              <div class="fake-progress-track">
+                <div class="fake-progress-bar" id="fakeProgressBar"></div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <section class="panel">
+      <section class="panel result-panel">
         <div class="panel-head">
           <h2>整理結果</h2>
           <p>已依照航段分組排序</p>
@@ -515,10 +682,10 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width: 180px;">航班號/日期</th>
-                  <th style="width: 140px;">航段</th>
-                  <th style="width: 130px;">起飛時間</th>
-                  <th style="width: 130px;">抵達時間</th>
+                  <th>航班號/日期</th>
+                  <th>航段</th>
+                  <th>起飛時間</th>
+                  <th>抵達時間</th>
                 </tr>
               </thead>
               <tbody id="resultBody">
@@ -552,6 +719,7 @@
 
     let currentRows = [];
     let currentWarnings = [];
+    let handledRowIds = new Set();
 
     function sanitizeSourceText(text) {
       return String(text || '')
@@ -845,14 +1013,58 @@
       rows.forEach(row => {
         const tr = document.createElement('tr');
         if (row.groupStart) tr.classList.add('group-start');
+        tr.dataset.rowId = row.id;
+        tr.dataset.flightDisplay = row.flightDisplay;
+        tr.dataset.sectorDisplay = row.sectorDisplay;
+        if (handledRowIds.has(row.id)) tr.classList.add('row-handled');
         tr.innerHTML = `
-          <td>${escapeHtml(row.flightDisplay)}</td>
-          <td>${escapeHtml(row.sectorDisplay)}</td>
+          <td>
+            <button type="button" class="result-toggle flight-toggle" data-action="toggle-handled" data-row-id="${escapeHtml(row.id)}" aria-pressed="${handledRowIds.has(row.id) ? 'true' : 'false'}" aria-label="${handledRowIds.has(row.id) ? '取消標記已處理' : '標記已處理'}：${escapeHtml(row.flightDisplay)} ${escapeHtml(row.sectorDisplay)}">
+              <span class="result-toggle-label">${escapeHtml(row.flightDisplay)}</span>
+              <span class="handled-pill">${handledRowIds.has(row.id) ? '已處理' : '待處理'}</span>
+            </button>
+          </td>
+          <td>
+            <button type="button" class="result-toggle sector-toggle" data-action="toggle-handled" data-row-id="${escapeHtml(row.id)}" aria-pressed="${handledRowIds.has(row.id) ? 'true' : 'false'}" aria-label="${handledRowIds.has(row.id) ? '取消標記已處理' : '標記已處理'}：${escapeHtml(row.flightDisplay)} ${escapeHtml(row.sectorDisplay)}">
+              <span class="result-toggle-label">${escapeHtml(row.sectorDisplay)}</span>
+            </button>
+          </td>
           <td>${escapeHtml(row.depTimeDisplay)}</td>
           <td>${escapeHtml(row.arrTimeDisplay)}</td>
         `;
         resultBody.appendChild(tr);
       });
+    }
+
+    function updateHandledRowUI(rowId) {
+      const rowElement = Array.from(resultBody.querySelectorAll('tr[data-row-id]')).find(item => item.dataset.rowId === rowId);
+      if (!rowElement) return;
+
+      const isHandled = handledRowIds.has(rowId);
+      const flightDisplay = rowElement.dataset.flightDisplay || '';
+      const sectorDisplay = rowElement.dataset.sectorDisplay || '';
+      rowElement.classList.toggle('row-handled', isHandled);
+
+      rowElement.querySelectorAll('[data-action="toggle-handled"]').forEach(button => {
+        button.setAttribute('aria-pressed', isHandled ? 'true' : 'false');
+        button.setAttribute(
+          'aria-label',
+          `${isHandled ? '取消標記已處理' : '標記已處理'}：${flightDisplay} ${sectorDisplay}`.trim()
+        );
+      });
+
+      const pill = rowElement.querySelector('.handled-pill');
+      if (pill) pill.textContent = isHandled ? '已處理' : '待處理';
+    }
+
+    function toggleHandledRow(rowId) {
+      if (!rowId) return;
+      if (handledRowIds.has(rowId)) {
+        handledRowIds.delete(rowId);
+      } else {
+        handledRowIds.add(rowId);
+      }
+      updateHandledRowUI(rowId);
     }
 
     function refreshStats(rowCount, groupCount, warningCount) {
@@ -939,6 +1151,7 @@
     function runParse() {
       const { records, warnings: parseWarnings } = parseAsmText(sourceInput.value);
       const { rows, groups, warnings: groupWarnings } = prepareRows(records);
+      handledRowIds = new Set();
       currentRows = rows;
       renderRows(rows);
       refreshStats(rows.length, groups.length, parseWarnings.length + groupWarnings.length);
@@ -978,12 +1191,19 @@
       sourceInput.value = '';
       currentRows = [];
       currentWarnings = [];
+      handledRowIds = new Set();
       resultBody.innerHTML = '<tr><td colspan="4" style="padding: 24px; color: #6a7987;">尚無資料</td></tr>';
       refreshStats(0, 0, 0);
       statusBox.innerHTML = '尚未整理。請先貼上電報後按「整理電報」。';
       warningBox.classList.add('hidden');
       warningBox.innerHTML = '';
       resetFakeProgress();
+    });
+
+    resultBody.addEventListener('click', event => {
+      const toggle = event.target.closest('[data-action="toggle-handled"]');
+      if (!toggle || !resultBody.contains(toggle)) return;
+      toggleHandledRow(toggle.dataset.rowId);
     });
 
     copyBtn.addEventListener('click', async () => {

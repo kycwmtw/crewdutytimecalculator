@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>值班時段航班整理工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -17,9 +20,9 @@
       --muted: #5f7694;
       --accent: #4d9cff;
       --accent-2: #79baff;
-      --warn: #ffb84d;
-      --shadow: 0 20px 48px rgba(88, 129, 184, 0.16);
-      --radius: 24px;
+      --warn: #60a5fa;
+      --shadow: 0 28px 80px -44px rgba(59, 130, 246, 0.22);
+      --radius: 32px;
     }
 
     * { box-sizing: border-box; }
@@ -28,44 +31,58 @@
       margin: 0;
       padding: 0;
       min-height: 100%;
-      font-family: Inter, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(120, 187, 255, 0.28), transparent 32%),
-        radial-gradient(circle at top right, rgba(167, 214, 255, 0.4), transparent 30%),
-        linear-gradient(180deg, #f4f9ff 0%, #edf5ff 45%, #f8fbff 100%);
-      letter-spacing: 0.02em;
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(191, 219, 254, 0.3), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.2), transparent 24%),
+        linear-gradient(180deg, #f8fcff 0%, #eef7ff 34%, #f8fafc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
     }
 
     body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(rgba(117,169,220,0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(117,169,220,0.08) 1px, transparent 1px);
-      background-size: 30px 30px;
-      mask-image: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0));
-      opacity: 0.7;
+      top: -10rem;
+      left: -8rem;
+      background: rgba(56, 189, 248, 0.22);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(96, 165, 250, 0.18);
     }
 
     .page {
       width: 100%;
+      max-width: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       gap: 20px;
-      padding: 28px 18px 56px;
+      margin: 0 auto;
+      padding: 24px 16px;
       position: relative;
       z-index: 1;
     }
 
     .card {
-      width: min(50vw, 900px);
-      min-width: 320px;
+      width: 100%;
+      min-width: 0;
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 250, 255, 0.98));
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 252, 255, 0.98));
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px);
@@ -79,7 +96,7 @@
       inset: 0;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(132,200,255,0.28), transparent 30%, transparent 70%, rgba(117,255,214,0.2));
+      background: linear-gradient(135deg, rgba(132,200,255,0.28), transparent 30%, transparent 70%, rgba(96,165,250,0.18));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
               mask-composite: exclude;
@@ -91,12 +108,12 @@
     .hero {
       padding: 26px 24px 18px;
       border-bottom: 1px solid var(--line);
-      background: linear-gradient(135deg, rgba(125, 187, 255, 0.18), rgba(255,255,255,0.92));
+      background: linear-gradient(135deg, #f8fcff 0%, #e0f2fe 52%, #dbeafe 100%);
     }
 
     .eyebrow {
       font-size: 12px;
-      color: #4f95eb;
+      color: #0369a1;
       text-transform: uppercase;
       letter-spacing: 0.18em;
       margin-bottom: 10px;
@@ -166,8 +183,8 @@
 
     input[type="file"]::file-selector-button {
       border: none;
-      background: linear-gradient(135deg, rgba(132,200,255,0.25), rgba(117,255,214,0.18));
-      color: var(--text);
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #0369a1;
       padding: 10px 14px;
       margin-right: 12px;
       border-radius: 12px;
@@ -203,9 +220,9 @@
 
     button {
       appearance: none;
-      border: 1px solid rgba(87, 140, 205, 0.22);
-      color: var(--text);
-      background: linear-gradient(180deg, #f8fbff, #e7f2ff);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: #ffffff;
+      background: linear-gradient(180deg, #38bdf8, #0ea5e9);
       padding: 13px 18px;
       border-radius: 16px;
       cursor: pointer;
@@ -213,22 +230,24 @@
       font-weight: 700;
       letter-spacing: 0.03em;
       transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,0.18);
+      box-shadow: 0 16px 34px -26px rgba(14, 165, 233, 0.4);
     }
 
     button:hover {
       transform: translateY(-1px);
-      border-color: rgba(77, 156, 255, 0.46);
+      border-color: rgba(14, 165, 233, 0.46);
     }
 
     button.secondary {
-      background: linear-gradient(180deg, #ffffff, #f4f8fd);
-      border-color: rgba(125, 166, 214, 0.28);
+      color: #0c4a6e;
+      background: linear-gradient(180deg, #ffffff, #f0f9ff);
+      border-color: rgba(125, 211, 252, 0.4);
     }
 
     button.warn {
-      background: linear-gradient(180deg, #fff7e8, #ffe9bf);
-      border-color: rgba(255, 184, 77, 0.32);
+      color: #ffffff;
+      background: linear-gradient(180deg, #22d3ee, #0891b2);
+      border-color: rgba(34, 211, 238, 0.3);
     }
 
     .stat-row {
@@ -242,7 +261,7 @@
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 14px;
-      background: rgba(255,255,255,0.72);
+      background: linear-gradient(180deg, #f0f9ff 0%, #eff6ff 100%);
     }
 
     .stat .k {
@@ -262,7 +281,7 @@
       padding: 12px 14px;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.72);
+      background: rgba(255,255,255,0.88);
       color: #34597f;
       font-size: 13px;
       line-height: 1.65;
@@ -272,14 +291,126 @@
       overflow: auto;
       border: 1px solid var(--line);
       border-radius: 20px;
-      background: rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.9);
       margin-top: 18px;
+      max-height: clamp(440px, 62vh, 780px);
+    }
+
+    .results-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .results-main {
+      min-width: 0;
+    }
+
+    .special-focus-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(245, 250, 255, 0.98), rgba(255, 255, 255, 0.96));
+      box-shadow: 0 18px 42px -34px rgba(59, 130, 246, 0.18);
+      padding: 16px 18px;
+    }
+
+    .special-focus-card[hidden] {
+      display: none !important;
+    }
+
+    .special-focus-head {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .special-focus-eyebrow {
+      font-size: 11px;
+      line-height: 1.4;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4b83b9;
+      font-weight: 700;
+    }
+
+    .special-focus-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .special-focus-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #17314f;
+    }
+
+    .special-focus-count {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(132, 200, 255, 0.28);
+      background: #eef6ff;
+      color: #2f5f92;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .special-focus-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .special-focus-item,
+    .special-focus-empty {
+      border: 1px solid rgba(125, 166, 214, 0.2);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 12px 14px;
+    }
+
+    .special-focus-flight {
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #17314f;
+    }
+
+    .special-focus-route {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .special-focus-empty {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .special-focus-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 640px;
+      table-layout: fixed;
     }
 
     thead th {
@@ -293,7 +424,8 @@
       padding: 14px;
       text-align: left;
       border-bottom: 1px solid var(--line-strong);
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     tbody td {
@@ -301,16 +433,40 @@
       border-bottom: 1px solid rgba(125, 166, 214, 0.18);
       color: #17314f;
       font-size: 14px;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     tbody tr:hover {
       background: rgba(116, 185, 255, 0.08);
     }
 
+    #resultTable th:nth-child(1),
+    #resultTable td:nth-child(1) {
+      width: 14%;
+      text-align: center;
+    }
+
+    #resultTable th:nth-child(2),
+    #resultTable td:nth-child(2) {
+      width: 30%;
+    }
+
+    #resultTable th:nth-child(3),
+    #resultTable td:nth-child(3),
+    #resultTable th:nth-child(4),
+    #resultTable td:nth-child(4),
+    #resultTable th:nth-child(5),
+    #resultTable td:nth-child(5) {
+      width: 18.666%;
+      text-align: center;
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       padding: 5px 10px;
       border-radius: 999px;
@@ -321,12 +477,15 @@
     }
 
     .time-chip {
-      display: inline-block;
-      min-width: 60px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
       text-align: center;
-      padding: 6px 10px;
+      white-space: nowrap;
+      padding: 6px 8px;
       border-radius: 12px;
-      background: #edf7ff;
+      background: #f0f9ff;
       border: 1px solid rgba(108, 166, 224, 0.18);
     }
 
@@ -339,15 +498,36 @@
       line-height: 1.7;
     }
 
-    @media (max-width: 1200px) {
-      .card { width: min(70vw, 900px); }
+    @media (min-width: 768px) {
+      .page {
+        padding: 32px 24px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .page {
+        padding: 40px 32px;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .page {
+        max-width: min(1680px, calc(100vw - 48px));
+        display: grid;
+        grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .page > .card:first-child {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+      }
     }
 
     @media (max-width: 820px) {
-      .page { padding: 16px 12px 40px; }
       .card {
-        width: 100%;
-        min-width: 0;
         border-radius: 20px;
       }
       .field-group, .stat-row { grid-template-columns: 1fr; }
@@ -407,6 +587,26 @@
       .print-page:last-child {
         break-after: auto;
         page-break-after: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 24px 12px;
+      }
+
+      thead th,
+      tbody td {
+        padding: 12px 10px;
+        font-size: 13px;
+      }
+
+      .special-focus-card {
+        padding: 14px 16px;
+      }
+
+      .special-focus-list {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -489,24 +689,40 @@
       </div>
       <div class="card-inner">
         <div id="summaryBadges" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;"></div>
-        <div class="table-wrap">
-          <table id="resultTable">
-            <thead>
-              <tr>
-                <th>航班號</th>
-                <th>航線</th>
-                <th>松訓報到時間</th>
-                <th>BOT報到時間</th>
-                <th>ETD</th>
-              </tr>
-            </thead>
-            <tbody id="resultBody">
-              <tr><td colspan="5" style="padding: 26px 14px; color: var(--muted); text-align: center;">請先上傳 Excel、選上班日期，再按下「生成航班列表」。</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="footnote">
-          條件：<strong>CI / AE</strong>、<strong>TPE / TSA 出發</strong>。松訓報到時間 = ETD - 140 分鐘，BOT 報到時間 = ETD - 90 分鐘。
+        <div class="results-layout">
+          <aside id="specialFocusCard" class="special-focus-card" hidden>
+            <div class="special-focus-head">
+              <div class="special-focus-eyebrow">Australia / New Zealand Focus</div>
+              <div class="special-focus-title-row">
+                <h2 id="specialFocusTitle" class="special-focus-title">當天澳紐出發航班</h2>
+                <span id="specialFocusCount" class="special-focus-count">共 0 班</span>
+              </div>
+            </div>
+            <div id="specialFocusList" class="special-focus-list"></div>
+            <div class="special-focus-note">此清單僅根據本次上傳 Excel 內容產生。</div>
+          </aside>
+
+          <div class="results-main">
+            <div class="table-wrap">
+              <table id="resultTable">
+                <thead>
+                  <tr>
+                    <th>航班號</th>
+                    <th>航線</th>
+                    <th>松訓報到時間</th>
+                    <th>BOT報到時間</th>
+                    <th>ETD</th>
+                  </tr>
+                </thead>
+                <tbody id="resultBody">
+                  <tr><td colspan="5" style="padding: 26px 14px; color: var(--muted); text-align: center;">請先上傳 Excel、選上班日期，再按下「生成航班列表」。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="footnote">
+              條件：<strong>CI / AE</strong>、<strong>TPE / TSA 出發</strong>。松訓報到時間 = ETD - 140 分鐘，BOT 報到時間 = ETD - 90 分鐘。
+            </div>
+          </div>
         </div>
       </div>
       <div class="print-shell" id="printShell"></div>
@@ -522,8 +738,13 @@
       B: { label: 'B班', start: '22:00', end: '08:00', crossesMidnight: true }
     };
 
+    const AU_NZ_AIRPORTS = ['SYD', 'MEL', 'BNE', 'AKL'];
+    const TAIPEI_AIRPORTS = ['TPE', 'TSA'];
+
+    let allEligibleRows = [];
     let rawRows = [];
     let filteredRows = [];
+    let specialFocusRows = [];
     let detectedDateLabel = '--';
     let detectedDateMin = null;
     let detectedDateMax = null;
@@ -539,6 +760,10 @@
     const dateLabel = document.getElementById('dateLabel');
     const summaryBadges = document.getElementById('summaryBadges');
     const printShell = document.getElementById('printShell');
+    const specialFocusCard = document.getElementById('specialFocusCard');
+    const specialFocusTitle = document.getElementById('specialFocusTitle');
+    const specialFocusCount = document.getElementById('specialFocusCount');
+    const specialFocusList = document.getElementById('specialFocusList');
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -552,6 +777,10 @@
 
     function formatDateTime(dateObj) {
       return `${formatDate(dateObj)} ${formatTime(dateObj)}`;
+    }
+
+    function formatRoute(dep, arr) {
+      return `${safeText(dep)}-${safeText(arr)}`;
     }
 
     function parseExcelDate(value) {
@@ -652,6 +881,68 @@
       renderPrintTemplate();
     }
 
+    function getSpecialFocusConfig() {
+      if (shiftSelect.value === 'A') {
+        return {
+          title: '當天澳紐出發航班',
+          emptyText: '本次檔案沒有符合的澳洲／紐西蘭出發航班。'
+        };
+      }
+      if (shiftSelect.value === 'N' || shiftSelect.value === 'B') {
+        return {
+          title: '當天台北往澳紐航班',
+          emptyText: '本次檔案沒有符合的台北往澳洲／紐西蘭航班。'
+        };
+      }
+      return null;
+    }
+
+    function buildSpecialFocusRows(dateText) {
+      const config = getSpecialFocusConfig();
+      if (!config || !dateText) return [];
+
+      return allEligibleRows
+        .filter(row => formatDate(row.__etdDate) === dateText)
+        .filter(row => {
+          if (shiftSelect.value === 'A') {
+            return AU_NZ_AIRPORTS.includes(row.LATEST_DEP_ARP_CD);
+          }
+          return TAIPEI_AIRPORTS.includes(row.LATEST_DEP_ARP_CD) && AU_NZ_AIRPORTS.includes(row.LATEST_ARV_ARP_CD);
+        })
+        .map(row => ({
+          flightNo: naturalFlightNo(row.ALN_CD, row.FLT_NR),
+          route: formatRoute(row.LATEST_DEP_ARP_CD, row.LATEST_ARV_ARP_CD),
+          __etdDate: row.__etdDate
+        }))
+        .sort((a, b) => a.__etdDate - b.__etdDate || a.flightNo.localeCompare(b.flightNo));
+    }
+
+    function renderSpecialFocusPanel() {
+      const config = getSpecialFocusConfig();
+      if (!config || !allEligibleRows.length || !dateInput.value) {
+        specialFocusCard.hidden = true;
+        specialFocusList.innerHTML = '';
+        specialFocusCount.textContent = '共 0 班';
+        return;
+      }
+
+      specialFocusCard.hidden = false;
+      specialFocusTitle.textContent = config.title;
+      specialFocusCount.textContent = `共 ${specialFocusRows.length} 班`;
+
+      if (!specialFocusRows.length) {
+        specialFocusList.innerHTML = `<div class="special-focus-empty">${config.emptyText}</div>`;
+        return;
+      }
+
+      specialFocusList.innerHTML = specialFocusRows.map(row => `
+        <div class="special-focus-item">
+          <div class="special-focus-flight">${row.flightNo}</div>
+          <div class="special-focus-route">${row.route}</div>
+        </div>
+      `).join('');
+    }
+
     function renderPrintTemplate() {
       const windowObj = getDutyWindow();
       const shift = SHIFT_MAP[shiftSelect.value];
@@ -692,7 +983,7 @@
         `}).join('');
 
         return `
-          <section class="print-page" style="width:100%; color:#10233b; font-family:Inter, 'Noto Sans TC', sans-serif;">
+          <section class="print-page" style="width:100%; color:#10233b; font-family:'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;">
             <div style="border:1px solid #cfe0f5; border-radius:14px; padding:10px 12px; background:linear-gradient(180deg,#ffffff,#f5faff);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
                 <div>
@@ -760,7 +1051,7 @@
     }
 
     function processRows() {
-      if (!rawRows.length) {
+      if (!allEligibleRows.length) {
         updateStatus('請先上傳 Excel 檔案。', 'error');
         return;
       }
@@ -778,7 +1069,7 @@
           const botDate = new Date(etdDate.getTime() - 90 * 60000);
           return {
             flightNo: naturalFlightNo(row.ALN_CD, row.FLT_NR),
-            route: `${safeText(row.LATEST_DEP_ARP_CD)}-${safeText(row.LATEST_ARV_ARP_CD)}`,
+            route: formatRoute(row.LATEST_DEP_ARP_CD, row.LATEST_ARV_ARP_CD),
             songxun: formatTime(songxunDate),
             bot: formatTime(botDate),
             etd: formatTime(etdDate),
@@ -790,11 +1081,19 @@
         .filter(row => isWithinWindow(row.__songxunDate, windowObj) || isWithinWindow(row.__botDate, windowObj))
         .sort((a, b) => a.__etdDate - b.__etdDate);
 
+      specialFocusRows = buildSpecialFocusRows(dateInput.value);
       countFlights.textContent = String(filteredRows.length);
       renderBadges(windowObj);
       renderTable();
+      renderSpecialFocusPanel();
       setShiftVisual();
-      updateStatus(`已完成整理。共 ${filteredRows.length} 班符合條件。篩選條件為 CI / AE、TPE / TSA 出發，且上班日期 ${dateInput.value} 的 ${windowObj.shift.label} 值班區間內有包含松訓報到時間或 BOT報到時間 任一。`);
+
+      const specialFocusConfig = getSpecialFocusConfig();
+      const specialFocusMessage = specialFocusConfig
+        ? ` 另已同步整理 ${specialFocusConfig.title} ${specialFocusRows.length} 班。`
+        : '';
+
+      updateStatus(`已完成整理。共 ${filteredRows.length} 班符合條件。篩選條件為 CI / AE、TPE / TSA 出發，且上班日期 ${dateInput.value} 的 ${windowObj.shift.label} 值班區間內有包含松訓報到時間或 BOT報到時間 任一。${specialFocusMessage}`);
     }
 
     async function readWorkbook(file) {
@@ -814,7 +1113,6 @@
           return { ...row, ALN_CD: aln, LATEST_DEP_ARP_CD: dep, LATEST_ARV_ARP_CD: arr, __etdDate: etdDate };
         })
         .filter(row => ['CI', 'AE'].includes(row.ALN_CD))
-        .filter(row => ['TPE', 'TSA'].includes(row.LATEST_DEP_ARP_CD))
         .filter(row => row.__etdDate instanceof Date && !isNaN(row.__etdDate.getTime()));
 
       if (normalized.length) {
@@ -841,6 +1139,10 @@
       return normalized;
     }
 
+    function buildMainSourceRows(rows) {
+      return rows.filter(row => TAIPEI_AIRPORTS.includes(row.LATEST_DEP_ARP_CD));
+    }
+
     document.getElementById('processBtn').addEventListener('click', processRows);
 
     document.getElementById('printBtn').addEventListener('click', () => {
@@ -853,8 +1155,10 @@
     });
 
     document.getElementById('clearBtn').addEventListener('click', () => {
+      allEligibleRows = [];
       rawRows = [];
       filteredRows = [];
+      specialFocusRows = [];
       detectedDateLabel = '--';
       detectedDateMin = null;
       detectedDateMax = null;
@@ -865,18 +1169,21 @@
       summaryBadges.innerHTML = '';
       resultBody.innerHTML = '<tr><td colspan="5" style="padding: 26px 14px; color: var(--muted); text-align: center;">請先上傳 Excel、選上班日期，再按下「生成航班列表」。</td></tr>';
       printShell.innerHTML = '';
+      renderSpecialFocusPanel();
       setShiftVisual();
       updateStatus('已清空資料。');
     });
 
     shiftSelect.addEventListener('change', () => {
       setShiftVisual();
-      if (rawRows.length && dateInput.value) processRows();
+      if (allEligibleRows.length && dateInput.value) processRows();
+      else renderSpecialFocusPanel();
     });
 
     dateInput.addEventListener('change', () => {
       setShiftVisual();
-      if (rawRows.length) processRows();
+      if (allEligibleRows.length) processRows();
+      else renderSpecialFocusPanel();
     });
 
 
@@ -886,15 +1193,21 @@
       updateStatus('正在讀取 Excel 檔案...');
       try {
         const rows = await readWorkbook(file);
-        rawRows = normalizeSourceRows(rows);
-        if (!rawRows.length) {
+        allEligibleRows = normalizeSourceRows(rows);
+        rawRows = buildMainSourceRows(allEligibleRows);
+        specialFocusRows = [];
+        renderSpecialFocusPanel();
+
+        if (!allEligibleRows.length) {
           filteredRows = [];
+          specialFocusRows = [];
           countFlights.textContent = '0';
           resultBody.innerHTML = '<tr><td colspan="5" style="padding: 26px 14px; color: var(--muted); text-align: center;">檔案已讀取，但沒有找到符合條件的 CI / AE、TPE / TSA 出發航班，或 ETD 欄位格式無法辨識。</td></tr>';
           updateStatus('檔案已讀取，但找不到可用的符合條件航班資料。', 'error');
           return;
         }
-        updateStatus(`檔案已載入。共讀到 ${rawRows.length} 筆符合固定條件的航班資料。請確認上班日期後可直接生成列表。`);
+
+        updateStatus(`檔案已載入。共讀到 ${allEligibleRows.length} 筆可用的 CI / AE 航班資料，其中 ${rawRows.length} 筆符合主表固定條件（TPE / TSA 出發）。請確認上班日期後可直接生成列表。`);
         if (dateInput.value) processRows();
       } catch (error) {
         console.error(error);
@@ -903,6 +1216,7 @@
     });
 
     setShiftVisual();
+    renderSpecialFocusPanel();
     renderPrintTemplate();
   </script>
 </body>
