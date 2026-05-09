@@ -476,6 +476,28 @@
       background: #eef6ff;
     }
 
+    .flight-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .handoff-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 233, 0.18);
+      background: rgba(224, 242, 254, 0.92);
+      color: #0c6a8b;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
     .time-chip {
       display: inline-flex;
       align-items: center;
@@ -610,8 +632,10 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="./motion-system.css" />
+  <script src="./motion-system.js" defer></script>
 </head>
-<body>
+<body data-motion-page="workbench">
   <div class="page">
     <section class="card">
       <div class="hero">
@@ -658,7 +682,7 @@
           </div>
           <div class="field">
             <label>篩選邏輯</label>
-              <div class="hint" style="padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.03); min-height:52px; display:flex; align-items:center;">只要上班日期 + 班別時段內有包含到松訓報到時間或 BOT報到時間 任一，即列出該航班。</div>
+              <div class="hint" style="padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.03); min-height:52px; display:flex; align-items:center;">只要上班日期 + 班別時段內有包含到松訓報到時間或 BOT報到時間 任一，即列出該航班，並額外補上現有排序中的交接下一班。</div>
             </div>
         </div>
 
@@ -684,7 +708,7 @@
         <div class="eyebrow">Generated Flight Sheet</div>
         <h1>值班航班列表</h1>
         <div class="subtitle">
-          列表判斷規則為：只要你選擇的 <strong>班別時段</strong> 內，<strong>松訓報到時間</strong> 或 <strong>BOT 報到時間</strong> 任一時間落入，即列入表格。
+          列表判斷規則為：只要你選擇的 <strong>班別時段</strong> 內，<strong>松訓報到時間</strong> 或 <strong>BOT 報到時間</strong> 任一時間落入，即列入表格，並額外補上排序中的 <strong>交接下一班</strong>。
         </div>
       </div>
       <div class="card-inner">
@@ -809,6 +833,17 @@
       return `${String(aln || '').trim()}${raw.replace(/\.0$/, '')}`;
     }
 
+    function buildFlightRowKey(row, index) {
+      return [
+        safeText(row.ALN_CD).toUpperCase(),
+        safeText(row.FLT_NR).replace(/\.0$/, ''),
+        safeText(row.LATEST_DEP_ARP_CD).toUpperCase(),
+        safeText(row.LATEST_ARV_ARP_CD).toUpperCase(),
+        row.__etdDate instanceof Date ? row.__etdDate.getTime() : '',
+        index
+      ].join('|');
+    }
+
     function updateStatus(message, tone = 'normal') {
       statusBar.textContent = message;
       statusBar.style.borderColor = tone === 'error' ? 'rgba(220,90,90,0.35)' : 'var(--line)';
@@ -871,7 +906,12 @@
 
       resultBody.innerHTML = filteredRows.map(row => `
         <tr>
-          <td><span class="badge">${row.flightNo}</span></td>
+          <td>
+            <div class="flight-cell">
+              <span class="badge">${row.flightNo}</span>
+              ${row.isHandoffNext ? '<span class="handoff-badge">交接下一班</span>' : ''}
+            </div>
+          </td>
           <td>${row.route}</td>
           <td><span class="time-chip">${row.songxun}</span></td>
           <td><span class="time-chip">${row.bot}</span></td>
@@ -943,6 +983,51 @@
       `).join('');
     }
 
+    function compareFlightRows(a, b) {
+      return a.__etdDate - b.__etdDate
+        || a.flightNo.localeCompare(b.flightNo)
+        || a.__rowKey.localeCompare(b.__rowKey);
+    }
+
+    function buildMainCandidateRows(rows) {
+      return rows
+        .map((row, index) => {
+          const etdDate = row.__etdDate;
+          const songxunDate = new Date(etdDate.getTime() - 140 * 60000);
+          const botDate = new Date(etdDate.getTime() - 90 * 60000);
+          return {
+            flightNo: naturalFlightNo(row.ALN_CD, row.FLT_NR),
+            route: formatRoute(row.LATEST_DEP_ARP_CD, row.LATEST_ARV_ARP_CD),
+            songxun: formatTime(songxunDate),
+            bot: formatTime(botDate),
+            etd: formatTime(etdDate),
+            __songxunDate: songxunDate,
+            __botDate: botDate,
+            __etdDate: etdDate,
+            __rowKey: buildFlightRowKey(row, index),
+            isHandoffNext: false
+          };
+        })
+        .sort(compareFlightRows);
+    }
+
+    function appendNextHandoffRow(rowsInWindow, allCandidateRows) {
+      if (!rowsInWindow.length) return rowsInWindow;
+
+      const existingKeys = new Set(rowsInWindow.map(row => row.__rowKey));
+      const lastIncludedRow = rowsInWindow[rowsInWindow.length - 1];
+      const lastIncludedIndex = allCandidateRows.findIndex(row => row.__rowKey === lastIncludedRow.__rowKey);
+      if (lastIncludedIndex === -1) return rowsInWindow;
+
+      for (let i = lastIncludedIndex + 1; i < allCandidateRows.length; i += 1) {
+        const candidate = allCandidateRows[i];
+        if (existingKeys.has(candidate.__rowKey)) continue;
+        return rowsInWindow.concat({ ...candidate, isHandoffNext: true });
+      }
+
+      return rowsInWindow;
+    }
+
     function renderPrintTemplate() {
       const windowObj = getDutyWindow();
       const shift = SHIFT_MAP[shiftSelect.value];
@@ -956,7 +1041,8 @@
             route: '無符合條件航班',
             songxun: '—',
             bot: '—',
-            etd: '—'
+            etd: '—',
+            isHandoffNext: false
           }];
 
       for (let i = 0; i < rows.length; i += chunkSize) {
@@ -978,7 +1064,7 @@
             <td style="${cellStyle} text-align:center;">${row.songxun} □GD</td>
             <td style="${cellStyle} text-align:center;">${row.bot} □點名</td>
             <td style="${cellStyle} text-align:center;">${row.etd}</td>
-            <td style="${cellStyle} text-align:left;">&nbsp;</td>
+            <td style="${cellStyle} text-align:left;">${row.isHandoffNext ? '交接下一班' : '&nbsp;'}</td>
           </tr>
         `}).join('');
 
@@ -989,7 +1075,7 @@
                 <div>
                   <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#5f7fa7; margin-bottom:4px;">Duty Flight Sheet</div>
                   <div style="font-size:18px; font-weight:800; line-height:1.1;">值班時段航班報到列表</div>
-                  <div style="margin-top:4px; font-size:10px; color:#597290; line-height:1.5;">CI / AE、TPE / TSA 出發，且松訓報到時間 / BOT報到時間包含在上班時段內</div>
+                  <div style="margin-top:4px; font-size:10px; color:#597290; line-height:1.5;">CI / AE、TPE / TSA 出發，且松訓報到時間 / BOT報到時間包含在上班時段內，另補交接下一班</div>
                 </div>
                 <div style="text-align:right; font-size:10px; color:#56708f; line-height:1.5; min-width:190px;">
                   <div><strong>上班日期</strong> ${dateInput.value || '--'}</div>
@@ -1061,25 +1147,11 @@
       }
 
       const windowObj = getDutyWindow();
+      const allCandidateRows = buildMainCandidateRows(rawRows);
+      const rowsInWindow = allCandidateRows
+        .filter(row => isWithinWindow(row.__songxunDate, windowObj) || isWithinWindow(row.__botDate, windowObj));
 
-      filteredRows = rawRows
-        .map(row => {
-          const etdDate = row.__etdDate;
-          const songxunDate = new Date(etdDate.getTime() - 140 * 60000);
-          const botDate = new Date(etdDate.getTime() - 90 * 60000);
-          return {
-            flightNo: naturalFlightNo(row.ALN_CD, row.FLT_NR),
-            route: formatRoute(row.LATEST_DEP_ARP_CD, row.LATEST_ARV_ARP_CD),
-            songxun: formatTime(songxunDate),
-            bot: formatTime(botDate),
-            etd: formatTime(etdDate),
-            __songxunDate: songxunDate,
-            __botDate: botDate,
-            __etdDate: etdDate
-          };
-        })
-        .filter(row => isWithinWindow(row.__songxunDate, windowObj) || isWithinWindow(row.__botDate, windowObj))
-        .sort((a, b) => a.__etdDate - b.__etdDate);
+      filteredRows = appendNextHandoffRow(rowsInWindow, allCandidateRows);
 
       specialFocusRows = buildSpecialFocusRows(dateInput.value);
       countFlights.textContent = String(filteredRows.length);
@@ -1092,8 +1164,12 @@
       const specialFocusMessage = specialFocusConfig
         ? ` 另已同步整理 ${specialFocusConfig.title} ${specialFocusRows.length} 班。`
         : '';
+      const handoffRow = filteredRows.find(row => row.isHandoffNext);
+      const handoffMessage = handoffRow
+        ? ` 已額外補上交接下一班 ${handoffRow.flightNo}（ETD ${handoffRow.etd}）。`
+        : '';
 
-      updateStatus(`已完成整理。共 ${filteredRows.length} 班符合條件。篩選條件為 CI / AE、TPE / TSA 出發，且上班日期 ${dateInput.value} 的 ${windowObj.shift.label} 值班區間內有包含松訓報到時間或 BOT報到時間 任一。${specialFocusMessage}`);
+      updateStatus(`已完成整理。共 ${filteredRows.length} 班列入清單。篩選條件為 CI / AE、TPE / TSA 出發，且上班日期 ${dateInput.value} 的 ${windowObj.shift.label} 值班區間內有包含松訓報到時間或 BOT報到時間 任一，並在原名單後補上現有排序中的交接下一班。${handoffMessage}${specialFocusMessage}`);
     }
 
     async function readWorkbook(file) {
