@@ -647,7 +647,7 @@
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-3">
-                    <button onclick="calculateFDPDeadline()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">確認並生成 FDP 底線</button>
+                    <button onclick="calculateFDPDeadline()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">確認並生成 FDP 底線</button>
                     <button onclick="resetFDP()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">清除</button>
                   </div>
                 </div>
@@ -698,7 +698,7 @@
                   </div>
 
                   <div class="flex flex-wrap gap-3">
-                    <button onclick="generateFDPMessage()" class="rounded-2xl bg-cyan-600 text-white px-5 py-3 font-medium hover:bg-cyan-700 transition">手動更新電報</button>
+                    <button onclick="generateFDPMessage()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">手動更新電報</button>
                     <button onclick="copyFDPMessage()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">複製電報</button>
                   </div>
 
@@ -810,7 +810,7 @@
               </div>
 
               <div class="flex flex-wrap gap-3">
-                <button onclick="calculateSplitDuty()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">確認並生成中斷工時計算結果</button>
+                <button onclick="calculateSplitDuty()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">確認並生成中斷工時計算結果</button>
                 <button onclick="resetSplitDuty()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">清除</button>
               </div>
             </div>
@@ -860,7 +860,7 @@
                   </div>
 
                   <div class="flex flex-wrap gap-3">
-                    <button onclick="generateSplitDutyMessage()" class="rounded-2xl bg-cyan-600 text-white px-5 py-3 font-medium hover:bg-cyan-700 transition">產生電報</button>
+                    <button onclick="generateSplitDutyMessage()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">產生電報</button>
                     <button onclick="copySplitDutyMessage()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">複製電報</button>
                   </div>
 
@@ -990,7 +990,7 @@
               </div>
 
               <div class="flex flex-wrap gap-3">
-                <button onclick="calculateExtensionDuty()" class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-medium hover:bg-sky-700 transition">計算延長工時</button>
+                <button onclick="calculateExtensionDuty()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">計算延長工時</button>
                 <button onclick="resetExtensionDuty()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">清除</button>
               </div>
             </div>
@@ -1040,7 +1040,7 @@
                   </div>
 
                   <div class="flex flex-wrap gap-3">
-                    <button onclick="generateExtensionDutyMessage()" class="rounded-2xl bg-cyan-600 text-white px-5 py-3 font-medium hover:bg-cyan-700 transition">產生電報</button>
+                    <button onclick="generateExtensionDutyMessage()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">產生電報</button>
                     <button onclick="copyExtensionDutyMessage()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">複製電報</button>
                   </div>
 
@@ -1110,7 +1110,7 @@
         const tab = document.getElementById(id);
         if (!tab) return;
         const isActive = activeViewId === viewId;
-        tab.classList.toggle('bg-sky-600', isActive);
+        tab.classList.toggle('bg-pink-600', isActive);
         tab.classList.toggle('border-sky-600', isActive);
         tab.classList.toggle('text-white', isActive);
         tab.classList.toggle('shadow-lg', isActive);
@@ -1695,7 +1695,7 @@
 
           <div class="pt-1 border-t border-slate-200">
             <div class="text-sm text-slate-500 mb-2">FDP 底線</div>
-            <div class="rounded-2xl bg-sky-600 text-white px-5 py-4 shadow-lg">
+            <div class="rounded-2xl bg-pink-600 text-white px-5 py-4 shadow-lg">
               <div class="text-sm text-sky-100">最晚 Block In</div>
               <div class="text-2xl font-bold mt-1">${formatDateTimeUTC(deadline)} <span class="text-cyan-100 text-lg font-semibold">${dayOffsetLabel}</span></div>
             </div>
@@ -1882,7 +1882,7 @@
 
           <div class="pt-1 border-t border-slate-200">
             <div class="text-sm text-slate-500 mb-2">新 FDP 底線</div>
-            <div class="rounded-2xl bg-sky-600 text-white px-5 py-4 shadow-lg">
+            <div class="rounded-2xl bg-pink-600 text-white px-5 py-4 shadow-lg">
               <div class="text-sm text-sky-100">新的最晚 Block In</div>
               <div class="text-2xl font-bold mt-1">${formatDateTimeUTC(newDeadline)} <span class="text-cyan-100 text-lg font-semibold">${getDayOffsetLabel(start, newDeadline)}</span></div>
             </div>
@@ -2155,7 +2155,7 @@
 
           <div class="pt-1 border-t border-slate-200">
             <div class="text-sm text-slate-500 mb-2">新 FDP 底線</div>
-            <div class="rounded-2xl bg-sky-600 text-white px-5 py-4 shadow-lg">
+            <div class="rounded-2xl bg-pink-600 text-white px-5 py-4 shadow-lg">
               <div class="text-sm text-sky-100">新的最晚 Block In</div>
               <div class="text-2xl font-bold mt-1">${formatDateTimeUTC(newDeadline)} <span class="text-cyan-100 text-lg font-semibold">${getDayOffsetLabel(start, newDeadline)}</span></div>
             </div>
