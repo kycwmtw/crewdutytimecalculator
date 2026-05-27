@@ -86,6 +86,21 @@
       overflow: auto;
     }
 
+    .retime-mode-panel {
+      display: none;
+    }
+
+    .retime-mode-panel.is-active {
+      display: block;
+    }
+
+    .retime-mode-button[aria-pressed="true"] {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #fff;
+      box-shadow: 0 18px 34px -24px rgba(14, 116, 144, 0.9);
+    }
+
     @media (min-width: 1280px) {
       .responsive-shell {
         max-width: min(1680px, calc(100vw - 48px));
@@ -120,7 +135,7 @@
             <p class="text-sky-700 text-sm tracking-[0.25em] uppercase">Function 5</p>
             <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">改時通知產生器</h1>
             <p class="text-slate-600 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
-              輸入航班號、日期與新的 ETD，快速產生改時通知內容。
+              貼上改時電報自動解析，或手動輸入航班號、日期與新的 ETD，快速產生改時通知內容。
             </p>
           </div>
           <a href="./index.html" class="shrink-0 rounded-2xl bg-white/70 text-sky-900 px-5 py-3 font-medium border border-sky-100 hover:bg-white/90 transition shadow-lg backdrop-blur-md">
@@ -134,10 +149,32 @@
       <section class="bg-white/85 backdrop-blur-xl rounded-[32px] shadow-[0_28px_80px_-44px_rgba(59,130,246,0.22)] border border-white/80 overflow-hidden">
         <div class="px-6 md:px-7 py-5 md:py-6 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.82))]">
           <h2 class="text-xl font-bold">輸入重要資訊</h2>
-          <p class="text-slate-500 mt-1">請輸入航班號、航班日期與新的 ETD（Local Time）。</p>
+          <p class="text-slate-500 mt-1">可貼上改時電報自動產生，或自行輸入航班資訊。</p>
         </div>
         <div class="p-5 md:p-6 lg:p-7">
-          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
+          <div class="mb-5 grid grid-cols-2 gap-2 rounded-3xl border border-slate-200 bg-white p-2">
+            <button id="reTimeTelegramModeBtn" type="button" onclick="setReTimeMode('telegram')" aria-pressed="true" class="retime-mode-button rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-sky-50">
+              貼上改時電報
+            </button>
+            <button id="reTimeManualModeBtn" type="button" onclick="setReTimeMode('manual')" aria-pressed="false" class="retime-mode-button rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-sky-50">
+              自行輸入
+            </button>
+          </div>
+
+          <div id="reTimeTelegramPanel" class="retime-mode-panel is-active rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
+            <div>
+              <label class="block text-sm font-medium mb-2">改時電報內容</label>
+              <textarea id="reTimeTelegramText" rows="12" placeholder="請貼上 ASM 或 MVT 改時電報內容" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono text-sm leading-relaxed"></textarea>
+              <div id="reTimeTelegramStatus" class="mt-2 text-sm text-slate-500">支援 ASM 與 MVT 兩種格式，電報時間會以 UTC 解析並自動換算為台北時間。</div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+              <button onclick="parseReTimeTelegram()" class="rounded-2xl bg-pink-600 text-white px-5 py-3 font-medium hover:bg-pink-700 transition">解析電報並產生通知</button>
+              <button onclick="clearReTimeTelegram()" class="rounded-2xl bg-sky-50 text-sky-900 border border-sky-200 px-5 py-3 font-medium hover:bg-sky-100 transition">清除電報</button>
+            </div>
+          </div>
+
+          <div id="reTimeManualPanel" class="retime-mode-panel rounded-3xl border border-slate-200 bg-slate-50 p-5 space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div>
                 <label class="block text-sm font-medium mb-2">航班號</label>
@@ -220,6 +257,55 @@
       return `${hours}${minutes}`;
     }
 
+    function reTimeFormatInputDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getReTimeBaseMonthDate(day) {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), Number(day));
+    }
+
+    function getReTimeTaipeiDateFromUtc(day, hour, minute) {
+      const utcBase = getReTimeBaseMonthDate(day);
+      return new Date(utcBase.getFullYear(), utcBase.getMonth(), Number(day), Number(hour) + 8, Number(minute));
+    }
+
+    function setReTimeMode(mode) {
+      const telegramPanel = document.getElementById('reTimeTelegramPanel');
+      const manualPanel = document.getElementById('reTimeManualPanel');
+      const telegramBtn = document.getElementById('reTimeTelegramModeBtn');
+      const manualBtn = document.getElementById('reTimeManualModeBtn');
+      const isTelegram = mode === 'telegram';
+
+      telegramPanel.classList.toggle('is-active', isTelegram);
+      manualPanel.classList.toggle('is-active', !isTelegram);
+      telegramBtn.setAttribute('aria-pressed', String(isTelegram));
+      manualBtn.setAttribute('aria-pressed', String(!isTelegram));
+    }
+
+    function ensureReTimeMinuteOption(minute) {
+      const minuteSelect = document.getElementById('reTimeEtdMinute');
+      if (!minuteSelect.querySelector(`option[value="${minute}"]`)) {
+        const option = document.createElement('option');
+        option.value = minute;
+        option.textContent = minute;
+        minuteSelect.appendChild(option);
+      }
+    }
+
+    function populateReTimeMinuteOptions() {
+      const minuteSelect = document.getElementById('reTimeEtdMinute');
+      minuteSelect.innerHTML = '';
+      for (let minute = 0; minute < 60; minute += 1) {
+        const value = String(minute).padStart(2, '0');
+        minuteSelect.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
+      }
+    }
+
     function normalizeReTimeFlightNo(raw) {
       const cleaned = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       const digits = cleaned.replace(/^CI/, '').replace(/\D/g, '');
@@ -281,6 +367,98 @@
           <div class="text-slate-500">以上僅供參考，不影響實際輸入與通知產出。</div>
         </div>
       `;
+    }
+
+    function parseReTimeTelegramText(rawText) {
+      const text = String(rawText || '').toUpperCase();
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const flightLineIndex = lines.findIndex(line => /\bCI\s*\d{1,4}\/\d{1,2}(?:\b|[.\s])/.test(line));
+
+      if (flightLineIndex === -1) {
+        return { error: '找不到航班編號與日期，請確認電報內有類似 CI5162/27 或 CI073/24 的內容。' };
+      }
+
+      const flightMatch = lines[flightLineIndex].match(/\bCI\s*(\d{1,4})\/(\d{1,2})(?:\b|[.\s])/);
+      const flightDigits = flightMatch[1];
+      const flightDay = flightMatch[2].padStart(2, '0');
+
+      const edLine = lines.find(line => /\bED\d{6}\b/.test(line));
+      if (edLine) {
+        const edMatch = edLine.match(/\bED(\d{2})(\d{2})(\d{2})\b/);
+        return {
+          type: 'MVT',
+          flightDigits,
+          flightDay,
+          etdDay: edMatch[1],
+          etdHour: edMatch[2],
+          etdMinute: edMatch[3],
+          utcToken: `ED${edMatch[1]}${edMatch[2]}${edMatch[3]}`
+        };
+      }
+
+      if (lines.includes('ASM') || lines.some(line => line.startsWith('TIM'))) {
+        for (let index = flightLineIndex + 1; index < Math.min(lines.length, flightLineIndex + 5); index += 1) {
+          const routeMatch = lines[index].match(/\b([A-Z]{3})(\d{4}|\d{6})\b/);
+          if (!routeMatch) continue;
+
+          const timePart = routeMatch[2];
+          const hasDayInEtd = timePart.length === 6;
+          return {
+            type: 'ASM',
+            flightDigits,
+            flightDay,
+            departureStation: routeMatch[1],
+            etdDay: hasDayInEtd ? timePart.slice(0, 2) : flightDay,
+            etdHour: hasDayInEtd ? timePart.slice(2, 4) : timePart.slice(0, 2),
+            etdMinute: hasDayInEtd ? timePart.slice(4, 6) : timePart.slice(2, 4),
+            utcToken: `${routeMatch[1]}${timePart}`
+          };
+        }
+      }
+
+      return { error: '已找到航班資料，但找不到新的 ETD。ASM 請確認有 TPE0900 或 TPE280800；MVT 請確認有 ED241455。' };
+    }
+
+    function applyReTimeParsedTelegram(parsed) {
+      const flightDate = getReTimeBaseMonthDate(parsed.flightDay);
+      const localEtdDate = getReTimeTaipeiDateFromUtc(parsed.etdDay, parsed.etdHour, parsed.etdMinute);
+      const monthLabel = reTimeFormatDDMON(flightDate).replace(/^\d{2}/, '');
+
+      document.getElementById('reTimeFlightNo').value = parsed.flightDigits;
+      document.getElementById('reTimeFlightDate').value = reTimeFormatInputDate(flightDate);
+      document.getElementById('reTimeEtdDate').value = reTimeFormatInputDate(localEtdDate);
+      document.getElementById('reTimeEtdHour').value = String(localEtdDate.getHours()).padStart(2, '0');
+      ensureReTimeMinuteOption(String(localEtdDate.getMinutes()).padStart(2, '0'));
+      document.getElementById('reTimeEtdMinute').value = String(localEtdDate.getMinutes()).padStart(2, '0');
+      renderReTimeFlightLookupStatus();
+      calculateReTimeNotice();
+
+      const utcDayMonth = `${parsed.etdDay}${monthLabel}`;
+      const utcTime = `${parsed.etdHour}${parsed.etdMinute}Z/${utcDayMonth}`;
+      const localTime = `${reTimeFormatHHMM(localEtdDate)}L/${reTimeFormatDDMON(localEtdDate)}`;
+      document.getElementById('reTimeTelegramStatus').innerHTML = `
+        <span class="text-cyan-700 font-medium">已解析 ${parsed.type} 電報：CI${parsed.flightDigits}/${parsed.flightDay}${monthLabel}</span>
+        <div class="mt-1 text-slate-500">UTC ETD ${utcTime} 已換算為台北時間 ${localTime}。</div>
+      `;
+    }
+
+    function parseReTimeTelegram() {
+      const telegramText = document.getElementById('reTimeTelegramText').value;
+      const status = document.getElementById('reTimeTelegramStatus');
+      const parsed = parseReTimeTelegramText(telegramText);
+
+      if (parsed.error) {
+        status.innerHTML = `<span class="text-sky-700">${parsed.error}</span>`;
+        return;
+      }
+
+      applyReTimeParsedTelegram(parsed);
+    }
+
+    function clearReTimeTelegram() {
+      document.getElementById('reTimeTelegramText').value = '';
+      document.getElementById('reTimeTelegramStatus').textContent = '支援 ASM 與 MVT 兩種格式，電報時間會以 UTC 解析並自動換算為台北時間。';
+      resetReTime();
     }
 
     function calculateReTimeNotice() {
@@ -380,10 +558,15 @@
       delete noticeEl.dataset.ready;
       const existing = document.querySelector('.reTimeCopyStatus');
       if (existing) existing.remove();
+      const status = document.getElementById('reTimeTelegramStatus');
+      if (status && !document.getElementById('reTimeTelegramText').value.trim()) {
+        status.textContent = '支援 ASM 與 MVT 兩種格式，電報時間會以 UTC 解析並自動換算為台北時間。';
+      }
       renderReTimeFlightLookupStatus();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+      populateReTimeMinuteOptions();
       document.getElementById('reTimeFlightNo').addEventListener('input', renderReTimeFlightLookupStatus);
       resetReTime();
     });
