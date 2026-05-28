@@ -235,7 +235,7 @@
             <div class="grid gap-3">
               <div class="rounded-2xl border border-sky-200 bg-sky-50/80 p-4">
                 <div class="font-bold text-sky-900">夜間加成</div>
-                <div class="mt-1">代碼 003。M/M- 為 0.5 小時，N/B 為 8 小時，N-/B- 為 2 小時，N+/B+ 為 6 小時。</div>
+                <div class="mt-1">代碼 3。M/M- 為 0.5 小時，N/B 為 8 小時，N-/B- 為 2 小時，N+/B+ 為 6 小時。</div>
               </div>
               <div class="rounded-2xl border border-orange-200 bg-orange-50/80 p-4">
                 <div class="font-bold text-orange-900">夜點費</div>
@@ -290,16 +290,14 @@
             <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-sky-50/70 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 class="text-lg font-bold text-sky-950">加班加成明細</h3>
-                <p class="text-sm text-sky-800/80">貼上欄位：日期、代碼、加班小時。</p>
+                <p class="text-sm text-sky-800/80">貼上格式：日期、代碼、加班小時。</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button type="button" data-copy-target="overtimeTsv" class="copy-btn rounded-xl bg-sky-600 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-700 transition">複製 TSV</button>
-                <button type="button" data-copy-target="overtimeList" class="copy-btn rounded-xl bg-white text-sky-900 border border-sky-200 px-4 py-2 text-sm font-semibold hover:bg-sky-50 transition">複製清單</button>
+                <button type="button" data-copy-target="overtimeTsv" class="copy-btn rounded-xl bg-sky-600 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-700 transition">複製格式</button>
               </div>
             </div>
             <div class="p-5 md:p-6">
               <textarea id="overtimeTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
-              <pre id="overtimeList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
             </div>
           </section>
 
@@ -311,12 +309,10 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 <button type="button" data-copy-target="mealTsv" class="copy-btn rounded-xl bg-orange-600 text-white px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition">複製格式</button>
-                <button type="button" data-copy-target="mealList" class="copy-btn rounded-xl bg-white text-orange-900 border border-orange-200 px-4 py-2 text-sm font-semibold hover:bg-orange-50 transition">複製清單</button>
               </div>
             </div>
             <div class="p-5 md:p-6">
               <textarea id="mealTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
-              <pre id="mealList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
             </div>
           </section>
 
@@ -328,12 +324,10 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 <button type="button" data-copy-target="taxiTsv" class="copy-btn rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">複製格式</button>
-                <button type="button" data-copy-target="taxiList" class="copy-btn rounded-xl bg-white text-emerald-900 border border-emerald-200 px-4 py-2 text-sm font-semibold hover:bg-emerald-50 transition">複製清單</button>
               </div>
             </div>
             <div class="p-5 md:p-6">
               <textarea id="taxiTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
-              <pre id="taxiList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
             </div>
           </section>
         </div>
@@ -403,9 +397,9 @@
     const copyAllBtn = document.getElementById('copyAllBtn');
 
     const outputIds = [
-      'overtimeTsv', 'overtimeList',
-      'mealTsv', 'mealList',
-      'taxiTsv', 'taxiList'
+      'overtimeTsv',
+      'mealTsv',
+      'taxiTsv'
     ];
 
     function normalizeText(value) {
@@ -660,7 +654,7 @@
           overtimeRows.push({
             day: scheduleRow.day,
             dateLabel: formatDateLabel(scheduleRow.day),
-            code: '003',
+            code: '3',
             hours: nightHours,
             source: nightSources.join(' + ')
           });
@@ -700,8 +694,9 @@
         ...taxiRows.map(row => row.day)
       ]).size;
 
-      const overtimeTsvLines = [['日期', '代碼', '加班小時'].join('\t')]
-        .concat(overtimeRows.map(row => [row.dateLabel, row.code, formatHours(row.hours)].join('\t')));
+      const overtimeFormat = overtimeRows.length
+        ? overtimeRows.map(row => [row.day, row.code, formatHours(row.hours)].join('\t')).join('\n')
+        : `${claimPersonName} ${formatClaimMonth()} 沒有夜間加成可申報。`;
       const mMealDates = mealRows
         .filter(row => row.mealGroup === 'M')
         .map(row => row.day);
@@ -772,7 +767,7 @@
         mealTotal,
         taxiTotal,
         claimDateCount,
-        overtimeTsv: overtimeTsvLines.join('\n'),
+        overtimeTsv: overtimeFormat,
         mealTsv: mealRows.length ? mealClaimFormat : `${claimPersonName}\nＭ班日期：無\nＮＢ班日期：無`,
         taxiTsv: taxiClaimFormat,
         overtimeList,
@@ -802,9 +797,6 @@
       document.getElementById('overtimeTsv').value = currentResult.overtimeTsv;
       document.getElementById('mealTsv').value = currentResult.mealTsv;
       document.getElementById('taxiTsv').value = currentResult.taxiTsv;
-      document.getElementById('overtimeList').textContent = currentResult.overtimeList;
-      document.getElementById('mealList').textContent = currentResult.mealList;
-      document.getElementById('taxiList').textContent = currentResult.taxiList;
       copyAllBtn.disabled = false;
 
       renderPreview(currentResult);
