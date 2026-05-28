@@ -235,15 +235,19 @@
             <div class="grid gap-3">
               <div class="rounded-2xl border border-sky-200 bg-sky-50/80 p-4">
                 <div class="font-bold text-sky-900">夜間加成</div>
-                <div class="mt-1">代碼 3。M/M- 為 0.5 小時，N/B 為 8 小時，N-/B- 為 2 小時，N+/B+ 為 6 小時。</div>
+                <div class="mt-1">代碼 3。M/M- 為 0.5 小時，N/B 為 8 小時。當月 1 號若為 N+/N 或 B+/B，只取斜線後的當月班別；當月最後一天若為 N-/B-，視為完整 N/B。</div>
               </div>
               <div class="rounded-2xl border border-orange-200 bg-orange-50/80 p-4">
                 <div class="font-bold text-orange-900">夜點費</div>
-                <div class="mt-1">M/M-/N-/B- 為 70 元，N/B/N+/B+ 為 110 元。</div>
+                <div class="mt-1">M/M- 為 70 元，N/B 為 110 元。月初斜線班與月底 N-/B- 依當月實際班別判斷。</div>
               </div>
               <div class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
                 <div class="font-bold text-emerald-900">交通費</div>
                 <div class="mt-1">依目前簡化規則，只有 M/M- 列入，每次 240 元。</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <div class="font-bold text-slate-900">休假代碼</div>
+                <div class="mt-1">R、Z、AL、SL、FL，以及補加數字如補2、補6，皆視為休假，不列入申報。</div>
               </div>
             </div>
           </div>
@@ -537,6 +541,22 @@
         .filter(Boolean);
     }
 
+    function resolveShiftTokens(cellValue, day, lastDay) {
+      const rawText = normalizeText(cellValue);
+      if (!rawText) return [];
+
+      if (day === 1 && rawText.includes('/')) {
+        const currentMonthPart = rawText.split('/').pop();
+        return splitShiftTokens(currentMonthPart);
+      }
+
+      return splitShiftTokens(rawText).map(token => {
+        if (day === lastDay && token === 'N-') return 'N';
+        if (day === lastDay && token === 'B-') return 'B';
+        return token;
+      });
+    }
+
     function parseTimeValue(value) {
       const text = normalizeShiftToken(value).replace(':', '');
       if (!/^\d{3,4}$/.test(text)) return null;
@@ -604,10 +624,11 @@
       const mealRows = [];
       const taxiRows = [];
       const ignoredCounts = new Map();
+      const lastDay = workbookState.scheduleRows.reduce((maxDay, row) => Math.max(maxDay, row.day), 0);
 
       for (const scheduleRow of workbookState.scheduleRows) {
         const rawCode = normalizeText(scheduleRow.row[personColIndex]);
-        const tokens = splitShiftTokens(rawCode);
+        const tokens = resolveShiftTokens(rawCode, scheduleRow.day, lastDay);
         let nightHours = 0;
         const nightSources = [];
         const mealClaims = [];
