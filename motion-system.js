@@ -120,6 +120,14 @@
       success: ['#statusBar', '#resultBody', '#specialFocusList'],
       rowStagger: ['#resultBody', '#specialFocusList']
     },
+    'duty_claims.html': {
+      surfaces: ['.panel', '.output-panel', '.summary-tile', '#dropzone'],
+      magnetic: ['button', 'a[href="./index.html"]'],
+      reveal: ['header > div', '.panel', '.output-panel', '.summary-tile'],
+      count: ['#nightHoursTotal', '#mealTotal', '#taxiTotal', '#claimDateCount'],
+      success: ['#parseStatus', '#previewBody', '#ignoredSummary'],
+      rowStagger: ['#previewBody']
+    },
     'telex.html': {
       surfaces: ['.panel', '.stat', '.table-wrap', '.result-panel'],
       magnetic: ['button:not([data-action="toggle-handled"])', '.btn-back'],

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>值班申報整理工具</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./motion-system.css" />
+  <style>
+    :root {
+      color-scheme: light;
+      --surface: rgba(255, 255, 255, 0.86);
+      --surface-strong: rgba(255, 255, 255, 0.96);
+      --line: rgba(148, 163, 184, 0.22);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --sky: #0284c7;
+      --rose: #be123c;
+      --emerald: #047857;
+      --amber: #b45309;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(186, 230, 253, 0.3), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(254, 205, 211, 0.28), transparent 24%),
+        radial-gradient(circle at 72% 86%, rgba(167, 243, 208, 0.22), transparent 24%),
+        linear-gradient(180deg, #f8fbff 0%, #eef6fb 48%, #f8fafc 100%);
+      color: var(--text-main);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 22rem;
+      height: 22rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.24;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -9rem;
+      left: -7rem;
+      background: rgba(56, 189, 248, 0.22);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(251, 113, 133, 0.2);
+    }
+
+    body > div {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::selection {
+      background: rgba(14, 165, 233, 0.18);
+      color: #0f172a;
+    }
+
+    .responsive-shell {
+      width: 100%;
+      max-width: min(1680px, calc(100vw - 24px));
+      margin: 0 auto;
+    }
+
+    .hero-card,
+    .panel,
+    .output-panel,
+    .summary-tile {
+      box-shadow: 0 28px 80px -46px rgba(15, 23, 42, 0.38);
+    }
+
+    .claims-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .result-textarea {
+      min-height: 190px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      line-height: 1.65;
+    }
+
+    .preview-table-wrap {
+      max-height: clamp(280px, 44vh, 560px);
+      overflow: auto;
+    }
+
+    .preview-table {
+      min-width: 760px;
+    }
+
+    .preview-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .code-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(248, 250, 252, 0.92);
+      padding: 0.25rem 0.625rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .claim-chip {
+      display: inline-flex;
+      border-radius: 9999px;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .claim-chip--night { background: #e0f2fe; color: #075985; }
+    .claim-chip--meal { background: #fff7ed; color: #9a3412; }
+    .claim-chip--taxi { background: #dcfce7; color: #166534; }
+
+    .dropzone.dragover {
+      border-color: #38bdf8;
+      background: rgba(224, 242, 254, 0.78);
+      transform: translateY(-1px);
+    }
+
+    @media (min-width: 1280px) {
+      .responsive-shell {
+        max-width: min(1680px, calc(100vw - 48px));
+      }
+
+      .claims-layout {
+        grid-template-columns: minmax(360px, 0.72fr) minmax(0, 1.28fr);
+      }
+
+      .claims-sidebar {
+        position: sticky;
+        top: 24px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      body::before,
+      body::after {
+        width: 16rem;
+        height: 16rem;
+      }
+
+      .hero-card {
+        border-radius: 28px;
+        padding: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased" data-motion-page="workbench">
+  <div class="responsive-shell px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10">
+    <header class="mb-8 md:mb-10">
+      <div class="hero-card relative overflow-hidden rounded-[32px] border border-sky-200/90 bg-[linear-gradient(135deg,#f8fcff_0%,#e0f2fe_52%,#fff1f2_100%)] text-slate-900 p-6 md:p-8 lg:p-10">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-4xl">
+            <p class="text-sky-700 text-sm tracking-[0.25em] uppercase">Duty Claims</p>
+            <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">值班申報整理工具</h1>
+            <p class="text-slate-600 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
+              上傳當月值班班表，選擇同仁後，自動整理夜間加成、夜點費與交通費申報內容。
+            </p>
+          </div>
+          <a href="./index.html" class="shrink-0 rounded-2xl bg-white/75 text-sky-900 px-5 py-3 font-medium border border-sky-100 hover:bg-white transition shadow-lg backdrop-blur-md text-center">
+            返回首頁
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="claims-layout">
+      <section class="claims-sidebar grid gap-5">
+        <div class="panel bg-white/85 backdrop-blur-xl rounded-[32px] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">1. 上傳班表</h2>
+            <p class="text-sm text-slate-500 mt-1">支援橫式月曆班表：左側日期、上方姓名、格內班別。</p>
+          </div>
+          <div class="p-5 md:p-6 space-y-5">
+            <div id="dropzone" class="dropzone border-2 border-dashed border-sky-300 rounded-2xl p-6 text-center bg-sky-50/70 transition duration-200">
+              <p class="text-slate-700 mb-4">拖曳 Excel 檔到這裡，或選擇班表檔案</p>
+              <label for="fileInput" class="inline-block cursor-pointer rounded-2xl bg-rose-600 text-white px-5 py-3 font-semibold hover:bg-rose-700 transition">選擇 Excel 檔案</label>
+              <input id="fileInput" type="file" accept=".xls,.xlsx" class="hidden" />
+              <div id="fileStatus" class="mt-4 text-sm text-slate-500">尚未選擇檔案。</div>
+            </div>
+
+            <div>
+              <label for="personSelect" class="block text-sm font-semibold text-slate-700 mb-2">選擇同仁</label>
+              <select id="personSelect" disabled class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 disabled:opacity-60">
+                <option value="">請先上傳班表</option>
+              </select>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-sm text-slate-500">解析狀態</div>
+              <div id="parseStatus" class="mt-2 text-sm leading-7 text-slate-700">等待上傳班表。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel bg-white/85 backdrop-blur-xl rounded-[32px] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">申報規則</h2>
+          </div>
+          <div class="p-5 md:p-6 text-sm leading-7 text-slate-700">
+            <div class="grid gap-3">
+              <div class="rounded-2xl border border-sky-200 bg-sky-50/80 p-4">
+                <div class="font-bold text-sky-900">夜間加成</div>
+                <div class="mt-1">代碼 003。M/M- 為 0.5 小時，N/B 為 8 小時，N-/B- 為 2 小時，N+/B+ 為 6 小時。</div>
+              </div>
+              <div class="rounded-2xl border border-orange-200 bg-orange-50/80 p-4">
+                <div class="font-bold text-orange-900">夜點費</div>
+                <div class="mt-1">M/M-/N-/B- 為 70 元，N/B/N+/B+ 為 110 元。</div>
+              </div>
+              <div class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+                <div class="font-bold text-emerald-900">交通費</div>
+                <div class="mt-1">依目前簡化規則，只有 M/M- 列入，每次 240 元。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-5 min-w-0">
+        <div class="panel bg-white/85 backdrop-blur-xl rounded-[32px] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))]">
+            <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-xl font-bold">2. 申報摘要</h2>
+                <p id="selectedSummary" class="text-sm text-slate-500 mt-1">請先上傳班表並選擇同仁。</p>
+              </div>
+              <button id="copyAllBtn" type="button" disabled class="rounded-2xl bg-sky-600 text-white px-5 py-3 font-semibold hover:bg-sky-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                複製全部核對清單
+              </button>
+            </div>
+          </div>
+          <div class="p-5 md:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="summary-tile rounded-2xl border border-sky-200 bg-sky-50/80 p-4">
+                <div class="text-sm text-sky-700">夜間加成總時數</div>
+                <div id="nightHoursTotal" class="mt-2 text-3xl font-extrabold text-sky-900">0</div>
+              </div>
+              <div class="summary-tile rounded-2xl border border-orange-200 bg-orange-50/80 p-4">
+                <div class="text-sm text-orange-700">夜點費合計</div>
+                <div id="mealTotal" class="mt-2 text-3xl font-extrabold text-orange-900">0</div>
+              </div>
+              <div class="summary-tile rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+                <div class="text-sm text-emerald-700">交通費合計</div>
+                <div id="taxiTotal" class="mt-2 text-3xl font-extrabold text-emerald-900">0</div>
+              </div>
+              <div class="summary-tile rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-sm text-slate-500">申報日期筆數</div>
+                <div id="claimDateCount" class="mt-2 text-3xl font-extrabold text-slate-900">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="output-grid">
+          <section class="output-panel bg-white/85 backdrop-blur-xl rounded-[28px] border border-white/80 overflow-hidden">
+            <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-sky-50/70 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-sky-950">加班加成明細</h3>
+                <p class="text-sm text-sky-800/80">貼上欄位：日期、代碼、加班小時。</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" data-copy-target="overtimeTsv" class="copy-btn rounded-xl bg-sky-600 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-700 transition">複製 TSV</button>
+                <button type="button" data-copy-target="overtimeList" class="copy-btn rounded-xl bg-white text-sky-900 border border-sky-200 px-4 py-2 text-sm font-semibold hover:bg-sky-50 transition">複製清單</button>
+              </div>
+            </div>
+            <div class="p-5 md:p-6">
+              <textarea id="overtimeTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
+              <pre id="overtimeList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
+            </div>
+          </section>
+
+          <section class="output-panel bg-white/85 backdrop-blur-xl rounded-[28px] border border-white/80 overflow-hidden">
+            <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-orange-50/80 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-orange-950">夜點費申報</h3>
+                <p class="text-sm text-orange-800/80">貼上欄位：姓名、日期、班別、金額。</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" data-copy-target="mealTsv" class="copy-btn rounded-xl bg-orange-600 text-white px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition">複製 TSV</button>
+                <button type="button" data-copy-target="mealList" class="copy-btn rounded-xl bg-white text-orange-900 border border-orange-200 px-4 py-2 text-sm font-semibold hover:bg-orange-50 transition">複製清單</button>
+              </div>
+            </div>
+            <div class="p-5 md:p-6">
+              <textarea id="mealTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
+              <pre id="mealList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
+            </div>
+          </section>
+
+          <section class="output-panel bg-white/85 backdrop-blur-xl rounded-[28px] border border-white/80 overflow-hidden">
+            <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-emerald-50/80 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-emerald-950">交通費申報</h3>
+                <p class="text-sm text-emerald-800/80">貼上欄位：姓名、日期、班別、金額。</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" data-copy-target="taxiTsv" class="copy-btn rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">複製 TSV</button>
+                <button type="button" data-copy-target="taxiList" class="copy-btn rounded-xl bg-white text-emerald-900 border border-emerald-200 px-4 py-2 text-sm font-semibold hover:bg-emerald-50 transition">複製清單</button>
+              </div>
+            </div>
+            <div class="p-5 md:p-6">
+              <textarea id="taxiTsv" readonly class="result-textarea w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">請先上傳班表並選擇同仁。</textarea>
+              <pre id="taxiList" class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap">請先上傳班表並選擇同仁。</pre>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel bg-white/85 backdrop-blur-xl rounded-[32px] border border-white/80 overflow-hidden">
+          <div class="px-6 md:px-7 py-5 border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))]">
+            <h2 class="text-xl font-bold">3. 班表核對</h2>
+            <p class="text-sm text-slate-500 mt-1">只列出選定同仁當月原始班別與系統判斷，方便回頭檢查。</p>
+          </div>
+          <div class="p-5 md:p-6">
+            <div id="ignoredSummary" class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">尚未產生摘要。</div>
+            <div class="preview-table-wrap rounded-2xl border border-slate-200 bg-white">
+              <table class="preview-table w-full border-collapse text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="px-4 py-3 text-left font-semibold border-b border-slate-200">日期</th>
+                    <th class="px-4 py-3 text-left font-semibold border-b border-slate-200">星期</th>
+                    <th class="px-4 py-3 text-left font-semibold border-b border-slate-200">原始班別</th>
+                    <th class="px-4 py-3 text-left font-semibold border-b border-slate-200">申報判斷</th>
+                  </tr>
+                </thead>
+                <tbody id="previewBody">
+                  <tr>
+                    <td colspan="4" class="px-4 py-8 text-center text-slate-500">請先上傳班表並選擇同仁。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const MONTH_NAME_MAP = {
+      JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+      JUL: 7, AUG: 8, SEP: 9, SEPT: 9, OCT: 10, NOV: 11, DEC: 12
+    };
+    const MONTH_CODE_MAP = {
+      1: 'JAN', 2: 'FEB', 3: 'MAR', 4: 'APR', 5: 'MAY', 6: 'JUN',
+      7: 'JUL', 8: 'AUG', 9: 'SEP', 10: 'OCT', 11: 'NOV', 12: 'DEC'
+    };
+
+    const CLAIM_RULES = {
+      M: { nightHours: 0.5, meal: 70, taxi: 240, label: 'M' },
+      'M-': { nightHours: 0.5, meal: 70, taxi: 240, label: 'M-' },
+      N: { nightHours: 8, meal: 110, taxi: 0, label: 'N' },
+      B: { nightHours: 8, meal: 110, taxi: 0, label: 'B' },
+      'N-': { nightHours: 2, meal: 70, taxi: 0, label: 'N-' },
+      'B-': { nightHours: 2, meal: 70, taxi: 0, label: 'B-' },
+      'N+': { nightHours: 6, meal: 110, taxi: 0, label: 'N+' },
+      'B+': { nightHours: 6, meal: 110, taxi: 0, label: 'B+' }
+    };
+
+    const IGNORED_EMPTY_TEXT = '沒有未申報或忽略代碼。';
+
+    let workbookState = null;
+    let currentResult = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const personSelect = document.getElementById('personSelect');
+    const fileStatus = document.getElementById('fileStatus');
+    const parseStatus = document.getElementById('parseStatus');
+    const selectedSummary = document.getElementById('selectedSummary');
+    const copyAllBtn = document.getElementById('copyAllBtn');
+
+    const outputIds = [
+      'overtimeTsv', 'overtimeList',
+      'mealTsv', 'mealList',
+      'taxiTsv', 'taxiList'
+    ];
+
+    function normalizeText(value) {
+      return String(value ?? '').replace(/\u3000/g, ' ').trim();
+    }
+
+    function normalizeShiftToken(value) {
+      return normalizeText(value)
+        .toUpperCase()
+        .replace(/＋/g, '+')
+        .replace(/[－–—]/g, '-')
+        .replace(/\s+/g, '');
+    }
+
+    function isStopHeader(value) {
+      const text = normalizeText(value).toUpperCase();
+      return !text || ['標準', '實際工時', 'NAME', '工時', '休假時數', '輪值工時'].some(item => text.includes(item));
+    }
+
+    function isLikelyName(value) {
+      const text = normalizeText(value);
+      if (!text) return false;
+      if (isStopHeader(text)) return false;
+      if (text.includes('姓名') || text.includes('日期')) return false;
+      if (/^\d+$/.test(text)) return false;
+      if (/[：:]/.test(text)) return false;
+      if (/^(MON|TUE|WED|THU|FRI|SAT|SUN)/i.test(text)) return false;
+      if (/^(A|M\*?|M-|B|B[+-]?|N|N[+-]?|OD|AL|SL|OJT|R|Z|補\d*)$/i.test(text)) return false;
+      if (/^\d{1,2}:?\d{0,2}[-~至]\d{1,2}:?\d{0,2}$/.test(text)) return false;
+      return true;
+    }
+
+    function isDayValue(value) {
+      const text = normalizeText(value);
+      if (!/^\d{1,2}$/.test(text)) return false;
+      const day = Number(text);
+      return day >= 1 && day <= 31;
+    }
+
+    function inferHeader(rows) {
+      let best = null;
+      const scanLimit = Math.min(rows.length, 10);
+      for (let rowIndex = 0; rowIndex < scanLimit; rowIndex += 1) {
+        const row = rows[rowIndex] || [];
+        let startCol = -1;
+        const names = [];
+        for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
+          const value = normalizeText(row[colIndex]);
+          if (startCol !== -1 && isStopHeader(value)) break;
+          if (!isLikelyName(value)) continue;
+          if (startCol === -1) startCol = colIndex;
+          names.push({ name: value, colIndex });
+        }
+        if (!best || names.length > best.names.length) {
+          best = { rowIndex, names };
+        }
+      }
+      if (!best || best.names.length < 2) {
+        throw new Error('找不到同仁姓名列。請確認班表是橫式月曆格式。');
+      }
+      return best;
+    }
+
+    function inferMonth(sheetName, fileName) {
+      const source = `${sheetName || ''} ${fileName || ''}`.toUpperCase();
+      const chineseMatch = source.match(/(\d{1,2})\s*月/);
+      if (chineseMatch) {
+        const month = Number(chineseMatch[1]);
+        if (month >= 1 && month <= 12) return month;
+      }
+      for (const [key, value] of Object.entries(MONTH_NAME_MAP)) {
+        if (source.includes(key)) return value;
+      }
+      return null;
+    }
+
+    function inferYear(rows, fileName) {
+      const fileMatch = String(fileName || '').match(/\b(20\d{2})\b/);
+      if (fileMatch) return Number(fileMatch[1]);
+      for (const row of rows) {
+        for (const cell of row) {
+          const match = normalizeText(cell).match(/\b(20\d{2})\b/);
+          if (match) return Number(match[1]);
+        }
+      }
+      return new Date().getFullYear();
+    }
+
+    function parseWorkbookRows(workbook, fileName) {
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
+      const header = inferHeader(rows);
+      const month = inferMonth(sheetName, fileName);
+      const year = inferYear(rows, fileName);
+      const scheduleRows = rows
+        .slice(header.rowIndex + 1)
+        .filter(row => isDayValue(row[0]))
+        .map(row => ({
+          day: Number(normalizeText(row[0])),
+          weekday: normalizeText(row[1]),
+          row
+        }));
+
+      if (!scheduleRows.length) {
+        throw new Error('找不到日期列。請確認第一欄為 1 到 31 的日期。');
+      }
+
+      return {
+        sheetName,
+        rows,
+        names: header.names,
+        scheduleRows,
+        month,
+        year,
+        fileName
+      };
+    }
+
+    function splitShiftTokens(cellValue) {
+      return normalizeText(cellValue)
+        .split(/[\/,，、;；]+/)
+        .map(normalizeShiftToken)
+        .filter(Boolean);
+    }
+
+    function parseTimeValue(value) {
+      const text = normalizeShiftToken(value).replace(':', '');
+      if (!/^\d{3,4}$/.test(text)) return null;
+      const padded = text.padStart(4, '0');
+      const hours = Number(padded.slice(0, 2));
+      const minutes = Number(padded.slice(2, 4));
+      if (hours > 23 || minutes > 59) return null;
+      return hours * 60 + minutes;
+    }
+
+    function analyzeTimeRange(token) {
+      const match = token.match(/^(\d{1,2}:?\d{0,2})[-~至](\d{1,2}:?\d{0,2})$/);
+      if (!match) return null;
+      const start = parseTimeValue(match[1]);
+      let end = parseTimeValue(match[2]);
+      if (start === null || end === null) return null;
+      if (end <= start) end += 24 * 60;
+      const nightStart = 22 * 60;
+      const nightEnd = 30 * 60;
+      const overlapStart = Math.max(start, nightStart);
+      const overlapEnd = Math.min(end, nightEnd);
+      const minutes = Math.max(0, overlapEnd - overlapStart);
+      if (!minutes) return null;
+      const middleStart = 24 * 60;
+      const middleEnd = 29 * 60;
+      const middleMinutes = Math.max(0, Math.min(end, middleEnd) - Math.max(start, middleStart));
+      return {
+        nightHours: minutes / 60,
+        meal: middleMinutes > 0 ? 110 : 70,
+        taxi: 0,
+        label: token
+      };
+    }
+
+    function getTokenClaim(token) {
+      if (CLAIM_RULES[token]) return CLAIM_RULES[token];
+      return analyzeTimeRange(token);
+    }
+
+    function formatHours(value) {
+      if (!value) return '0';
+      return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+    }
+
+    function formatMoney(value) {
+      return String(Math.round(value || 0));
+    }
+
+    function formatDateLabel(day) {
+      if (!workbookState) return String(day);
+      if (workbookState.month) return `${workbookState.month}/${day}`;
+      return String(day);
+    }
+
+    function formatClaimMonth() {
+      if (!workbookState) return '--';
+      const monthText = workbookState.month ? MONTH_CODE_MAP[workbookState.month] : workbookState.sheetName;
+      return `${workbookState.year}${monthText}`;
+    }
+
+    function analyzePerson(personColIndex, personName) {
+      const dayRecords = [];
+      const overtimeRows = [];
+      const mealRows = [];
+      const taxiRows = [];
+      const ignoredCounts = new Map();
+
+      for (const scheduleRow of workbookState.scheduleRows) {
+        const rawCode = normalizeText(scheduleRow.row[personColIndex]);
+        const tokens = splitShiftTokens(rawCode);
+        let nightHours = 0;
+        const nightSources = [];
+        const mealClaims = [];
+        const taxiClaims = [];
+        const ignoredTokens = [];
+
+        for (const token of tokens) {
+          const claim = getTokenClaim(token);
+          if (!claim) {
+            ignoredTokens.push(token);
+            if (token) ignoredCounts.set(token, (ignoredCounts.get(token) || 0) + 1);
+            continue;
+          }
+          if (claim.nightHours > 0) {
+            nightHours += claim.nightHours;
+            nightSources.push(`${claim.label} ${formatHours(claim.nightHours)}h`);
+          }
+          if (claim.meal > 0) {
+            const row = {
+              name: personName,
+              day: scheduleRow.day,
+              dateLabel: formatDateLabel(scheduleRow.day),
+              shift: claim.label,
+              amount: claim.meal
+            };
+            mealRows.push(row);
+            mealClaims.push(row);
+          }
+          if (claim.taxi > 0) {
+            const row = {
+              name: personName,
+              day: scheduleRow.day,
+              dateLabel: formatDateLabel(scheduleRow.day),
+              shift: claim.label,
+              amount: claim.taxi
+            };
+            taxiRows.push(row);
+            taxiClaims.push(row);
+          }
+        }
+
+        if (nightHours > 0) {
+          overtimeRows.push({
+            day: scheduleRow.day,
+            dateLabel: formatDateLabel(scheduleRow.day),
+            code: '003',
+            hours: nightHours,
+            source: nightSources.join(' + ')
+          });
+        }
+
+        dayRecords.push({
+          day: scheduleRow.day,
+          dateLabel: formatDateLabel(scheduleRow.day),
+          weekday: scheduleRow.weekday,
+          rawCode,
+          nightHours,
+          nightSources,
+          mealClaims,
+          taxiClaims,
+          ignoredTokens
+        });
+      }
+
+      return buildResult({
+        personName,
+        dayRecords,
+        overtimeRows,
+        mealRows,
+        taxiRows,
+        ignoredCounts
+      });
+    }
+
+    function buildResult({ personName, dayRecords, overtimeRows, mealRows, taxiRows, ignoredCounts }) {
+      const overtimeTotal = overtimeRows.reduce((sum, row) => sum + row.hours, 0);
+      const mealTotal = mealRows.reduce((sum, row) => sum + row.amount, 0);
+      const taxiTotal = taxiRows.reduce((sum, row) => sum + row.amount, 0);
+      const claimDateCount = new Set([
+        ...overtimeRows.map(row => row.day),
+        ...mealRows.map(row => row.day),
+        ...taxiRows.map(row => row.day)
+      ]).size;
+
+      const overtimeTsvLines = [['日期', '代碼', '加班小時'].join('\t')]
+        .concat(overtimeRows.map(row => [row.dateLabel, row.code, formatHours(row.hours)].join('\t')));
+      const mealTsvLines = [['姓名', '日期', '班別', '金額'].join('\t')]
+        .concat(mealRows.map(row => [row.name, row.dateLabel, row.shift, row.amount].join('\t')));
+      const taxiTsvLines = [['姓名', '日期', '班別', '金額'].join('\t')]
+        .concat(taxiRows.map(row => [row.name, row.dateLabel, row.shift, row.amount].join('\t')));
+
+      const overtimeList = overtimeRows.length
+        ? [
+            `${personName} ${formatClaimMonth()} 加班加成明細`,
+            `合計 ${formatHours(overtimeTotal)} 小時`,
+            '',
+            ...overtimeRows.map(row => `${row.dateLabel}：代碼 ${row.code}，${formatHours(row.hours)} 小時（${row.source}）`)
+          ].join('\n')
+        : `${personName} ${formatClaimMonth()} 沒有夜間加成可申報。`;
+
+      const mealList = mealRows.length
+        ? [
+            `${personName} ${formatClaimMonth()} 夜點費`,
+            `合計 ${formatMoney(mealTotal)} 元，共 ${mealRows.length} 筆`,
+            '',
+            ...mealRows.map(row => `${row.dateLabel}：${row.shift}，${row.amount} 元`)
+          ].join('\n')
+        : `${personName} ${formatClaimMonth()} 沒有夜點費可申報。`;
+
+      const taxiList = taxiRows.length
+        ? [
+            `${personName} ${formatClaimMonth()} 交通費`,
+            `合計 ${formatMoney(taxiTotal)} 元，共 ${taxiRows.length} 筆`,
+            '',
+            ...taxiRows.map(row => `${row.dateLabel}：${row.shift}，${row.amount} 元`)
+          ].join('\n')
+        : `${personName} ${formatClaimMonth()} 沒有交通費可申報。`;
+
+      const allList = [
+        overtimeList,
+        '',
+        '---',
+        '',
+        mealList,
+        '',
+        '---',
+        '',
+        taxiList
+      ].join('\n');
+
+      return {
+        personName,
+        dayRecords,
+        overtimeRows,
+        mealRows,
+        taxiRows,
+        ignoredCounts,
+        overtimeTotal,
+        mealTotal,
+        taxiTotal,
+        claimDateCount,
+        overtimeTsv: overtimeTsvLines.join('\n'),
+        mealTsv: mealTsvLines.join('\n'),
+        taxiTsv: taxiTsvLines.join('\n'),
+        overtimeList,
+        mealList,
+        taxiList,
+        allList
+      };
+    }
+
+    function renderPersonResult() {
+      const selectedOption = personSelect.selectedOptions[0];
+      if (!selectedOption || !selectedOption.value) {
+        resetOutputs('請先選擇同仁。');
+        return;
+      }
+
+      const personName = selectedOption.textContent;
+      const personColIndex = Number(selectedOption.value);
+      currentResult = analyzePerson(personColIndex, personName);
+
+      selectedSummary.textContent = `${personName} / ${formatClaimMonth()} / ${workbookState.sheetName}`;
+      document.getElementById('nightHoursTotal').textContent = formatHours(currentResult.overtimeTotal);
+      document.getElementById('mealTotal').textContent = `${formatMoney(currentResult.mealTotal)} 元`;
+      document.getElementById('taxiTotal').textContent = `${formatMoney(currentResult.taxiTotal)} 元`;
+      document.getElementById('claimDateCount').textContent = String(currentResult.claimDateCount);
+
+      document.getElementById('overtimeTsv').value = currentResult.overtimeTsv;
+      document.getElementById('mealTsv').value = currentResult.mealTsv;
+      document.getElementById('taxiTsv').value = currentResult.taxiTsv;
+      document.getElementById('overtimeList').textContent = currentResult.overtimeList;
+      document.getElementById('mealList').textContent = currentResult.mealList;
+      document.getElementById('taxiList').textContent = currentResult.taxiList;
+      copyAllBtn.disabled = false;
+
+      renderPreview(currentResult);
+      renderIgnoredSummary(currentResult);
+    }
+
+    function renderPreview(result) {
+      const body = document.getElementById('previewBody');
+      body.innerHTML = result.dayRecords.map(record => {
+        const chips = [];
+        if (record.nightHours > 0) {
+          chips.push(`<span class="claim-chip claim-chip--night">加成 ${formatHours(record.nightHours)}h</span>`);
+        }
+        if (record.mealClaims.length) {
+          chips.push(`<span class="claim-chip claim-chip--meal">夜點 ${formatMoney(record.mealClaims.reduce((sum, row) => sum + row.amount, 0))}</span>`);
+        }
+        if (record.taxiClaims.length) {
+          chips.push(`<span class="claim-chip claim-chip--taxi">交通 ${formatMoney(record.taxiClaims.reduce((sum, row) => sum + row.amount, 0))}</span>`);
+        }
+        const claimText = chips.length ? chips.join(' ') : '<span class="text-slate-400">未申報</span>';
+        const rawCode = record.rawCode ? escapeHtml(record.rawCode) : '<span class="text-slate-400">空白</span>';
+        return `
+          <tr class="border-b border-slate-100 last:border-b-0">
+            <td class="px-4 py-3 font-semibold text-slate-900">${escapeHtml(record.dateLabel)}</td>
+            <td class="px-4 py-3 text-slate-600">${escapeHtml(record.weekday || '')}</td>
+            <td class="px-4 py-3"><span class="code-chip">${rawCode}</span></td>
+            <td class="px-4 py-3"><div class="flex flex-wrap gap-2">${claimText}</div></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderIgnoredSummary(result) {
+      const target = document.getElementById('ignoredSummary');
+      const items = Array.from(result.ignoredCounts.entries())
+        .filter(([token]) => token)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      if (!items.length) {
+        target.textContent = IGNORED_EMPTY_TEXT;
+        return;
+      }
+      target.innerHTML = [
+        '<div class="font-semibold text-slate-900 mb-2">未申報 / 忽略代碼摘要</div>',
+        '<div class="flex flex-wrap gap-2">',
+        ...items.map(([token, count]) => `<span class="rounded-full border border-slate-200 bg-white px-3 py-1">${escapeHtml(token)}：${count} 次</span>`),
+        '</div>'
+      ].join('');
+    }
+
+    function resetOutputs(message) {
+      currentResult = null;
+      selectedSummary.textContent = message;
+      document.getElementById('nightHoursTotal').textContent = '0';
+      document.getElementById('mealTotal').textContent = '0';
+      document.getElementById('taxiTotal').textContent = '0';
+      document.getElementById('claimDateCount').textContent = '0';
+      outputIds.forEach(id => {
+        const node = document.getElementById(id);
+        if ('value' in node) node.value = message;
+        else node.textContent = message;
+      });
+      document.getElementById('ignoredSummary').textContent = '尚未產生摘要。';
+      document.getElementById('previewBody').innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">${escapeHtml(message)}</td></tr>`;
+      copyAllBtn.disabled = true;
+    }
+
+    function populatePeopleSelect(names) {
+      personSelect.innerHTML = names.map(item => `<option value="${item.colIndex}">${escapeHtml(item.name)}</option>`).join('');
+      personSelect.disabled = false;
+    }
+
+    async function handleFile(file) {
+      if (!file) return;
+      if (!window.XLSX) {
+        fileStatus.textContent = 'Excel 解析套件尚未載入，請確認網路後重新整理。';
+        return;
+      }
+
+      fileStatus.textContent = `正在讀取：${file.name}`;
+      parseStatus.textContent = '正在解析班表格式。';
+      resetOutputs('正在解析班表。');
+
+      try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array', raw: false, cellDates: false });
+        workbookState = parseWorkbookRows(workbook, file.name);
+        populatePeopleSelect(workbookState.names);
+        fileStatus.textContent = `已載入：${file.name}`;
+        parseStatus.textContent = `已讀取 ${workbookState.sheetName}，共 ${workbookState.names.length} 位同仁、${workbookState.scheduleRows.length} 個日期。`;
+        renderPersonResult();
+      } catch (error) {
+        console.error(error);
+        workbookState = null;
+        personSelect.innerHTML = '<option value="">請先上傳班表</option>';
+        personSelect.disabled = true;
+        fileStatus.textContent = '班表讀取失敗。';
+        parseStatus.textContent = error.message || '請確認檔案格式是否為 Excel。';
+        resetOutputs('班表讀取失敗。');
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function copyText(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+        flashCopyButton(button, '已複製');
+      } catch (error) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+        flashCopyButton(button, '已複製');
+      }
+    }
+
+    function flashCopyButton(button, text) {
+      if (!button) return;
+      const original = button.textContent;
+      button.textContent = text;
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+    }
+
+    fileInput.addEventListener('change', event => {
+      handleFile(event.target.files?.[0]);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', event => {
+      const file = event.dataTransfer.files?.[0];
+      if (file) {
+        fileInput.files = event.dataTransfer.files;
+        handleFile(file);
+      }
+    });
+
+    personSelect.addEventListener('change', renderPersonResult);
+
+    document.querySelectorAll('.copy-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        const text = 'value' in target ? target.value : target.textContent;
+        copyText(text, button);
+      });
+    });
+
+    copyAllBtn.addEventListener('click', () => {
+      if (!currentResult) return;
+      copyText(currentResult.allList, copyAllBtn);
+    });
+  </script>
+  <script src="./motion-system.js"></script>
+</body>
+</html>

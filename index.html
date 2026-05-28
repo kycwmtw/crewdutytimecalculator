@@ -125,6 +125,10 @@
       background: linear-gradient(90deg, #60a5fa, #2563eb);
     }
 
+    .tool-link[data-accent="rose"]::before {
+      background: linear-gradient(90deg, #fb7185, #e11d48);
+    }
+
     .responsive-shell {
       width: 100%;
       max-width: 100%;
@@ -322,7 +326,7 @@
           <div class="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
             <div class="w-full sm:w-auto rounded-[24px] bg-white/70 backdrop-blur-md px-4 py-3 border border-sky-100 text-sm shadow-lg">
               <div class="chip-text text-slate-500">目前版本</div>
-              <div class="secondary-title text-lg font-semibold text-slate-900">V2.9</div>
+              <div class="secondary-title text-lg font-semibold text-slate-900">V3.0</div>
             </div>
             <div class="w-full sm:min-w-[250px] rounded-[24px] bg-white/60 backdrop-blur-md px-4 py-3 border border-sky-100 text-sm shadow-lg">
               <div class="grid grid-cols-1 gap-2">
@@ -409,6 +413,10 @@
                 <h4 class="tool-title text-lg font-bold mt-3">每日值班航班整理</h4>
                 <p class="tool-copy text-sm text-slate-600 mt-2 leading-relaxed">整理值班時段內的航班並輸出列印表格，方便點名與追蹤。</p>
               </a>
+              <a href="./duty_claims.html" class="tool-link tool-card block rounded-[24px] border border-white/80 bg-white/90 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-rose-200 hover:bg-white" data-accent="rose">
+                <h4 class="tool-title text-lg font-bold mt-3">值班申報整理</h4>
+                <p class="tool-copy text-sm text-slate-600 mt-2 leading-relaxed">上傳月底班表，整理夜間加成、夜點費與交通費申報內容。</p>
+              </a>
             </div>
           </section>
         </div>
@@ -437,7 +445,11 @@
           </div>
           <div class="secondary-log-list p-5 md:p-6 grid grid-cols-1 gap-3">
             <div class="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-              <div class="chip-text inline-flex rounded-full bg-sky-600 px-2.5 py-1 text-xs font-semibold text-white">V2.9</div>
+              <div class="chip-text inline-flex rounded-full bg-sky-600 px-2.5 py-1 text-xs font-semibold text-white">V3.0</div>
+              <p class="section-copy mt-3 text-sm leading-relaxed text-slate-700">新增值班申報整理功能，可依班表整理夜間加成、夜點費與交通費。</p>
+            </div>
+            <div class="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+              <div class="chip-text inline-flex rounded-full bg-sky-50 border border-sky-200 px-2.5 py-1 text-xs font-semibold text-sky-700">V2.9</div>
               <p class="section-copy mt-3 text-sm leading-relaxed text-slate-700">新增每日值班航班整理功能。</p>
             </div>
             <div class="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
