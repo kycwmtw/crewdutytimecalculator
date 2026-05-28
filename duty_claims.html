@@ -307,10 +307,10 @@
             <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-orange-50/80 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 class="text-lg font-bold text-orange-950">夜點費申報</h3>
-                <p class="text-sm text-orange-800/80">貼上欄位：姓名、日期、班別、金額。</p>
+                <p class="text-sm text-orange-800/80">貼上格式：姓名、Ｍ班日期、ＮＢ班日期。</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button type="button" data-copy-target="mealTsv" class="copy-btn rounded-xl bg-orange-600 text-white px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition">複製 TSV</button>
+                <button type="button" data-copy-target="mealTsv" class="copy-btn rounded-xl bg-orange-600 text-white px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition">複製格式</button>
                 <button type="button" data-copy-target="mealList" class="copy-btn rounded-xl bg-white text-orange-900 border border-orange-200 px-4 py-2 text-sm font-semibold hover:bg-orange-50 transition">複製清單</button>
               </div>
             </div>
@@ -324,10 +324,10 @@
             <div class="px-5 md:px-6 py-4 border-b border-slate-200/70 bg-emerald-50/80 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 class="text-lg font-bold text-emerald-950">交通費申報</h3>
-                <p class="text-sm text-emerald-800/80">貼上欄位：姓名、日期、班別、金額。</p>
+                <p class="text-sm text-emerald-800/80">貼上格式：姓名、日期、天數、總金額。</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button type="button" data-copy-target="taxiTsv" class="copy-btn rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">複製 TSV</button>
+                <button type="button" data-copy-target="taxiTsv" class="copy-btn rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition">複製格式</button>
                 <button type="button" data-copy-target="taxiList" class="copy-btn rounded-xl bg-white text-emerald-900 border border-emerald-200 px-4 py-2 text-sm font-semibold hover:bg-emerald-50 transition">複製清單</button>
               </div>
             </div>
@@ -418,6 +418,17 @@
         .replace(/＋/g, '+')
         .replace(/[－–—]/g, '-')
         .replace(/\s+/g, '');
+    }
+
+    function formatClaimPersonName(name) {
+      return normalizeText(name).replace(/巣/g, '巢');
+    }
+
+    function getMealGroup(shift, amount) {
+      const normalizedShift = normalizeShiftToken(shift);
+      if (normalizedShift.startsWith('M')) return 'M';
+      if (normalizedShift.startsWith('N') || normalizedShift.startsWith('B')) return 'NB';
+      return Number(amount) === 110 ? 'NB' : 'M';
     }
 
     function isStopHeader(value) {
@@ -593,6 +604,7 @@
     }
 
     function analyzePerson(personColIndex, personName) {
+      const claimPersonName = formatClaimPersonName(personName);
       const dayRecords = [];
       const overtimeRows = [];
       const mealRows = [];
@@ -621,18 +633,19 @@
           }
           if (claim.meal > 0) {
             const row = {
-              name: personName,
+              name: claimPersonName,
               day: scheduleRow.day,
               dateLabel: formatDateLabel(scheduleRow.day),
               shift: claim.label,
-              amount: claim.meal
+              amount: claim.meal,
+              mealGroup: getMealGroup(claim.label, claim.meal)
             };
             mealRows.push(row);
             mealClaims.push(row);
           }
           if (claim.taxi > 0) {
             const row = {
-              name: personName,
+              name: claimPersonName,
               day: scheduleRow.day,
               dateLabel: formatDateLabel(scheduleRow.day),
               shift: claim.label,
@@ -677,6 +690,7 @@
     }
 
     function buildResult({ personName, dayRecords, overtimeRows, mealRows, taxiRows, ignoredCounts }) {
+      const claimPersonName = formatClaimPersonName(personName);
       const overtimeTotal = overtimeRows.reduce((sum, row) => sum + row.hours, 0);
       const mealTotal = mealRows.reduce((sum, row) => sum + row.amount, 0);
       const taxiTotal = taxiRows.reduce((sum, row) => sum + row.amount, 0);
@@ -688,37 +702,52 @@
 
       const overtimeTsvLines = [['日期', '代碼', '加班小時'].join('\t')]
         .concat(overtimeRows.map(row => [row.dateLabel, row.code, formatHours(row.hours)].join('\t')));
-      const mealTsvLines = [['姓名', '日期', '班別', '金額'].join('\t')]
-        .concat(mealRows.map(row => [row.name, row.dateLabel, row.shift, row.amount].join('\t')));
-      const taxiTsvLines = [['姓名', '日期', '班別', '金額'].join('\t')]
-        .concat(taxiRows.map(row => [row.name, row.dateLabel, row.shift, row.amount].join('\t')));
+      const mMealDates = mealRows
+        .filter(row => row.mealGroup === 'M')
+        .map(row => row.day);
+      const nbMealDates = mealRows
+        .filter(row => row.mealGroup === 'NB')
+        .map(row => row.day);
+      const formatDayList = days => days.length ? days.join('.') : '無';
+      const mealClaimFormat = [
+        claimPersonName,
+        `Ｍ班日期：${formatDayList(mMealDates)}`,
+        `ＮＢ班日期：${formatDayList(nbMealDates)}`
+      ].join('\n');
+      const taxiDates = taxiRows.map(row => row.day);
+      const taxiDateText = taxiDates.length ? taxiDates.join('. ') : '無';
+      const taxiClaimFormat = taxiRows.length
+        ? `${claimPersonName} 日期：${taxiDateText} 共${taxiRows.length}天 $${formatMoney(taxiTotal)}`
+        : `${claimPersonName} 日期：無 共0天 $0`;
 
       const overtimeList = overtimeRows.length
         ? [
-            `${personName} ${formatClaimMonth()} 加班加成明細`,
+            `${claimPersonName} ${formatClaimMonth()} 加班加成明細`,
             `合計 ${formatHours(overtimeTotal)} 小時`,
             '',
             ...overtimeRows.map(row => `${row.dateLabel}：代碼 ${row.code}，${formatHours(row.hours)} 小時（${row.source}）`)
           ].join('\n')
-        : `${personName} ${formatClaimMonth()} 沒有夜間加成可申報。`;
+        : `${claimPersonName} ${formatClaimMonth()} 沒有夜間加成可申報。`;
 
       const mealList = mealRows.length
         ? [
-            `${personName} ${formatClaimMonth()} 夜點費`,
-            `合計 ${formatMoney(mealTotal)} 元，共 ${mealRows.length} 筆`,
+            mealClaimFormat,
             '',
+            `合計 ${formatMoney(mealTotal)} 元，共 ${mealRows.length} 筆`,
             ...mealRows.map(row => `${row.dateLabel}：${row.shift}，${row.amount} 元`)
           ].join('\n')
-        : `${personName} ${formatClaimMonth()} 沒有夜點費可申報。`;
+        : `${claimPersonName} ${formatClaimMonth()} 沒有夜點費可申報。`;
 
       const taxiList = taxiRows.length
         ? [
-            `${personName} ${formatClaimMonth()} 交通費`,
+            taxiClaimFormat,
+            '',
+            `${claimPersonName} ${formatClaimMonth()} 交通費`,
             `合計 ${formatMoney(taxiTotal)} 元，共 ${taxiRows.length} 筆`,
             '',
             ...taxiRows.map(row => `${row.dateLabel}：${row.shift}，${row.amount} 元`)
           ].join('\n')
-        : `${personName} ${formatClaimMonth()} 沒有交通費可申報。`;
+        : `${claimPersonName} ${formatClaimMonth()} 沒有交通費可申報。`;
 
       const allList = [
         overtimeList,
@@ -744,8 +773,8 @@
         taxiTotal,
         claimDateCount,
         overtimeTsv: overtimeTsvLines.join('\n'),
-        mealTsv: mealTsvLines.join('\n'),
-        taxiTsv: taxiTsvLines.join('\n'),
+        mealTsv: mealRows.length ? mealClaimFormat : `${claimPersonName}\nＭ班日期：無\nＮＢ班日期：無`,
+        taxiTsv: taxiClaimFormat,
         overtimeList,
         mealList,
         taxiList,
