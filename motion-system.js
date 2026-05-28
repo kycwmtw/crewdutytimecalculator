@@ -124,7 +124,7 @@
       surfaces: ['.panel', '.output-panel', '.summary-tile', '#dropzone'],
       magnetic: ['button', 'a[href="./index.html"]'],
       reveal: ['header > div', '.panel', '.output-panel', '.summary-tile'],
-      count: ['#nightHoursTotal', '#mealTotal', '#taxiTotal', '#claimDateCount'],
+      count: [],
       success: ['#parseStatus', '#previewBody', '#ignoredSummary'],
       rowStagger: ['#previewBody']
     },
