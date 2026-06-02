@@ -128,16 +128,16 @@
       <section class="rounded-[28px] border border-white/80 bg-white/88 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.36)] backdrop-blur-xl overflow-hidden">
         <div class="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] px-5 py-5 md:px-6">
           <h2 class="text-xl font-bold">上傳 GD PDF / HTM / QRP</h2>
-          <p class="mt-1 text-sm text-slate-500">PDF 與 HTM 可直接補頁；真正的 QuickReport QRP 需先轉成 PDF 或 HTM。</p>
+          <p class="mt-1 text-sm text-slate-500">PDF 與 HTM 可直接補頁；HTM 若有印章圖片，請連同圖片一起拖入。</p>
         </div>
 
         <div class="p-5 md:p-6">
           <label id="dropzone" class="dropzone flex min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-8 text-center">
-            <input id="fileInput" type="file" accept="application/pdf,text/html,.pdf,.htm,.html,.qrp" class="sr-only" />
-            <span class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm">選擇 PDF / HTM / QRP</span>
+            <input id="fileInput" type="file" accept="application/pdf,text/html,image/*,.pdf,.htm,.html,.qrp,.jpg,.jpeg,.png,.gif" multiple class="sr-only" />
+            <span class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm">選擇檔案</span>
             <span class="mt-5 text-2xl font-bold text-slate-900">拖入系統產生的 GD 檔案</span>
             <span class="mt-3 max-w-xl text-sm leading-relaxed text-slate-600">
-              工具會依序輸出第 1 頁、第 2 頁、第 2 頁；第 3 頁、第 4 頁、第 4 頁，以此類推。
+              PDF 可直接拖入；HTM 若有印章，請把 HTM 和 logo1.jpg 等圖片一起選取或拖入。
             </span>
           </label>
 
@@ -165,7 +165,7 @@
               重新列印
             </button>
             <button id="downloadBtn" type="button" disabled class="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-bold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-45">
-              下載 PDF
+              下載檔案
             </button>
           </div>
         </div>
@@ -186,7 +186,7 @@
           </div>
           <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p class="text-sm font-bold text-slate-900">HTM 也可直接處理</p>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">若檔案內有 page1、page2 這類分頁標記，工具會直接重排成可列印 HTM。</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">若檔案內有 page1、page2 這類分頁標記，工具會直接重排成可列印 HTM；外部印章圖片會自動內嵌。</p>
           </div>
           <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p class="text-sm font-bold text-slate-900">不用上傳到任何伺服器</p>
@@ -294,6 +294,42 @@
         .replace(/"/g, '&quot;');
     }
 
+    function normalizeAssetName(value) {
+      try {
+        value = decodeURIComponent(value);
+      } catch (error) {
+        // Keep the original value if it is not URI encoded.
+      }
+      return String(value).split(/[\\/]/).pop().toLowerCase();
+    }
+
+    function getMimeType(file) {
+      if (file.type) return file.type;
+      if (/\.png$/i.test(file.name)) return 'image/png';
+      if (/\.gif$/i.test(file.name)) return 'image/gif';
+      if (/\.jpe?g$/i.test(file.name)) return 'image/jpeg';
+      return 'application/octet-stream';
+    }
+
+    async function fileToDataUrl(file) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+      }
+      return `data:${getMimeType(file)};base64,${btoa(binary)}`;
+    }
+
+    async function buildAssetMap(files) {
+      const assetMap = new Map();
+      const imageFiles = files.filter((file) => file.type.startsWith('image/') || /\.(jpe?g|png|gif|bmp|webp)$/i.test(file.name));
+      for (const file of imageFiles) {
+        assetMap.set(normalizeAssetName(file.name), await fileToDataUrl(file));
+      }
+      return assetMap;
+    }
+
     function loadScript(src) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -360,9 +396,27 @@
       };
     }
 
-    async function buildPrintReadyHtml(file) {
+    function inlineHtmlImages(sourceDoc, assetMap) {
+      const missingImages = new Set();
+      Array.from(sourceDoc.querySelectorAll('img[src]')).forEach((image) => {
+        const src = image.getAttribute('src') || '';
+        if (/^(data:|https?:|blob:)/i.test(src)) return;
+
+        const assetKey = normalizeAssetName(src);
+        const dataUrl = assetMap.get(assetKey);
+        if (dataUrl) {
+          image.setAttribute('src', dataUrl);
+        } else {
+          missingImages.add(assetKey || src);
+        }
+      });
+      return [...missingImages];
+    }
+
+    async function buildPrintReadyHtml(file, assetMap = new Map()) {
       const rawHtml = (await file.text()).replace(/\u0000/g, '').replace(/^\uFEFF/, '');
       const sourceDoc = new DOMParser().parseFromString(rawHtml, 'text/html');
+      const missingImages = inlineHtmlImages(sourceDoc, assetMap);
       const markers = Array.from(sourceDoc.querySelectorAll('.pagemarker'))
         .map((marker) => ({ marker, top: parseTopPx(marker) }))
         .filter((item) => Number.isFinite(item.top))
@@ -441,6 +495,7 @@ ${outputSections.join('\n')}
         pageCount,
         flightCount: pageCount / 2,
         outputPageCount: outputSections.length,
+        missingImages,
         blob: new Blob([outputHtml], { type: 'text/html;charset=utf-8' })
       };
     }
@@ -450,7 +505,7 @@ ${outputSections.join('\n')}
 
       const printWindow = window.open(outputUrl, '_blank');
       if (!printWindow) {
-        setStatus('PDF 已產生，但瀏覽器阻擋了列印視窗。請按「重新列印」或「下載 PDF」。', 'ok');
+        setStatus('檔案已產生，但瀏覽器阻擋了列印視窗。請按「重新列印」或「下載檔案」。', 'ok');
         return;
       }
 
@@ -459,20 +514,29 @@ ${outputSections.join('\n')}
           printWindow.focus();
           printWindow.print();
         } catch (error) {
-          setStatus('PDF 已開啟，但瀏覽器沒有允許自動列印。請在新視窗中手動列印，或下載 PDF。', 'ok');
+          setStatus('檔案已開啟，但瀏覽器沒有允許自動列印。請在新視窗中手動列印，或下載檔案。', 'ok');
         }
       }, 900);
     }
 
-    async function handleFile(file) {
+    async function handleFiles(fileList) {
       resetOutput();
+      const files = Array.from(fileList || []);
 
-      if (!file) {
+      if (!files.length) {
         setStatus('尚未選擇檔案。');
         return;
       }
 
-      const fileKind = await getFileKind(file);
+      const fileKinds = await Promise.all(files.map(async (file) => ({ file, kind: await getFileKind(file) })));
+      const documentItem = fileKinds.find((item) => item.kind === 'pdf' || item.kind === 'html' || item.kind === 'qrp');
+
+      if (!documentItem) {
+        setStatus('請選擇 PDF、HTM，或系統產生的 QRP 檔。', 'error');
+        return;
+      }
+
+      const { file, kind: fileKind } = documentItem;
       if (fileKind === 'qrp') {
         setStatus('這是一個 QuickReport QRP 檔。QRP 是專有報表格式，這個瀏覽器工具無法直接轉 PDF；請先在原系統或 QRP Viewer 內匯出/列印成 PDF 或 HTM，再把檔案拖進來補頁。', 'warn');
         return;
@@ -485,9 +549,10 @@ ${outputSections.join('\n')}
 
       try {
         setStatus(`正在讀取與重排 ${fileKind === 'pdf' ? 'PDF' : 'HTM'}...`, 'busy');
+        const assetMap = fileKind === 'html' ? await buildAssetMap(files.filter((candidate) => candidate !== file)) : new Map();
         const result = fileKind === 'pdf'
           ? await buildPrintReadyPdf(file)
-          : await buildPrintReadyHtml(file);
+          : await buildPrintReadyHtml(file, assetMap);
 
         outputUrl = URL.createObjectURL(result.blob);
         outputFilename = fileKind === 'pdf' ? getPdfOutputFilename(file.name) : getHtmlOutputFilename(file.name);
@@ -496,6 +561,14 @@ ${outputSections.join('\n')}
         outputPages.textContent = `${result.outputPageCount} 頁`;
         printBtn.disabled = false;
         downloadBtn.disabled = false;
+
+        const missingImageText = result.missingImages && result.missingImages.length
+          ? ` 但缺少圖片：${result.missingImages.join('、')}，請把 HTM 和這些圖片一起拖入。`
+          : '';
+        if (result.missingImages && result.missingImages.length) {
+          setStatus(`${result.pageCount} 頁 / ${result.flightCount} 班 / 輸出 ${result.outputPageCount} 頁。檔案已產生，但尚未列印。${missingImageText}`, 'warn');
+          return;
+        }
 
         setStatus(`${result.pageCount} 頁 / ${result.flightCount} 班 / 輸出 ${result.outputPageCount} 頁。檔案已產生，正在開啟列印。`, 'ok');
         triggerPrint();
@@ -506,7 +579,7 @@ ${outputSections.join('\n')}
     }
 
     fileInput.addEventListener('change', () => {
-      handleFile(fileInput.files[0]);
+      handleFiles(fileInput.files);
     });
 
     ['dragenter', 'dragover'].forEach((eventName) => {
@@ -524,7 +597,7 @@ ${outputSections.join('\n')}
     });
 
     dropzone.addEventListener('drop', (event) => {
-      handleFile(event.dataTransfer.files[0]);
+      handleFiles(event.dataTransfer.files);
     });
 
     printBtn.addEventListener('click', triggerPrint);
