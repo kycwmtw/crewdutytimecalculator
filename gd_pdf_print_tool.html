@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GD PDF 補頁列印工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(191, 219, 254, 0.3), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.2), transparent 24%),
+        linear-gradient(180deg, #f8fcff 0%, #eef7ff 34%, #f8fafc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 9999px;
+      filter: blur(88px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -10rem;
+      left: -8rem;
+      background: rgba(56, 189, 248, 0.22);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(96, 165, 250, 0.18);
+    }
+
+    body > div {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::selection {
+      background: rgba(14, 165, 233, 0.18);
+      color: #0f172a;
+    }
+
+    .responsive-shell {
+      width: 100%;
+      max-width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .dropzone {
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .dropzone.dragover {
+      border-color: #38bdf8;
+      background: rgba(224, 242, 254, 0.82);
+      box-shadow: 0 24px 70px -42px rgba(14, 165, 233, 0.58);
+      transform: translateY(-1px);
+    }
+
+    .status-ok {
+      border-color: rgba(14, 165, 233, 0.32);
+      background: rgba(240, 249, 255, 0.92);
+      color: #075985;
+    }
+
+    .status-error {
+      border-color: rgba(244, 63, 94, 0.34);
+      background: rgba(255, 241, 242, 0.92);
+      color: #9f1239;
+    }
+
+    .status-busy {
+      border-color: rgba(37, 99, 235, 0.24);
+      background: rgba(239, 246, 255, 0.92);
+      color: #1d4ed8;
+    }
+
+    @media (max-width: 767px) {
+      body::before,
+      body::after {
+        width: 16rem;
+        height: 16rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased">
+  <div class="responsive-shell px-4 py-6 md:px-0 md:py-8 lg:py-10">
+    <header class="mb-6 md:mb-8">
+      <div class="relative overflow-hidden rounded-[32px] border border-sky-200/90 bg-[linear-gradient(135deg,#f8fcff_0%,#e0f2fe_52%,#dbeafe_100%)] text-slate-900 shadow-[0_32px_90px_-42px_rgba(59,130,246,0.24)] p-6 md:p-8 lg:p-10">
+        <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div class="max-w-3xl">
+            <p class="text-sky-700 text-sm tracking-[0.25em] uppercase">GD Print Helper</p>
+            <h1 class="text-3xl md:text-4xl lg:text-[2.6rem] font-bold mt-3">GD PDF 補頁列印工具</h1>
+            <p class="text-slate-600 mt-4 max-w-3xl leading-relaxed text-base md:text-[1.05rem]">
+              將系統產生的兩頁式 GD PDF 轉成每班三頁：第一頁一張、第二頁兩張，完成後直接開啟列印。
+            </p>
+          </div>
+          <a href="./index.html" class="inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-white/80 px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-white">
+            回首頁
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+      <section class="rounded-[28px] border border-white/80 bg-white/88 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.36)] backdrop-blur-xl overflow-hidden">
+        <div class="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] px-5 py-5 md:px-6">
+          <h2 class="text-xl font-bold">上傳 GD PDF</h2>
+          <p class="mt-1 text-sm text-slate-500">只接受單一 PDF，原始頁數必須是偶數。</p>
+        </div>
+
+        <div class="p-5 md:p-6">
+          <label id="dropzone" class="dropzone flex min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-8 text-center">
+            <input id="fileInput" type="file" accept="application/pdf,.pdf" class="sr-only" />
+            <span class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm">選擇 PDF</span>
+            <span class="mt-5 text-2xl font-bold text-slate-900">拖入系統產生的 GD PDF</span>
+            <span class="mt-3 max-w-xl text-sm leading-relaxed text-slate-600">
+              工具會依序輸出第 1 頁、第 2 頁、第 2 頁；第 3 頁、第 4 頁、第 4 頁，以此類推。
+            </span>
+          </label>
+
+          <div id="statusBox" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            尚未選擇檔案。
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">原始頁數</p>
+              <p id="sourcePages" class="mt-2 text-2xl font-bold text-slate-900">-</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">推算航班</p>
+              <p id="flightCount" class="mt-2 text-2xl font-bold text-slate-900">-</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">輸出頁數</p>
+              <p id="outputPages" class="mt-2 text-2xl font-bold text-slate-900">-</p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-3">
+            <button id="printBtn" type="button" disabled class="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-bold text-white shadow-[0_16px_34px_-26px_rgba(14,165,233,0.6)] transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-45">
+              重新列印
+            </button>
+            <button id="downloadBtn" type="button" disabled class="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-bold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-45">
+              下載 PDF
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="rounded-[28px] border border-white/80 bg-white/88 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.36)] backdrop-blur-xl overflow-hidden lg:sticky lg:top-8">
+        <div class="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] px-5 py-5 md:px-6">
+          <h2 class="text-xl font-bold">列印規則</h2>
+        </div>
+        <div class="space-y-4 p-5 md:p-6">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p class="text-sm font-bold text-slate-900">每兩頁是一班</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">原始 PDF 需為 A1、A2、B1、B2 這種順序。</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p class="text-sm font-bold text-slate-900">第二頁自動補一張</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">輸出會變成 A1、A2、A2、B1、B2、B2。</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p class="text-sm font-bold text-slate-900">不用上傳到任何伺服器</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">PDF 只在目前瀏覽器內處理，完成後產生可列印的新檔。</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const statusBox = document.getElementById('statusBox');
+    const sourcePages = document.getElementById('sourcePages');
+    const flightCount = document.getElementById('flightCount');
+    const outputPages = document.getElementById('outputPages');
+    const printBtn = document.getElementById('printBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const PDF_LIB_URLS = [
+      'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js',
+      'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'
+    ];
+
+    let outputUrl = '';
+    let outputFilename = '';
+    let pdfLibLoadPromise = null;
+
+    function setStatus(message, type = 'idle') {
+      statusBox.className = 'mt-5 rounded-2xl border px-4 py-3 text-sm';
+      if (type === 'ok') {
+        statusBox.classList.add('status-ok');
+      } else if (type === 'error') {
+        statusBox.classList.add('status-error');
+      } else if (type === 'busy') {
+        statusBox.classList.add('status-busy');
+      } else {
+        statusBox.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-600');
+      }
+      statusBox.textContent = message;
+    }
+
+    function resetOutput() {
+      if (outputUrl) {
+        URL.revokeObjectURL(outputUrl);
+      }
+      outputUrl = '';
+      outputFilename = '';
+      sourcePages.textContent = '-';
+      flightCount.textContent = '-';
+      outputPages.textContent = '-';
+      printBtn.disabled = true;
+      downloadBtn.disabled = true;
+    }
+
+    function getOutputFilename(filename) {
+      const cleanName = filename.replace(/\.pdf$/i, '');
+      return `${cleanName || 'GD'}_GD_print_ready.pdf`;
+    }
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`無法載入 ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function ensurePdfLibReady() {
+      if (window.PDFLib && window.PDFLib.PDFDocument) {
+        return window.PDFLib;
+      }
+
+      if (!pdfLibLoadPromise) {
+        pdfLibLoadPromise = (async () => {
+          for (const src of PDF_LIB_URLS) {
+            try {
+              await loadScript(src);
+              if (window.PDFLib && window.PDFLib.PDFDocument) {
+                return window.PDFLib;
+              }
+            } catch (error) {
+              // Try the next CDN before surfacing the load failure.
+            }
+          }
+          throw new Error('PDF 處理工具載入失敗。請確認網路可連線後再重新整理頁面。');
+        })();
+      }
+
+      return pdfLibLoadPromise;
+    }
+
+    async function buildPrintReadyPdf(file) {
+      const { PDFDocument } = await ensurePdfLibReady();
+      const arrayBuffer = await file.arrayBuffer();
+      const sourcePdf = await PDFDocument.load(arrayBuffer);
+      const pageCount = sourcePdf.getPageCount();
+
+      if (pageCount === 0) {
+        throw new Error('這份 PDF 沒有可處理的頁面。');
+      }
+
+      if (pageCount % 2 !== 0) {
+        throw new Error(`原始 PDF 是 ${pageCount} 頁，不是偶數頁。請確認系統輸出的 GD 是否完整。`);
+      }
+
+      const newPdf = await PDFDocument.create();
+      for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 2) {
+        const [firstPage, secondPage, secondPageCopy] = await newPdf.copyPages(sourcePdf, [pageIndex, pageIndex + 1, pageIndex + 1]);
+        newPdf.addPage(firstPage);
+        newPdf.addPage(secondPage);
+        newPdf.addPage(secondPageCopy);
+      }
+
+      const outputBytes = await newPdf.save();
+      return {
+        pageCount,
+        flightCount: pageCount / 2,
+        outputPageCount: (pageCount / 2) * 3,
+        blob: new Blob([outputBytes], { type: 'application/pdf' })
+      };
+    }
+
+    function triggerPrint() {
+      if (!outputUrl) return;
+
+      const printWindow = window.open(outputUrl, '_blank');
+      if (!printWindow) {
+        setStatus('PDF 已產生，但瀏覽器阻擋了列印視窗。請按「重新列印」或「下載 PDF」。', 'ok');
+        return;
+      }
+
+      setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch (error) {
+          setStatus('PDF 已開啟，但瀏覽器沒有允許自動列印。請在新視窗中手動列印，或下載 PDF。', 'ok');
+        }
+      }, 900);
+    }
+
+    async function handleFile(file) {
+      resetOutput();
+
+      if (!file) {
+        setStatus('尚未選擇檔案。');
+        return;
+      }
+
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (!isPdf) {
+        setStatus('請選擇 PDF 檔。', 'error');
+        return;
+      }
+
+      try {
+        setStatus('正在讀取與重排 PDF...', 'busy');
+        const result = await buildPrintReadyPdf(file);
+
+        outputUrl = URL.createObjectURL(result.blob);
+        outputFilename = getOutputFilename(file.name);
+        sourcePages.textContent = `${result.pageCount} 頁`;
+        flightCount.textContent = `${result.flightCount} 班`;
+        outputPages.textContent = `${result.outputPageCount} 頁`;
+        printBtn.disabled = false;
+        downloadBtn.disabled = false;
+
+        setStatus(`${result.pageCount} 頁 / ${result.flightCount} 班 / 輸出 ${result.outputPageCount} 頁。PDF 已產生，正在開啟列印。`, 'ok');
+        triggerPrint();
+      } catch (error) {
+        resetOutput();
+        setStatus(error.message || 'PDF 處理失敗，請確認檔案是否正常。', 'error');
+      }
+    }
+
+    fileInput.addEventListener('change', () => {
+      handleFile(fileInput.files[0]);
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      handleFile(event.dataTransfer.files[0]);
+    });
+
+    printBtn.addEventListener('click', triggerPrint);
+
+    downloadBtn.addEventListener('click', () => {
+      if (!outputUrl) return;
+      const link = document.createElement('a');
+      link.href = outputUrl;
+      link.download = outputFilename || 'GD_print_ready.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (outputUrl) {
+        URL.revokeObjectURL(outputUrl);
+      }
+    });
+  </script>
+</body>
+</html>
