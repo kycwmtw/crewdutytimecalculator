@@ -127,14 +127,14 @@
     <main class="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
       <section class="rounded-[28px] border border-white/80 bg-white/88 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.36)] backdrop-blur-xl overflow-hidden">
         <div class="border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.82))] px-5 py-5 md:px-6">
-          <h2 class="text-xl font-bold">上傳 GD PDF / QRP</h2>
-          <p class="mt-1 text-sm text-slate-500">PDF 可直接補頁；QRP 會先辨識，真正的 QuickReport QRP 需先轉成 PDF。</p>
+          <h2 class="text-xl font-bold">上傳 GD PDF / HTM / QRP</h2>
+          <p class="mt-1 text-sm text-slate-500">PDF 與 HTM 可直接補頁；真正的 QuickReport QRP 需先轉成 PDF 或 HTM。</p>
         </div>
 
         <div class="p-5 md:p-6">
           <label id="dropzone" class="dropzone flex min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-8 text-center">
-            <input id="fileInput" type="file" accept="application/pdf,.pdf,.qrp" class="sr-only" />
-            <span class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm">選擇 PDF / QRP</span>
+            <input id="fileInput" type="file" accept="application/pdf,text/html,.pdf,.htm,.html,.qrp" class="sr-only" />
+            <span class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm">選擇 PDF / HTM / QRP</span>
             <span class="mt-5 text-2xl font-bold text-slate-900">拖入系統產生的 GD 檔案</span>
             <span class="mt-3 max-w-xl text-sm leading-relaxed text-slate-600">
               工具會依序輸出第 1 頁、第 2 頁、第 2 頁；第 3 頁、第 4 頁、第 4 頁，以此類推。
@@ -185,12 +185,16 @@
             <p class="mt-2 text-sm leading-relaxed text-slate-600">輸出會變成 A1、A2、A2、B1、B2、B2。</p>
           </div>
           <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p class="text-sm font-bold text-slate-900">HTM 也可直接處理</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">若檔案內有 page1、page2 這類分頁標記，工具會直接重排成可列印 HTM。</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p class="text-sm font-bold text-slate-900">不用上傳到任何伺服器</p>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">PDF 只在目前瀏覽器內處理，完成後產生可列印的新檔。</p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">檔案只在目前瀏覽器內處理，完成後產生可列印的新檔。</p>
           </div>
           <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
             <p class="text-sm font-bold text-amber-900">QRP 需要先轉 PDF</p>
-            <p class="mt-2 text-sm leading-relaxed text-amber-800">真正的 QuickReport QRP 是專有格式，瀏覽器不能直接解析；請先用原系統或 QRP Viewer 匯出 PDF 再補頁。</p>
+            <p class="mt-2 text-sm leading-relaxed text-amber-800">真正的 QuickReport QRP 是專有格式，瀏覽器不能直接解析；請先用原系統或 QRP Viewer 匯出 PDF / HTM 再補頁。</p>
           </div>
         </div>
       </aside>
@@ -244,18 +248,50 @@
       downloadBtn.disabled = true;
     }
 
-    function getOutputFilename(filename) {
+    function getPdfOutputFilename(filename) {
       const cleanName = filename.replace(/\.(pdf|qrp)$/i, '');
       return `${cleanName || 'GD'}_GD_print_ready.pdf`;
     }
 
+    function getHtmlOutputFilename(filename) {
+      const cleanName = filename.replace(/\.(html|htm)$/i, '');
+      return `${cleanName || 'GD'}_GD_print_ready.htm`;
+    }
+
     async function getFileKind(file) {
-      const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+      const header = new Uint8Array(await file.slice(0, 80).arrayBuffer());
       const headerText = String.fromCharCode(...header);
       if (headerText.startsWith('%PDF')) return 'pdf';
+      if (/^\s*(<!doctype html|<html)/i.test(headerText) || file.type === 'text/html' || /\.(htm|html)$/i.test(file.name)) return 'html';
       if (/\.qrp$/i.test(file.name)) return 'qrp';
       if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) return 'pdf';
       return 'unknown';
+    }
+
+    function parseTopPx(element) {
+      const topValue = element.style && element.style.top;
+      if (topValue) return Number.parseFloat(topValue);
+      const match = (element.getAttribute('style') || '').match(/top\s*:\s*(-?\d+(?:\.\d+)?)px/i);
+      return match ? Number.parseFloat(match[1]) : null;
+    }
+
+    function setTopPx(element, top) {
+      if (element.style) {
+        element.style.top = `${Math.round(top)}px`;
+      }
+    }
+
+    function getMedian(numbers) {
+      const sorted = [...numbers].sort((a, b) => a - b);
+      return sorted[Math.floor(sorted.length / 2)];
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
     function loadScript(src) {
@@ -324,6 +360,91 @@
       };
     }
 
+    async function buildPrintReadyHtml(file) {
+      const rawHtml = (await file.text()).replace(/\u0000/g, '').replace(/^\uFEFF/, '');
+      const sourceDoc = new DOMParser().parseFromString(rawHtml, 'text/html');
+      const markers = Array.from(sourceDoc.querySelectorAll('.pagemarker'))
+        .map((marker) => ({ marker, top: parseTopPx(marker) }))
+        .filter((item) => Number.isFinite(item.top))
+        .sort((a, b) => a.top - b.top);
+
+      if (markers.length < 2) {
+        throw new Error('這份 HTM 找不到足夠的分頁標記，無法判斷第 1 頁與第 2 頁。');
+      }
+
+      const pageCount = markers.length;
+      if (pageCount % 2 !== 0) {
+        throw new Error(`原始 HTM 是 ${pageCount} 頁，不是偶數頁。請確認系統輸出的 GD 是否完整。`);
+      }
+
+      const pageGaps = markers.slice(1).map((item, index) => item.top - markers[index].top).filter((gap) => gap > 0);
+      const pageHeight = Math.round(getMedian(pageGaps) || 1123);
+      const bodyChildren = Array.from(sourceDoc.body.children);
+      const outputSections = [];
+
+      for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+        const startTop = markers[pageIndex].top;
+        const endTop = pageIndex + 1 < pageCount ? markers[pageIndex + 1].top : startTop + pageHeight;
+        const repeatCount = (pageIndex + 1) % 2 === 0 ? 2 : 1;
+        const pageNodes = bodyChildren.filter((child) => {
+          const top = parseTopPx(child);
+          return Number.isFinite(top) && top >= startTop && top < endTop;
+        });
+
+        for (let copyIndex = 0; copyIndex < repeatCount; copyIndex += 1) {
+          const pageHtml = pageNodes.map((node) => {
+            const clone = node.cloneNode(true);
+            const top = parseTopPx(clone);
+            if (Number.isFinite(top)) setTopPx(clone, top - startTop);
+            if (clone.classList && clone.classList.contains('pagemarker')) {
+              clone.removeAttribute('name');
+              clone.removeAttribute('id');
+            }
+            return clone.outerHTML;
+          }).join('\n');
+
+          outputSections.push(`<section class="gd-html-page">${pageHtml}</section>`);
+        }
+      }
+
+      const title = `${file.name.replace(/\.(htm|html)$/i, '') || 'GD'} GD print ready`;
+      const outputHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .gd-html-page {
+      position: relative;
+      width: 805px;
+      height: ${pageHeight}px;
+      overflow: hidden;
+      background: #fff;
+      page-break-after: always;
+      break-after: page;
+    }
+    .gd-html-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+  </style>
+</head>
+<body>
+${outputSections.join('\n')}
+</body>
+</html>`;
+
+      return {
+        pageCount,
+        flightCount: pageCount / 2,
+        outputPageCount: outputSections.length,
+        blob: new Blob([outputHtml], { type: 'text/html;charset=utf-8' })
+      };
+    }
+
     function triggerPrint() {
       if (!outputUrl) return;
 
@@ -353,28 +474,30 @@
 
       const fileKind = await getFileKind(file);
       if (fileKind === 'qrp') {
-        setStatus('這是一個 QuickReport QRP 檔。QRP 是專有報表格式，這個瀏覽器工具無法直接轉 PDF；請先在原系統或 QRP Viewer 內匯出/列印成 PDF，再把 PDF 拖進來補頁。', 'warn');
+        setStatus('這是一個 QuickReport QRP 檔。QRP 是專有報表格式，這個瀏覽器工具無法直接轉 PDF；請先在原系統或 QRP Viewer 內匯出/列印成 PDF 或 HTM，再把檔案拖進來補頁。', 'warn');
         return;
       }
 
-      if (fileKind !== 'pdf') {
-        setStatus('請選擇 PDF 檔，或系統產生的 QRP 檔。', 'error');
+      if (fileKind !== 'pdf' && fileKind !== 'html') {
+        setStatus('請選擇 PDF、HTM，或系統產生的 QRP 檔。', 'error');
         return;
       }
 
       try {
-        setStatus('正在讀取與重排 PDF...', 'busy');
-        const result = await buildPrintReadyPdf(file);
+        setStatus(`正在讀取與重排 ${fileKind === 'pdf' ? 'PDF' : 'HTM'}...`, 'busy');
+        const result = fileKind === 'pdf'
+          ? await buildPrintReadyPdf(file)
+          : await buildPrintReadyHtml(file);
 
         outputUrl = URL.createObjectURL(result.blob);
-        outputFilename = getOutputFilename(file.name);
+        outputFilename = fileKind === 'pdf' ? getPdfOutputFilename(file.name) : getHtmlOutputFilename(file.name);
         sourcePages.textContent = `${result.pageCount} 頁`;
         flightCount.textContent = `${result.flightCount} 班`;
         outputPages.textContent = `${result.outputPageCount} 頁`;
         printBtn.disabled = false;
         downloadBtn.disabled = false;
 
-        setStatus(`${result.pageCount} 頁 / ${result.flightCount} 班 / 輸出 ${result.outputPageCount} 頁。PDF 已產生，正在開啟列印。`, 'ok');
+        setStatus(`${result.pageCount} 頁 / ${result.flightCount} 班 / 輸出 ${result.outputPageCount} 頁。檔案已產生，正在開啟列印。`, 'ok');
         triggerPrint();
       } catch (error) {
         resetOutput();
