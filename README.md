@@ -29,12 +29,13 @@ index.html
 calculators.html
 retime.html
 kuatian.html
+aircraft_timeline.html
 flight_gd_shift_tool.html
 duty_claims.html
 telex.html
 ```
 
-注意：部分功能需要讀取 Excel，瀏覽器需能載入外部 CDN 的 SheetJS；部分頁面使用 Tailwind CDN 與 Google Fonts，若離線使用，樣式或 Excel 解析功能可能受影響。
+注意：部分功能需要讀取 Excel，瀏覽器需能載入 SheetJS；`aircraft_timeline.html` 已內建本機版 SheetJS。部分頁面使用 Tailwind CDN 與 Google Fonts，若離線使用，樣式可能受影響。
 
 ## 工具清單
 
@@ -161,6 +162,19 @@ CIXXXX/DDMMM/DEP-ARV STD或STA DDHHMM(L) ETD或ETA或ATD或ATA DDHHMM(L)
 ```
 
 工具提供複製結果與下載 TXT。
+
+### `aircraft_timeline.html` - 航機位置與任務時間線
+
+用途：上傳公司固定格式航班報表後，依機型與機尾號整理 aircraft rotation。
+
+主要功能：
+
+- 讀取 `Export Data` 工作表
+- 依 actual block time 優先、schedule time 備援建立時間線
+- 搜尋機尾號、航班號或機場
+- 顯示單機目前位置、前一段、目前、下一段任務
+- 顯示單機與全機隊橫向時間線
+- 標記銜接異常、時間重疊與資料問題
 
 ### `flight_gd_shift_tool.html` - 值班航班整理工具
 
@@ -292,6 +306,8 @@ Bunk 規則：
 - Tailwind CSS CDN
 - Google Fonts：Noto Sans TC
 - SheetJS：用於讀取 `.xls` / `.xlsx`
+
+`aircraft_timeline.html` 使用 `vendor/sheet-parser.js` 作為本機 SheetJS 解析檔，避免工具在無法連線到 CDN 時不能讀取航班報表。
 
 若部署在無網路或內網環境，建議改為本地化這些 CDN 檔案。
 

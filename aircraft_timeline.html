@@ -1,0 +1,2149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>航機位置與任務時間線</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="./vendor/sheet-parser.js"></script>
+  <style>
+    :root {
+      --bg: #f5f9ff;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-soft: rgba(248, 252, 255, 0.95);
+      --line: rgba(125, 166, 214, 0.32);
+      --line-strong: rgba(87, 140, 205, 0.5);
+      --text: #17314f;
+      --muted: #64748b;
+      --accent: #0ea5e9;
+      --accent-strong: #0369a1;
+      --ok: #0284c7;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --plan: #64748b;
+      --shadow: 0 28px 80px -44px rgba(59, 130, 246, 0.24);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(191, 219, 254, 0.3), transparent 24%),
+        linear-gradient(180deg, #f8fcff 0%, #eef7ff 42%, #f8fafc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 22rem;
+      height: 22rem;
+      border-radius: 999px;
+      filter: blur(88px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.25;
+    }
+
+    body::before {
+      top: -10rem;
+      left: -8rem;
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    body::after {
+      right: -8rem;
+      bottom: -10rem;
+      background: rgba(96, 165, 250, 0.2);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1680px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #f8fcff 0%, #e0f2fe 52%, #dbeafe 100%);
+      padding: 24px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #075985;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid rgba(14, 165, 233, 0.2);
+      background: rgba(255, 255, 255, 0.68);
+      border-radius: 999px;
+      padding: 9px 13px;
+    }
+
+    .eyebrow {
+      margin: 18px 0 8px;
+      color: #0369a1;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 840px;
+      margin: 12px 0 0;
+      color: #475569;
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    .hero-clock {
+      min-width: 260px;
+      border: 1px solid rgba(125, 166, 214, 0.32);
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .clock-label,
+    .field-label,
+    .metric-label {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .clock-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .panel-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.7);
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 0.82));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .panel-copy {
+      margin: 4px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .panel-body {
+      padding: 20px 22px 22px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.1fr) minmax(280px, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .dropzone {
+      border: 1.5px dashed rgba(14, 165, 233, 0.42);
+      background: rgba(240, 249, 255, 0.72);
+      border-radius: 20px;
+      padding: 20px;
+      min-height: 170px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+    }
+
+    .dropzone.is-dragging {
+      border-color: rgba(2, 132, 199, 0.8);
+      background: rgba(224, 242, 254, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .file-input {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .chip-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      font-weight: 800;
+      transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+      white-space: nowrap;
+    }
+
+    .primary-button {
+      padding: 11px 18px;
+      color: white;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      box-shadow: 0 18px 40px -24px rgba(37, 99, 235, 0.72);
+    }
+
+    .secondary-button,
+    .chip-button {
+      color: #075985;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .secondary-button {
+      padding: 10px 15px;
+    }
+
+    .chip-button {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .chip-button.is-active {
+      color: white;
+      background: #0284c7;
+      border-color: #0284c7;
+    }
+
+    .primary-button:hover,
+    .secondary-button:hover,
+    .chip-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .status-line {
+      margin: 12px 0 0;
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .status-line.ok { color: #0369a1; font-weight: 700; }
+    .status-line.warn { color: #b45309; font-weight: 700; }
+    .status-line.danger { color: #b91c1c; font-weight: 700; }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-card {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      background: rgba(255, 255, 255, 0.74);
+      border-radius: 18px;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .metric-value {
+      margin-top: 6px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .controls-grid .field:first-child {
+      grid-column: span 2;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid rgba(125, 166, 214, 0.42);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f172a;
+      padding: 10px 12px;
+      outline: 0;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: rgba(14, 165, 233, 0.72);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+    }
+
+    .focus-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.76fr) minmax(0, 1.24fr);
+      gap: 16px;
+    }
+
+    .status-card {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      background: var(--panel-soft);
+      border-radius: 20px;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .tail-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tail-number {
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .type-pill,
+    .status-pill,
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .type-pill {
+      color: #075985;
+      background: #e0f2fe;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .status-pill {
+      padding: 9px 11px;
+      font-size: 13px;
+    }
+
+    .status-pill.ground { color: #0369a1; background: #e0f2fe; }
+    .status-pill.flight { color: #166534; background: #dcfce7; }
+    .status-pill.warn { color: #92400e; background: #fef3c7; }
+    .status-pill.outside { color: #475569; background: #e2e8f0; }
+
+    .status-text {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .task-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .task-card {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      background: rgba(255, 255, 255, 0.82);
+      border-radius: 16px;
+      padding: 13px;
+    }
+
+    .task-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .task-main {
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .task-sub {
+      margin-top: 5px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .timeline-shell {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      background: rgba(255, 255, 255, 0.76);
+      border-radius: 20px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .timeline-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.7);
+      background: rgba(248, 250, 252, 0.8);
+    }
+
+    .timeline-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+    }
+
+    .timeline-canvas {
+      position: relative;
+      min-width: 880px;
+      height: 190px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.96));
+    }
+
+    .axis {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 38px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.72);
+    }
+
+    .axis-tick {
+      position: absolute;
+      top: 9px;
+      transform: translateX(-50%);
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .time-grid-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(148, 163, 184, 0.2);
+      z-index: 1;
+    }
+
+    .time-grid-line.major {
+      background: rgba(14, 165, 233, 0.34);
+    }
+
+    .time-grid-label {
+      position: absolute;
+      top: 9px;
+      transform: translateX(-50%);
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      z-index: 3;
+    }
+
+    .now-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+      z-index: 8;
+    }
+
+    .flight-block,
+    .ground-block {
+      position: absolute;
+      top: 64px;
+      height: 48px;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 7px 9px;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .flight-block {
+      color: white;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 18px 36px -28px rgba(37, 99, 235, 0.92);
+      z-index: 4;
+      cursor: default;
+    }
+
+    .flight-block.planned {
+      color: #075985;
+      background: rgba(224, 242, 254, 0.92);
+      border: 1px dashed rgba(2, 132, 199, 0.55);
+      box-shadow: none;
+    }
+
+    .flight-block.active {
+      outline: 3px solid rgba(34, 197, 94, 0.35);
+      background: linear-gradient(135deg, #059669, #0284c7);
+    }
+
+    .flight-block.issue {
+      outline: 3px solid rgba(245, 158, 11, 0.28);
+    }
+
+    .ground-block {
+      top: 122px;
+      height: 30px;
+      color: #475569;
+      background: rgba(226, 232, 240, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .block-title {
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .block-sub {
+      opacity: 0.88;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .fleet-wrap {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      border-radius: 20px;
+      overflow: auto;
+      max-height: 620px;
+      background: rgba(255, 255, 255, 0.82);
+      scrollbar-width: thin;
+    }
+
+    .fleet-grid {
+      display: grid;
+      grid-template-columns: 168px minmax(900px, 1fr);
+      min-width: 1080px;
+    }
+
+    .fleet-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 168px minmax(900px, 1fr);
+      grid-column: 1 / -1;
+    }
+
+    .fleet-head-cell {
+      min-height: 42px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.8);
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+    }
+
+    .fleet-axis-cell {
+      position: relative;
+      min-height: 42px;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .fleet-left {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      min-height: 44px;
+      border-right: 1px solid rgba(203, 213, 225, 0.8);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+      background: rgba(248, 250, 252, 0.96);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .fleet-left.type-row {
+      color: #075985;
+      background: #e0f2fe;
+      min-height: 36px;
+      cursor: pointer;
+    }
+
+    .fleet-row {
+      position: relative;
+      min-height: 44px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .fleet-row.type-row {
+      min-height: 36px;
+      background: #eff6ff;
+    }
+
+    .mini-block {
+      position: absolute;
+      top: 8px;
+      height: 28px;
+      border-radius: 9px;
+      color: white;
+      background: #0284c7;
+      padding: 5px 7px;
+      font-size: 11px;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .mini-block.planned {
+      color: #075985;
+      background: #e0f2fe;
+      border: 1px dashed rgba(2, 132, 199, 0.52);
+    }
+
+    .mini-block.active {
+      background: #059669;
+    }
+
+    .mini-block.issue {
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
+    }
+
+    .flight-tooltip {
+      position: fixed;
+      z-index: 80;
+      max-width: min(320px, calc(100vw - 28px));
+      border: 1px solid rgba(14, 165, 233, 0.28);
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.94);
+      color: white;
+      box-shadow: 0 22px 48px -28px rgba(15, 23, 42, 0.7);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-line;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate3d(0, 4px, 0);
+      transition: opacity 90ms ease, transform 90ms ease;
+    }
+
+    .flight-tooltip.is-visible {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .fleet-now {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(239, 68, 68, 0.9);
+      z-index: 2;
+    }
+
+    .results-list,
+    .issues-list {
+      display: grid;
+      gap: 8px;
+      max-height: 240px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .result-item,
+    .issue-item {
+      border: 1px solid rgba(203, 213, 225, 0.75);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.82);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .result-item:hover {
+      border-color: rgba(14, 165, 233, 0.42);
+      background: #f0f9ff;
+    }
+
+    .result-main,
+    .issue-main {
+      color: #0f172a;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .result-sub,
+    .issue-sub {
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .source-pill {
+      padding: 6px 8px;
+      font-size: 11px;
+      color: #075985;
+      background: #e0f2fe;
+    }
+
+    .empty-state {
+      border: 1px dashed rgba(148, 163, 184, 0.55);
+      border-radius: 18px;
+      background: rgba(248, 250, 252, 0.72);
+      color: #64748b;
+      padding: 18px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1100px) {
+      .upload-grid,
+      .focus-layout,
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 20px, 1680px);
+        padding-top: 12px;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 18px;
+      }
+
+      .panel-header,
+      .panel-body,
+      .hero {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-clock {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <a class="back-link" href="./index.html">← 回工具首頁</a>
+          <div class="eyebrow">Aircraft Rotation Viewer</div>
+          <h1>航機位置與任務時間線</h1>
+          <p class="subtitle">上傳公司固定格式航班報表，快速查詢每架飛機現在在哪裡、前一段任務、下一段任務，並用橫向時間線瀏覽 aircraft rotation。</p>
+        </div>
+        <div class="hero-clock">
+          <div>
+            <div class="clock-label">UTC / Zulu</div>
+            <div id="utcClock" class="clock-value">--:--:--</div>
+          </div>
+          <div>
+            <div class="clock-label">Taipei (UTC+8)</div>
+            <div id="taipeiClock" class="clock-value">--:--:--</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">上傳報表</h2>
+          <p class="panel-copy">支援固定格式的 `.xls` / `.xlsx`，資料只在瀏覽器本機解析。</p>
+        </div>
+        <button id="resetButton" class="secondary-button" type="button">清除資料</button>
+      </div>
+      <div class="panel-body">
+        <div class="upload-grid">
+          <label id="dropzone" class="dropzone" for="fileInput">
+            <input id="fileInput" class="file-input" type="file" accept=".xls,.xlsx,.xlsm,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+            <span>
+              <strong>拖放 Excel 到這裡，或點選上傳</strong><br />
+              <span style="color:#64748b;font-size:14px;">讀取 Export Data，依機型與機尾號建立時間線。</span>
+              <span id="uploadStatus" class="status-line">尚未選擇檔案。</span>
+            </span>
+          </label>
+
+          <div class="metrics-grid" aria-live="polite">
+            <div class="metric-card">
+              <div class="metric-label">日期範圍</div>
+              <div id="metricRange" class="metric-value" style="font-size:15px;line-height:1.45;">--</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">航班數</div>
+              <div id="metricFlights" class="metric-value">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">機尾號</div>
+              <div id="metricTails" class="metric-value">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">機型</div>
+              <div id="metricTypes" class="metric-value">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">資料問題</div>
+              <div id="metricIssues" class="metric-value">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">快速定位</h2>
+          <p class="panel-copy">輸入機尾號、航班號或機場。機尾號會優先顯示。</p>
+        </div>
+        <button id="jumpNowButton" class="secondary-button" type="button">跳到現在</button>
+      </div>
+      <div class="panel-body">
+        <div class="controls-grid">
+          <div class="field">
+            <label class="field-label" for="searchInput">搜尋</label>
+            <input id="searchInput" class="input" type="search" placeholder="例如 18360、B-18360、CI120、HKG" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="timeModeSelect">時間顯示</label>
+            <select id="timeModeSelect" class="select">
+              <option value="taipei">台北時間</option>
+              <option value="utc">UTC</option>
+              <option value="local">報表 Local</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="typeFilter">機型篩選</label>
+            <select id="typeFilter" class="select">
+              <option value="">全部機型</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="airportFilter">機場篩選</label>
+            <input id="airportFilter" class="input" type="text" placeholder="例如 TPE" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="issueFilter">異常狀態</label>
+            <select id="issueFilter" class="select">
+              <option value="">全部</option>
+              <option value="issues">只看異常</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fleetWindowSelect">全機隊範圍</label>
+            <select id="fleetWindowSelect" class="select">
+              <option value="threeDays">昨天到明天</option>
+              <option value="today">今天</option>
+              <option value="tomorrow">明天</option>
+              <option value="report">全報表</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="timeScaleSelect">刻度比例</label>
+            <select id="timeScaleSelect" class="select">
+              <option value="2">每格 2 小時</option>
+              <option value="4" selected>每格 4 小時</option>
+              <option value="6">每格 6 小時</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="focusPanel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">單機焦點</h2>
+          <p id="focusHint" class="panel-copy">上傳報表後搜尋或點選任一機尾號。</p>
+        </div>
+        <div class="source-pill">顯示現在前後 48 小時</div>
+      </div>
+      <div class="panel-body">
+        <div id="emptyFocus" class="empty-state">還沒有選擇飛機。上傳報表後，可以直接輸入機尾號，例如 18360。</div>
+        <div id="focusContent" class="focus-layout hidden">
+          <aside class="status-card">
+            <div class="tail-heading">
+              <div>
+                <div id="focusTail" class="tail-number">B------</div>
+                <div id="focusType" class="type-pill" style="margin-top:10px;">--</div>
+              </div>
+              <div id="focusStatusPill" class="status-pill outside">--</div>
+            </div>
+            <p id="focusStatusText" class="status-text">--</p>
+            <div class="task-grid">
+              <div class="task-card">
+                <div class="task-label">前一段任務</div>
+                <div id="prevTask" class="task-main">--</div>
+                <div id="prevTaskSub" class="task-sub"></div>
+              </div>
+              <div class="task-card">
+                <div class="task-label">目前任務</div>
+                <div id="currentTask" class="task-main">--</div>
+                <div id="currentTaskSub" class="task-sub"></div>
+              </div>
+              <div class="task-card">
+                <div class="task-label">下一段任務</div>
+                <div id="nextTask" class="task-main">--</div>
+                <div id="nextTaskSub" class="task-sub"></div>
+              </div>
+            </div>
+          </aside>
+          <div class="timeline-shell">
+            <div class="timeline-toolbar">
+              <strong>單機時間線</strong>
+              <span id="singleRangeLabel" style="color:#64748b;font-size:13px;">--</span>
+            </div>
+            <div class="timeline-scroll">
+              <div id="singleTimeline" class="timeline-canvas"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">搜尋結果</h2>
+          <p class="panel-copy">點選結果可切換單機焦點。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="resultsList" class="results-list">
+          <div class="empty-state">尚無搜尋結果。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">全機隊時間線</h2>
+          <p class="panel-copy">依機型分組。點機型列可收合，點航班或機尾號可切到單機焦點。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="fleetEmpty" class="empty-state">上傳報表後會在這裡顯示全機隊 aircraft rotation。</div>
+        <div id="fleetWrap" class="fleet-wrap hidden">
+          <div id="fleetGrid" class="fleet-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">資料問題</h2>
+          <p class="panel-copy">缺欄位、缺時間、時間重疊或銜接不一致會列在這裡。</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="issuesList" class="issues-list">
+          <div class="empty-state">尚無資料問題。</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="flightTooltip" class="flight-tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <script>
+    const REQUIRED_COLUMNS = [
+      "LATEST_EQP_CD",
+      "LATEST_TAIL_NR",
+      "ALN_CD",
+      "FLT_NR",
+      "LATEST_DEP_ARP_CD",
+      "LATEST_ARV_ARP_CD",
+      "SCH_ETD",
+      "SCH_ETA",
+      "ACTUAL_OFFBLOCKS",
+      "ACTUAL_ONBLOCKS"
+    ];
+
+    const state = {
+      flights: [],
+      issues: [],
+      byTail: new Map(),
+      byType: new Map(),
+      byFlight: new Map(),
+      byAirport: new Map(),
+      collapsedTypes: new Set(),
+      selectedTail: "",
+      fleetWindow: "threeDays",
+      timeScaleHours: 4,
+      timeMode: "taipei",
+      reportMin: null,
+      reportMax: null
+    };
+
+    const el = {
+      utcClock: document.getElementById("utcClock"),
+      taipeiClock: document.getElementById("taipeiClock"),
+      fileInput: document.getElementById("fileInput"),
+      dropzone: document.getElementById("dropzone"),
+      uploadStatus: document.getElementById("uploadStatus"),
+      resetButton: document.getElementById("resetButton"),
+      metricRange: document.getElementById("metricRange"),
+      metricFlights: document.getElementById("metricFlights"),
+      metricTails: document.getElementById("metricTails"),
+      metricTypes: document.getElementById("metricTypes"),
+      metricIssues: document.getElementById("metricIssues"),
+      searchInput: document.getElementById("searchInput"),
+      timeModeSelect: document.getElementById("timeModeSelect"),
+      typeFilter: document.getElementById("typeFilter"),
+      airportFilter: document.getElementById("airportFilter"),
+      issueFilter: document.getElementById("issueFilter"),
+      fleetWindowSelect: document.getElementById("fleetWindowSelect"),
+      timeScaleSelect: document.getElementById("timeScaleSelect"),
+      jumpNowButton: document.getElementById("jumpNowButton"),
+      emptyFocus: document.getElementById("emptyFocus"),
+      focusContent: document.getElementById("focusContent"),
+      focusHint: document.getElementById("focusHint"),
+      focusTail: document.getElementById("focusTail"),
+      focusType: document.getElementById("focusType"),
+      focusStatusPill: document.getElementById("focusStatusPill"),
+      focusStatusText: document.getElementById("focusStatusText"),
+      prevTask: document.getElementById("prevTask"),
+      prevTaskSub: document.getElementById("prevTaskSub"),
+      currentTask: document.getElementById("currentTask"),
+      currentTaskSub: document.getElementById("currentTaskSub"),
+      nextTask: document.getElementById("nextTask"),
+      nextTaskSub: document.getElementById("nextTaskSub"),
+      singleTimeline: document.getElementById("singleTimeline"),
+      singleRangeLabel: document.getElementById("singleRangeLabel"),
+      resultsList: document.getElementById("resultsList"),
+      fleetEmpty: document.getElementById("fleetEmpty"),
+      fleetWrap: document.getElementById("fleetWrap"),
+      fleetGrid: document.getElementById("fleetGrid"),
+      issuesList: document.getElementById("issuesList"),
+      flightTooltip: document.getElementById("flightTooltip")
+    };
+
+    function pad2(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function formatClock(date, utcOffsetHours = 0) {
+      const shifted = new Date(date.getTime() + utcOffsetHours * 60 * 60 * 1000);
+      return `${shifted.getUTCFullYear()}-${pad2(shifted.getUTCMonth() + 1)}-${pad2(shifted.getUTCDate())} ${pad2(shifted.getUTCHours())}:${pad2(shifted.getUTCMinutes())}:${pad2(shifted.getUTCSeconds())}`;
+    }
+
+    function updateClocks() {
+      const now = new Date();
+      el.utcClock.textContent = formatClock(now, 0);
+      el.taipeiClock.textContent = formatClock(now, 8);
+    }
+
+    function normalizeText(value) {
+      if (value === null || value === undefined) return "";
+      return String(value).trim();
+    }
+
+    function normalizeTail(value) {
+      return normalizeText(value).replace(/^B[-\s]?/i, "").replace(/\s+/g, "").toUpperCase();
+    }
+
+    function displayTail(value) {
+      const tail = normalizeTail(value);
+      if (!tail) return "未分配";
+      return tail.startsWith("B-") ? tail : `B-${tail}`;
+    }
+
+    function formatFlightNo(row) {
+      const airline = normalizeText(row.ALN_CD);
+      const nr = normalizeText(row.FLT_NR).padStart(4, "0");
+      const suffix = normalizeText(row.OP_SUFFIX);
+      return `${airline}${nr}${suffix}`.trim();
+    }
+
+    function normalizeFlightToken(value) {
+      const token = normalizeText(value).toUpperCase().replace(/\s+/g, "");
+      const match = token.match(/^([A-Z]+)0*(\d+)(.*)$/);
+      if (!match) return token;
+      return `${match[1]}${Number(match[2])}${match[3] || ""}`;
+    }
+
+    function formatDisplayFlightNo(flightNo) {
+      return normalizeFlightToken(flightNo);
+    }
+
+    function buildFlightTooltip(flight, includeTail = false) {
+      const depLabel = flight.actualOffblocksUtc ? "ATD" : "ETD";
+      const arrLabel = flight.actualOnblocksUtc ? "ATA" : "ETA";
+      const depTime = flight.actualOffblocksUtc || flight.scheduledDepUtc || flight.timelineStartUtc;
+      const arrTime = flight.actualOnblocksUtc || flight.scheduledArrUtc || flight.timelineEndUtc;
+      const depLocal = flight.actualOffblocksUtc ? flight.localTimes.actualOffblocks : flight.localTimes.scheduledDep;
+      const arrLocal = flight.actualOnblocksUtc ? flight.localTimes.actualOnblocks : flight.localTimes.scheduledArr;
+      const lines = [];
+      if (includeTail) lines.push(`機尾號：${flight.tailNumberDisplay}`);
+      lines.push(`航班：${formatDisplayFlightNo(flight.flightNo)}`);
+      lines.push(`起飛站：${flight.dep}`);
+      lines.push(`終點站：${flight.arr}`);
+      lines.push(`${depLabel}：${formatDateTime(depTime, state.timeMode, depLocal)}`);
+      lines.push(`${arrLabel}：${formatDateTime(arrTime, state.timeMode, arrLocal)}`);
+      return lines.join("\n");
+    }
+
+    function positionFlightTooltip(event) {
+      const tooltip = el.flightTooltip;
+      if (!tooltip || !tooltip.classList.contains("is-visible")) return;
+      const margin = 14;
+      const offset = 14;
+      const rect = tooltip.getBoundingClientRect();
+      let left = event.clientX + offset;
+      let top = event.clientY + offset;
+      if (left + rect.width + margin > window.innerWidth) {
+        left = event.clientX - rect.width - offset;
+      }
+      if (top + rect.height + margin > window.innerHeight) {
+        top = event.clientY - rect.height - offset;
+      }
+      tooltip.style.left = `${Math.max(margin, left)}px`;
+      tooltip.style.top = `${Math.max(margin, top)}px`;
+    }
+
+    function showFlightTooltip(event, target) {
+      const tooltipText = target.dataset.tooltip;
+      if (!tooltipText) return;
+      el.flightTooltip.textContent = tooltipText;
+      el.flightTooltip.setAttribute("aria-hidden", "false");
+      el.flightTooltip.classList.add("is-visible");
+      positionFlightTooltip(event);
+    }
+
+    function hideFlightTooltip() {
+      el.flightTooltip.classList.remove("is-visible");
+      el.flightTooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function normalizeAircraftFamily(value) {
+      const code = normalizeText(value).toUpperCase();
+      const familyMap = {
+        "32Q": "321",
+        "A321": "321",
+        "A320": "320",
+        "33A": "330",
+        "33C": "330",
+        "333": "330",
+        "A333": "330",
+        "A332": "330",
+        "359": "350",
+        "35C": "350",
+        "35D": "350",
+        "A359": "350",
+        "738": "737",
+        "B738": "737",
+        "B737F": "737",
+        "77W": "777",
+        "77X": "777",
+        "B77W": "777",
+        "B773": "777",
+        "B772": "777",
+        "B777": "777",
+        "B777F": "777",
+        "74Y": "747",
+        "B744F": "747",
+        "B748F": "747",
+        "B767": "767",
+        "B787": "787",
+        "B789": "787",
+        "B78X": "787"
+      };
+      return familyMap[code] || code || "UNKNOWN";
+    }
+
+    function parseDateValue(value) {
+      if (!value && value !== 0) return null;
+      if (typeof value === "number" && window.XLSX && XLSX.SSF) {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (!parsed) return null;
+        return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d, parsed.H || 0, parsed.M || 0, Math.floor(parsed.S || 0)));
+      }
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return new Date(Date.UTC(
+          value.getFullYear(),
+          value.getMonth(),
+          value.getDate(),
+          value.getHours(),
+          value.getMinutes(),
+          value.getSeconds()
+        ));
+      }
+      const text = normalizeText(value);
+      if (!text) return null;
+      const normalized = text
+        .replace(/\//g, "-")
+        .replace("T", " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (match) {
+        const [, y, m, d, hh = "0", mm = "0", ss = "0"] = match;
+        return new Date(Date.UTC(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss)));
+      }
+      const fallback = new Date(text);
+      return Number.isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    function dateMs(date) {
+      return date instanceof Date ? date.getTime() : Number.NaN;
+    }
+
+    function formatDateTime(date, mode = state.timeMode, localValue = null) {
+      if (mode === "local" && localValue) {
+        const localDate = parseDateValue(localValue);
+        if (localDate) return `${pad2(localDate.getUTCMonth() + 1)}/${pad2(localDate.getUTCDate())} ${pad2(localDate.getUTCHours())}:${pad2(localDate.getUTCMinutes())}L`;
+      }
+      const offset = mode === "taipei" ? 8 : 0;
+      const shifted = new Date(date.getTime() + offset * 60 * 60 * 1000);
+      const suffix = mode === "taipei" ? "TPE" : "Z";
+      return `${pad2(shifted.getUTCMonth() + 1)}/${pad2(shifted.getUTCDate())} ${pad2(shifted.getUTCHours())}:${pad2(shifted.getUTCMinutes())}${suffix}`;
+    }
+
+    function formatDuration(ms) {
+      if (!Number.isFinite(ms) || ms < 0) return "--";
+      const totalMinutes = Math.round(ms / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours <= 0) return `${minutes}分`;
+      return `${hours}小時${pad2(minutes)}分`;
+    }
+
+    function resetState() {
+      state.flights = [];
+      state.issues = [];
+      state.byTail = new Map();
+      state.byType = new Map();
+      state.byFlight = new Map();
+      state.byAirport = new Map();
+      state.collapsedTypes = new Set();
+      state.selectedTail = "";
+      state.fleetWindow = "threeDays";
+      state.timeScaleHours = 4;
+      state.reportMin = null;
+      state.reportMax = null;
+      el.fileInput.value = "";
+      el.uploadStatus.textContent = "尚未選擇檔案。";
+      el.uploadStatus.className = "status-line";
+      el.searchInput.value = "";
+      el.airportFilter.value = "";
+      el.issueFilter.value = "";
+      el.fleetWindowSelect.value = "threeDays";
+      el.timeScaleSelect.value = "4";
+      renderAll();
+    }
+
+    function pushIndex(map, key, value) {
+      if (!key) return;
+      const normalized = String(key).toUpperCase();
+      if (!map.has(normalized)) map.set(normalized, []);
+      map.get(normalized).push(value);
+    }
+
+    function buildFlight(row, index) {
+      const tailNumberRaw = normalizeTail(row.LATEST_TAIL_NR);
+      const dep = normalizeText(row.LATEST_DEP_ARP_CD).toUpperCase();
+      const arr = normalizeText(row.LATEST_ARV_ARP_CD).toUpperCase();
+      const scheduledDepUtc = parseDateValue(row.SCH_ETD);
+      const scheduledArrUtc = parseDateValue(row.SCH_ETA);
+      const actualOffblocksUtc = parseDateValue(row.ACTUAL_OFFBLOCKS);
+      const actualOnblocksUtc = parseDateValue(row.ACTUAL_ONBLOCKS);
+      const timelineStartUtc = actualOffblocksUtc || scheduledDepUtc;
+      const timelineEndUtc = actualOnblocksUtc || scheduledArrUtc;
+      const missing = [];
+      const aircraftType = normalizeText(row.LATEST_EQP_CD) || "UNKNOWN";
+
+      if (!tailNumberRaw) missing.push("缺機尾號");
+      if (!dep) missing.push("缺出發機場");
+      if (!arr) missing.push("缺到達機場");
+      if (!timelineStartUtc) missing.push("缺出發時間");
+      if (!timelineEndUtc) missing.push("缺到達時間");
+      if (timelineStartUtc && timelineEndUtc && timelineEndUtc < timelineStartUtc) missing.push("到達時間早於出發時間");
+
+      const flight = {
+        airlineCode: normalizeText(row.ALN_CD).toUpperCase(),
+        aircraftType,
+        aircraftFamily: normalizeAircraftFamily(aircraftType),
+        tailNumberRaw,
+        tailNumberDisplay: displayTail(tailNumberRaw),
+        flightNo: formatFlightNo(row),
+        dep,
+        arr,
+        serviceType: normalizeText(row.SVC_TYPE),
+        operator: normalizeText(row.ACF_OPER),
+        timelineStartUtc,
+        timelineEndUtc,
+        startSource: actualOffblocksUtc ? "actual" : "planned",
+        endSource: actualOnblocksUtc ? "actual" : "planned",
+        scheduledDepUtc,
+        scheduledArrUtc,
+        actualOffblocksUtc,
+        actualOnblocksUtc,
+        actualAirborneUtc: parseDateValue(row.ACTUAL_AIRBORNE),
+        actualLandingUtc: parseDateValue(row.ACTUAL_LANDING),
+        localTimes: {
+          scheduledDep: row.SCH_ETD_LCL,
+          scheduledArr: row.SCH_ETA_LCL,
+          actualOffblocks: row.ACTUAL_OFFBLOCKS_LCL,
+          actualOnblocks: row.ACTUAL_ONBLOCKS_LCL,
+          actualAirborne: row.ACTUAL_AIRBORNE_LCL,
+          actualLanding: row.ACTUAL_LANDING_LCL
+        },
+        depGate: normalizeText(row.DEP_GATE),
+        arrGate: normalizeText(row.ARV_GATE),
+        rawRowIndex: index + 2,
+        issues: missing
+      };
+
+      return flight;
+    }
+
+    function buildModel(rows) {
+      const flights = [];
+      const issues = [];
+
+      rows.forEach((row, index) => {
+        const flight = buildFlight(row, index);
+        if (!["CI", "AE"].includes(flight.airlineCode)) {
+          return;
+        }
+        if (flight.issues.length) {
+          issues.push({
+            level: "資料缺漏",
+            title: `第 ${flight.rawRowIndex} 列 ${flight.flightNo || ""}`,
+            detail: flight.issues.join("、")
+          });
+          return;
+        }
+        flights.push(flight);
+      });
+
+      flights.sort((a, b) => dateMs(a.timelineStartUtc) - dateMs(b.timelineStartUtc));
+
+      const byTail = new Map();
+      const byType = new Map();
+      const byFlight = new Map();
+      const byAirport = new Map();
+
+      flights.forEach((flight) => {
+        pushIndex(byTail, flight.tailNumberRaw, flight);
+        pushIndex(byType, flight.aircraftFamily, flight);
+        pushIndex(byFlight, flight.flightNo, flight);
+        pushIndex(byFlight, normalizeFlightToken(flight.flightNo), flight);
+        pushIndex(byAirport, flight.dep, flight);
+        pushIndex(byAirport, flight.arr, flight);
+      });
+
+      for (const [tail, list] of byTail.entries()) {
+        list.sort((a, b) => dateMs(a.timelineStartUtc) - dateMs(b.timelineStartUtc));
+        for (let i = 0; i < list.length; i += 1) {
+          const current = list[i];
+          const next = list[i + 1];
+          if (!next) continue;
+          if (current.timelineEndUtc > next.timelineStartUtc) {
+            current.hasOverlap = true;
+            next.hasOverlap = true;
+            issues.push({
+              level: "時間重疊",
+              title: `${current.tailNumberDisplay} ${current.flightNo} / ${next.flightNo}`,
+              detail: `${formatDateTime(current.timelineEndUtc)} 之後才結束，但下一班 ${formatDateTime(next.timelineStartUtc)} 已開始。`
+            });
+          }
+          if (current.arr && next.dep && current.arr !== next.dep) {
+            current.hasConnectionIssue = true;
+            next.hasConnectionIssue = true;
+            issues.push({
+              level: "位置銜接",
+              title: `${current.tailNumberDisplay} ${current.flightNo} → ${next.flightNo}`,
+              detail: `上一班到 ${current.arr}，下一班從 ${next.dep} 出發。`
+            });
+          }
+        }
+      }
+
+      state.flights = flights;
+      state.issues = issues;
+      state.byTail = byTail;
+      state.byType = byType;
+      state.byFlight = byFlight;
+      state.byAirport = byAirport;
+      state.reportMin = flights.length ? new Date(Math.min(...flights.map((flight) => dateMs(flight.timelineStartUtc)))) : null;
+      state.reportMax = flights.length ? new Date(Math.max(...flights.map((flight) => dateMs(flight.timelineEndUtc)))) : null;
+    }
+
+    function validateColumns(rows) {
+      if (!rows.length) {
+        throw new Error("Export Data 工作表沒有可讀取的資料。");
+      }
+      const first = rows[0] || {};
+      const missing = REQUIRED_COLUMNS.filter((column) => !(column in first));
+      if (missing.length) {
+        throw new Error(`報表欄位不完整：缺少 ${missing.join("、")}`);
+      }
+    }
+
+    async function handleFile(file) {
+      if (!window.XLSX) {
+        el.uploadStatus.textContent = "Excel 解析套件尚未載入，請確認網路可連到 CDN 後重試。";
+        el.uploadStatus.className = "status-line danger";
+        return;
+      }
+
+      el.uploadStatus.textContent = `讀取中：${file.name}`;
+      el.uploadStatus.className = "status-line";
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array", cellDates: false, raw: true });
+        const sheetName = workbook.SheetNames.includes("Export Data") ? "Export Data" : "";
+        if (!sheetName) throw new Error("找不到 Export Data 工作表，請確認上傳的是公司固定格式航班報表。");
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
+        validateColumns(rows);
+        buildModel(rows);
+        const firstTail = state.byTail.keys().next().value || "";
+        state.selectedTail = firstTail;
+        el.uploadStatus.textContent = `已載入 ${file.name}，工作表：${sheetName}`;
+        el.uploadStatus.className = "status-line ok";
+        renderAll();
+      } catch (error) {
+        console.error(error);
+        el.uploadStatus.textContent = error.message || "讀取失敗，請確認是否為固定格式的航班報表。";
+        el.uploadStatus.className = "status-line danger";
+      }
+    }
+
+    function getAircraftStatus(flights, now = new Date()) {
+      if (!flights.length) return null;
+      let previous = null;
+      let current = null;
+      let next = null;
+
+      for (const flight of flights) {
+        if (flight.timelineStartUtc <= now && now <= flight.timelineEndUtc) {
+          current = flight;
+          break;
+        }
+        if (flight.timelineEndUtc < now) previous = flight;
+        if (flight.timelineStartUtc > now) {
+          next = flight;
+          break;
+        }
+      }
+
+      if (current) {
+        const currentIndex = flights.indexOf(current);
+        previous = flights[currentIndex - 1] || previous;
+        next = flights[currentIndex + 1] || null;
+        return {
+          kind: "flight",
+          pill: "任務中",
+          text: `${current.flightNo} ${current.dep} → ${current.arr} 任務中，預計/實際到場 ${formatDateTime(current.timelineEndUtc, state.timeMode, current.endSource === "actual" ? current.localTimes.actualOnblocks : current.localTimes.scheduledArr)}。`,
+          previous,
+          current,
+          next
+        };
+      }
+
+      if (!previous && next) {
+        return {
+          kind: "outside",
+          pill: "報表前",
+          text: `報表起點前狀態未知，第一筆任務從 ${next.dep} 出發。`,
+          previous: null,
+          current: null,
+          next
+        };
+      }
+
+      if (previous && !next) {
+        return {
+          kind: "outside",
+          pill: "最後已知",
+          text: `最後已知位置為 ${previous.arr}，最後一班 ${previous.flightNo} 已到場。`,
+          previous,
+          current: null,
+          next: null
+        };
+      }
+
+      if (previous && next) {
+        if (previous.arr === next.dep) {
+          return {
+            kind: "ground",
+            pill: "地停中",
+            text: `目前在 ${previous.arr} 地停，下一班 ${next.flightNo} 將前往 ${next.arr}。`,
+            previous,
+            current: null,
+            next
+          };
+        }
+        return {
+          kind: "warn",
+          pill: "銜接異常",
+          text: `位置銜接不一致：上一班到 ${previous.arr}，下一班從 ${next.dep} 出發。`,
+          previous,
+          current: null,
+          next
+        };
+      }
+
+      return null;
+    }
+
+    function describeFlight(flight) {
+      if (!flight) return ["--", ""];
+      const startLocal = flight.startSource === "actual" ? flight.localTimes.actualOffblocks : flight.localTimes.scheduledDep;
+      const endLocal = flight.endSource === "actual" ? flight.localTimes.actualOnblocks : flight.localTimes.scheduledArr;
+      const main = `${flight.flightNo} ${flight.dep} → ${flight.arr}`;
+      const sub = `${formatDateTime(flight.timelineStartUtc, state.timeMode, startLocal)} - ${formatDateTime(flight.timelineEndUtc, state.timeMode, endLocal)} · ${flight.startSource === "actual" ? "實際" : "計畫"}出發 / ${flight.endSource === "actual" ? "實際" : "預估"}到達`;
+      return [main, sub];
+    }
+
+    function setTask(mainEl, subEl, flight) {
+      const [main, sub] = describeFlight(flight);
+      mainEl.textContent = main;
+      subEl.textContent = sub;
+    }
+
+    function dayWindow(offsetDays) {
+      const now = new Date();
+      const tpeNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const startTpe = Date.UTC(tpeNow.getUTCFullYear(), tpeNow.getUTCMonth(), tpeNow.getUTCDate() + offsetDays, 0, 0, 0);
+      return {
+        start: new Date(startTpe - 8 * 60 * 60 * 1000),
+        end: new Date(startTpe - 8 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000)
+      };
+    }
+
+    function currentFocusRange(flights) {
+      if (!flights.length) return null;
+      const now = new Date();
+      const span = 48 * 60 * 60 * 1000;
+      return { start: new Date(now.getTime() - span), end: new Date(now.getTime() + span) };
+    }
+
+    function timelineWidthForRange(start, end, scaleHours) {
+      const hours = Math.max(1, (end.getTime() - start.getTime()) / (60 * 60 * 1000));
+      return Math.max(880, Math.ceil(hours / scaleHours) * 92);
+    }
+
+    function alignToScale(date, scaleHours) {
+      const aligned = new Date(date);
+      aligned.setUTCMinutes(0, 0, 0);
+      const hour = aligned.getUTCHours();
+      aligned.setUTCHours(Math.floor(hour / scaleHours) * scaleHours);
+      if (aligned > date) aligned.setUTCHours(aligned.getUTCHours() - scaleHours);
+      return aligned;
+    }
+
+    function formatAxisLabel(date) {
+      const offset = state.timeMode === "taipei" ? 8 : 0;
+      const shifted = new Date(date.getTime() + offset * 60 * 60 * 1000);
+      const hour = shifted.getUTCHours();
+      if (hour === 0) {
+        return `${pad2(shifted.getUTCMonth() + 1)}/${pad2(shifted.getUTCDate())} 00:00`;
+      }
+      return `${pad2(hour)}:00`;
+    }
+
+    function addTimeGrid(container, start, end, scaleHours, options = {}) {
+      const span = end.getTime() - start.getTime();
+      let effectiveScaleHours = scaleHours;
+      while (span / (effectiveScaleHours * 60 * 60 * 1000) > 240) {
+        effectiveScaleHours *= 2;
+      }
+      const tickMs = effectiveScaleHours * 60 * 60 * 1000;
+      const first = alignToScale(start, effectiveScaleHours);
+      for (let t = first.getTime(); t <= end.getTime() + tickMs; t += tickMs) {
+        if (t < start.getTime()) continue;
+        const ratio = (t - start.getTime()) / span;
+        if (ratio < 0 || ratio > 1) continue;
+        const tickDate = new Date(t);
+        const line = document.createElement("div");
+        const shiftedHour = new Date(tickDate.getTime() + (state.timeMode === "taipei" ? 8 : 0) * 60 * 60 * 1000).getUTCHours();
+        line.className = `time-grid-line${shiftedHour === 0 ? " major" : ""}`;
+        line.style.left = `${ratio * 100}%`;
+        container.appendChild(line);
+
+        if (options.labels !== false) {
+          const label = document.createElement("div");
+          label.className = "time-grid-label";
+          label.style.left = `${ratio * 100}%`;
+          label.textContent = formatAxisLabel(tickDate);
+          container.appendChild(label);
+        }
+      }
+    }
+
+    function addAxis(container, start, end, scaleHours = state.timeScaleHours) {
+      const axis = document.createElement("div");
+      axis.className = "axis";
+      addTimeGrid(axis, start, end, scaleHours);
+      container.appendChild(axis);
+    }
+
+    function addNowLine(container, start, end) {
+      const now = new Date();
+      if (now < start || now > end) return;
+      const ratio = (now.getTime() - start.getTime()) / (end.getTime() - start.getTime());
+      const line = document.createElement("div");
+      line.className = "now-line";
+      line.style.left = `${ratio * 100}%`;
+      container.appendChild(line);
+    }
+
+    function renderSingleTimeline(flights) {
+      const range = currentFocusRange(flights);
+      el.singleTimeline.innerHTML = "";
+      if (!range) {
+        el.singleRangeLabel.textContent = "--";
+        return;
+      }
+
+      const span = Math.max(range.end.getTime() - range.start.getTime(), 60 * 60 * 1000);
+      el.singleTimeline.style.width = `${timelineWidthForRange(range.start, range.end, state.timeScaleHours)}px`;
+      el.singleRangeLabel.textContent = `現在前後 48 小時 · ${formatDateTime(range.start)} - ${formatDateTime(range.end)}`;
+      addTimeGrid(el.singleTimeline, range.start, range.end, state.timeScaleHours, { labels: false });
+      addAxis(el.singleTimeline, range.start, range.end, state.timeScaleHours);
+      addNowLine(el.singleTimeline, range.start, range.end);
+
+      const visibleFlights = flights.filter((flight) => flight.timelineEndUtc >= range.start && flight.timelineStartUtc <= range.end);
+      const now = new Date();
+
+      visibleFlights.forEach((flight, index) => {
+        const left = Math.max(0, (flight.timelineStartUtc.getTime() - range.start.getTime()) / span * 100);
+        const right = Math.min(100, (flight.timelineEndUtc.getTime() - range.start.getTime()) / span * 100);
+        const width = Math.max(1.5, right - left);
+        const block = document.createElement("div");
+        const planned = flight.startSource !== "actual" || flight.endSource !== "actual";
+        const active = flight.timelineStartUtc <= now && now <= flight.timelineEndUtc;
+        const issue = flight.hasOverlap || flight.hasConnectionIssue;
+        block.className = `flight-block${planned ? " planned" : ""}${active ? " active" : ""}${issue ? " issue" : ""}`;
+        block.style.left = `${left}%`;
+        block.style.width = `${width}%`;
+        block.dataset.tooltip = buildFlightTooltip(flight);
+        block.innerHTML = `<span><span class="block-title">${formatDisplayFlightNo(flight.flightNo)}</span><br><span class="block-sub">${flight.dep} → ${flight.arr}</span></span>`;
+        el.singleTimeline.appendChild(block);
+
+        const next = visibleFlights[index + 1];
+        if (next && flight.timelineEndUtc < next.timelineStartUtc) {
+          const groundLeft = Math.max(0, (flight.timelineEndUtc.getTime() - range.start.getTime()) / span * 100);
+          const groundRight = Math.min(100, (next.timelineStartUtc.getTime() - range.start.getTime()) / span * 100);
+          const groundWidth = Math.max(1, groundRight - groundLeft);
+          const ground = document.createElement("div");
+          ground.className = "ground-block";
+          ground.style.left = `${groundLeft}%`;
+          ground.style.width = `${groundWidth}%`;
+          ground.textContent = flight.arr === next.dep ? `${flight.arr} 地停 ${formatDuration(next.timelineStartUtc - flight.timelineEndUtc)}` : `${flight.arr} ≠ ${next.dep}`;
+          el.singleTimeline.appendChild(ground);
+        }
+      });
+    }
+
+    function renderFocus() {
+      const flights = state.byTail.get(state.selectedTail) || [];
+      if (!flights.length) {
+        el.emptyFocus.classList.remove("hidden");
+        el.focusContent.classList.add("hidden");
+        el.focusHint.textContent = "上傳報表後搜尋或點選任一機尾號。";
+        return;
+      }
+
+      const status = getAircraftStatus(flights);
+      const first = flights[0];
+      el.emptyFocus.classList.add("hidden");
+      el.focusContent.classList.remove("hidden");
+      el.focusTail.textContent = first.tailNumberDisplay;
+      el.focusType.textContent = first.aircraftFamily === first.aircraftType ? first.aircraftFamily : `${first.aircraftFamily} / 原始 ${first.aircraftType}`;
+      el.focusHint.textContent = `${flights.length} 段任務 · ${formatDateTime(flights[0].timelineStartUtc)} 起`;
+      el.focusStatusPill.className = `status-pill ${status.kind}`;
+      el.focusStatusPill.textContent = status.pill;
+      el.focusStatusText.textContent = status.text;
+      setTask(el.prevTask, el.prevTaskSub, status.previous);
+      setTask(el.currentTask, el.currentTaskSub, status.current);
+      setTask(el.nextTask, el.nextTaskSub, status.next);
+      renderSingleTimeline(flights);
+    }
+
+    function renderMetrics() {
+      el.metricRange.innerHTML = state.reportMin && state.reportMax ? `${formatDateTime(state.reportMin)}<br>${formatDateTime(state.reportMax)}` : "--";
+      el.metricFlights.textContent = state.flights.length.toLocaleString();
+      el.metricTails.textContent = state.byTail.size.toLocaleString();
+      el.metricTypes.textContent = state.byType.size.toLocaleString();
+      el.metricIssues.textContent = state.issues.length.toLocaleString();
+    }
+
+    function renderFilters() {
+      const currentType = el.typeFilter.value;
+      const types = [...state.byType.keys()].sort();
+      el.typeFilter.innerHTML = `<option value="">全部機型</option>${types.map((type) => `<option value="${type}">${type}</option>`).join("")}`;
+      if (types.includes(currentType)) el.typeFilter.value = currentType;
+    }
+
+    function matchSearchFlight(flight, query) {
+      if (!query) return true;
+      const normalizedQuery = query.toUpperCase().replace(/^B[-\s]?/, "");
+      return (
+        flight.tailNumberRaw.includes(normalizedQuery) ||
+        flight.tailNumberDisplay.toUpperCase().includes(query.toUpperCase()) ||
+        flight.flightNo.toUpperCase().includes(query.toUpperCase()) ||
+        normalizeFlightToken(flight.flightNo).includes(normalizeFlightToken(query)) ||
+        flight.dep.includes(query.toUpperCase()) ||
+        flight.arr.includes(query.toUpperCase())
+      );
+    }
+
+    function renderResults() {
+      const query = el.searchInput.value.trim();
+      if (!state.flights.length) {
+        el.resultsList.innerHTML = `<div class="empty-state">尚未載入報表。</div>`;
+        return;
+      }
+
+      const normalizedTail = normalizeTail(query);
+      const tailHits = normalizedTail ? [...state.byTail.keys()].filter((tail) => tail.includes(normalizedTail)).slice(0, 20) : [];
+      const flightHits = query ? state.flights.filter((flight) => matchSearchFlight(flight, query)).slice(0, 40) : [];
+      const seenTails = new Set();
+      const items = [];
+
+      tailHits.forEach((tail) => {
+        const flights = state.byTail.get(tail);
+        if (!flights || seenTails.has(tail)) return;
+        seenTails.add(tail);
+        const status = getAircraftStatus(flights);
+        items.push({
+          kind: "tail",
+          tail,
+          title: `${displayTail(tail)} / ${flights[0].aircraftFamily} / 原始 ${flights[0].aircraftType}`,
+          detail: status ? status.text : `${flights.length} 段任務`
+        });
+      });
+
+      flightHits.forEach((flight) => {
+        if (seenTails.has(flight.tailNumberRaw)) return;
+        seenTails.add(flight.tailNumberRaw);
+        items.push({
+          kind: "flight",
+          tail: flight.tailNumberRaw,
+          title: `${flight.tailNumberDisplay} / ${flight.aircraftFamily} / 原始 ${flight.aircraftType}`,
+          detail: `${flight.flightNo} ${flight.dep} → ${flight.arr} · ${formatDateTime(flight.timelineStartUtc)}`
+        });
+      });
+
+      if (!items.length) {
+        el.resultsList.innerHTML = `<div class="empty-state">沒有符合的機尾號、航班號或機場。</div>`;
+        return;
+      }
+
+      el.resultsList.innerHTML = items.map((item) => `
+        <button class="result-item" type="button" data-tail="${item.tail}">
+          <span>
+            <span class="result-main">${item.title}</span>
+            <span class="result-sub">${item.detail}</span>
+          </span>
+          <span class="source-pill">${item.kind === "tail" ? "機尾號" : "航班"}</span>
+        </button>
+      `).join("");
+    }
+
+    function fleetRange() {
+      if (!state.reportMin || !state.reportMax) return null;
+      if (state.fleetWindow === "today") return dayWindow(0);
+      if (state.fleetWindow === "tomorrow") return dayWindow(1);
+      if (state.fleetWindow === "threeDays") {
+        const yesterday = dayWindow(-1);
+        const tomorrow = dayWindow(1);
+        return { start: yesterday.start, end: tomorrow.end };
+      }
+      const padding = 60 * 60 * 1000;
+      return { start: new Date(state.reportMin.getTime() - padding), end: new Date(state.reportMax.getTime() + padding) };
+    }
+
+    function flightMatchesFleetFilters(flight, range) {
+      const typeFilter = el.typeFilter.value;
+      const airportFilter = el.airportFilter.value.trim().toUpperCase();
+      const issueFilter = el.issueFilter.value;
+      if (typeFilter && flight.aircraftFamily !== typeFilter) return false;
+      if (airportFilter && flight.dep !== airportFilter && flight.arr !== airportFilter) return false;
+      if (issueFilter === "issues" && !flight.hasOverlap && !flight.hasConnectionIssue) return false;
+      if (range && (flight.timelineEndUtc < range.start || flight.timelineStartUtc > range.end)) return false;
+      return true;
+    }
+
+    function renderFleet() {
+      if (!state.flights.length) {
+        el.fleetEmpty.classList.remove("hidden");
+        el.fleetWrap.classList.add("hidden");
+        el.fleetGrid.innerHTML = "";
+        return;
+      }
+
+      const range = fleetRange();
+      const span = range.end.getTime() - range.start.getTime();
+      const axisWidth = timelineWidthForRange(range.start, range.end, state.timeScaleHours);
+      const now = new Date();
+      const visibleFlights = state.flights.filter((flight) => flightMatchesFleetFilters(flight, range));
+      const types = [...new Set(visibleFlights.map((flight) => flight.aircraftFamily))].sort();
+      const rows = [];
+
+      types.forEach((type) => {
+        const typeFlights = visibleFlights.filter((flight) => flight.aircraftFamily === type);
+        const tails = [...new Set(typeFlights.map((flight) => flight.tailNumberRaw))].sort();
+        const filteredTails = tails;
+        if (!filteredTails.length) return;
+        rows.push({ kind: "type", type, count: filteredTails.length });
+        if (!state.collapsedTypes.has(type)) {
+          filteredTails.forEach((tail) => rows.push({ kind: "tail", type, tail, flights: visibleFlights.filter((flight) => flight.tailNumberRaw === tail) }));
+        }
+      });
+
+      el.fleetEmpty.classList.add("hidden");
+      el.fleetWrap.classList.remove("hidden");
+      el.fleetGrid.style.gridTemplateColumns = `168px ${axisWidth}px`;
+      el.fleetGrid.style.minWidth = `${168 + axisWidth}px`;
+      el.fleetGrid.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "fleet-header";
+      header.style.gridTemplateColumns = `168px ${axisWidth}px`;
+      const leftHead = document.createElement("div");
+      leftHead.className = "fleet-head-cell";
+      leftHead.textContent = "機型 / 機尾號";
+      const axisHead = document.createElement("div");
+      axisHead.className = "fleet-head-cell fleet-axis-cell";
+      axisHead.title = `${formatDateTime(range.start)} - ${formatDateTime(range.end)}`;
+      addTimeGrid(axisHead, range.start, range.end, state.timeScaleHours);
+      header.appendChild(leftHead);
+      header.appendChild(axisHead);
+      el.fleetGrid.appendChild(header);
+
+      rows.forEach((row) => {
+        const left = document.createElement("div");
+        const right = document.createElement("div");
+        if (row.kind === "type") {
+          left.className = "fleet-left type-row";
+          left.textContent = `${state.collapsedTypes.has(row.type) ? "＋" : "－"} ${row.type} (${row.count})`;
+          left.dataset.type = row.type;
+          right.className = "fleet-row type-row";
+          right.style.width = `${axisWidth}px`;
+        } else {
+          left.className = "fleet-left";
+          const firstFlight = row.flights[0];
+          left.textContent = `${displayTail(row.tail)} ${firstFlight ? firstFlight.aircraftType : ""}`.trim();
+          left.dataset.tail = row.tail;
+          right.className = "fleet-row";
+          right.style.width = `${axisWidth}px`;
+          addTimeGrid(right, range.start, range.end, state.timeScaleHours, { labels: false });
+          const nowRatio = (now.getTime() - range.start.getTime()) / span;
+          if (nowRatio >= 0 && nowRatio <= 1) {
+            const nowLine = document.createElement("div");
+            nowLine.className = "fleet-now";
+            nowLine.style.left = `${nowRatio * 100}%`;
+            right.appendChild(nowLine);
+          }
+          row.flights.forEach((flight) => {
+            const blockStart = Math.max(range.start.getTime(), flight.timelineStartUtc.getTime());
+            const blockEnd = Math.min(range.end.getTime(), flight.timelineEndUtc.getTime());
+            if (blockEnd < range.start.getTime() || blockStart > range.end.getTime()) return;
+            const leftPct = (blockStart - range.start.getTime()) / span * 100;
+            const widthPct = Math.max(0.25, (blockEnd - blockStart) / span * 100);
+            const planned = flight.startSource !== "actual" || flight.endSource !== "actual";
+            const active = flight.timelineStartUtc <= now && now <= flight.timelineEndUtc;
+            const issue = flight.hasOverlap || flight.hasConnectionIssue;
+            const block = document.createElement("div");
+            block.className = `mini-block${planned ? " planned" : ""}${active ? " active" : ""}${issue ? " issue" : ""}`;
+            block.style.left = `${leftPct}%`;
+            block.style.width = `${widthPct}%`;
+            block.dataset.tail = flight.tailNumberRaw;
+            block.dataset.tooltip = buildFlightTooltip(flight, true);
+            block.textContent = `${formatDisplayFlightNo(flight.flightNo)} ${flight.dep}-${flight.arr}`;
+            right.appendChild(block);
+          });
+        }
+        el.fleetGrid.appendChild(left);
+        el.fleetGrid.appendChild(right);
+      });
+    }
+
+    function renderIssues() {
+      if (!state.issues.length) {
+        el.issuesList.innerHTML = `<div class="empty-state">目前沒有資料問題。</div>`;
+        return;
+      }
+      el.issuesList.innerHTML = state.issues.slice(0, 200).map((issue) => `
+        <div class="issue-item">
+          <span>
+            <span class="issue-main">${issue.level} · ${issue.title}</span>
+            <span class="issue-sub">${issue.detail}</span>
+          </span>
+        </div>
+      `).join("");
+    }
+
+    function scrollElementToTime(scrollEl, contentWidth, start, end, targetTime = new Date(), leftOffset = 0) {
+      if (!scrollEl || !start || !end || targetTime < start || targetTime > end) return;
+      const ratio = (targetTime.getTime() - start.getTime()) / (end.getTime() - start.getTime());
+      const targetLeft = leftOffset + contentWidth * ratio - scrollEl.clientWidth / 2;
+      scrollEl.scrollLeft = Math.max(0, targetLeft);
+    }
+
+    function scrollTimelinesToNow() {
+      const now = new Date();
+      const selectedFlights = state.byTail.get(state.selectedTail) || [];
+      const singleRange = currentFocusRange(selectedFlights);
+      const singleScroll = el.singleTimeline && el.singleTimeline.closest(".timeline-scroll");
+      if (singleRange && singleScroll) {
+        scrollElementToTime(singleScroll, el.singleTimeline.offsetWidth, singleRange.start, singleRange.end, now);
+      }
+      const range = fleetRange();
+      if (range && el.fleetWrap) {
+        const axisWidth = timelineWidthForRange(range.start, range.end, state.timeScaleHours);
+        scrollElementToTime(el.fleetWrap, axisWidth, range.start, range.end, now, 168);
+      }
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderFilters();
+      renderFocus();
+      renderResults();
+      renderFleet();
+      renderIssues();
+    }
+
+    function selectTail(tail) {
+      if (!tail || !state.byTail.has(tail)) return;
+      state.selectedTail = tail;
+      renderFocus();
+      window.scrollTo({ top: document.getElementById("focusPanel").offsetTop - 12, behavior: "smooth" });
+    }
+
+    function handleSearchInput() {
+      const query = el.searchInput.value.trim();
+      const normalized = normalizeTail(query);
+      if (normalized && state.byTail.has(normalized)) {
+        state.selectedTail = normalized;
+      }
+      renderResults();
+      renderFocus();
+    }
+
+    el.fileInput.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      el.dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        el.dropzone.classList.add("is-dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      el.dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        el.dropzone.classList.remove("is-dragging");
+      });
+    });
+
+    el.dropzone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    el.resetButton.addEventListener("click", resetState);
+    el.searchInput.addEventListener("input", handleSearchInput);
+    el.timeModeSelect.addEventListener("change", () => {
+      state.timeMode = el.timeModeSelect.value;
+      renderFocus();
+      renderFleet();
+      renderResults();
+      renderIssues();
+    });
+    el.typeFilter.addEventListener("change", renderFleet);
+    el.airportFilter.addEventListener("input", renderFleet);
+    el.issueFilter.addEventListener("change", renderFleet);
+    el.fleetWindowSelect.addEventListener("change", () => {
+      state.fleetWindow = el.fleetWindowSelect.value;
+      renderFleet();
+    });
+    el.timeScaleSelect.addEventListener("change", () => {
+      state.timeScaleHours = Number(el.timeScaleSelect.value) || 4;
+      renderFocus();
+      renderFleet();
+    });
+
+    document.addEventListener("mouseover", (event) => {
+      const target = event.target.closest("[data-tooltip]");
+      if (!target) return;
+      showFlightTooltip(event, target);
+    });
+
+    document.addEventListener("mousemove", (event) => {
+      if (!event.target.closest("[data-tooltip]")) return;
+      positionFlightTooltip(event);
+    });
+
+    document.addEventListener("mouseout", (event) => {
+      const target = event.target.closest("[data-tooltip]");
+      if (!target) return;
+      const nextTarget = event.relatedTarget;
+      if (nextTarget && target.contains(nextTarget)) return;
+      hideFlightTooltip();
+    });
+
+    el.jumpNowButton.addEventListener("click", () => {
+      renderFocus();
+      renderFleet();
+      scrollTimelinesToNow();
+      document.getElementById("focusPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.addEventListener("click", (event) => {
+      const result = event.target.closest("[data-tail]");
+      if (result && result.dataset.tail) {
+        selectTail(result.dataset.tail);
+        return;
+      }
+      const typeRow = event.target.closest("[data-type]");
+      if (typeRow && typeRow.dataset.type) {
+        const type = typeRow.dataset.type;
+        if (state.collapsedTypes.has(type)) state.collapsedTypes.delete(type);
+        else state.collapsedTypes.add(type);
+        renderFleet();
+        return;
+      }
+    });
+
+    updateClocks();
+    setInterval(updateClocks, 1000);
+    renderAll();
+  </script>
+</body>
+</html>
