@@ -587,6 +587,75 @@
       animation: fakeProgressShimmer 0.8s linear infinite;
     }
 
+    .notice-preview {
+      max-height: clamp(320px, 48vh, 560px);
+      overflow: auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .notice-preview.is-empty {
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px;
+      background: #fff;
+      color: #64748b;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 18px 40px -36px rgba(15, 23, 42, 0.28);
+    }
+
+    .notice-card {
+      border: 1px solid #dbeafe;
+      border-radius: 18px;
+      padding: 16px;
+      background: #fff;
+      box-shadow: 0 16px 32px -28px rgba(15, 23, 42, 0.32);
+    }
+
+    .notice-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .notice-card-title {
+      margin: 0;
+      color: #075985;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .notice-card-text {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      border-radius: 12px;
+      background: #f8fafc;
+      color: #334155;
+      font: 13px/1.75 "Consolas", "Courier New", monospace;
+      white-space: pre-wrap;
+    }
+
+    .notice-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .notice-card-copy-status {
+      min-height: 1.5em;
+      margin: 0;
+      color: #64748b;
+      font-size: 13px;
+    }
+
     @keyframes fakeProgressShimmer {
       0% { background-position: 200% 0; }
       100% { background-position: -20% 0; }
@@ -647,6 +716,17 @@
                 <div class="fake-progress-bar" id="fakeProgressBar"></div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="noticeTitle">
+          <div class="panel-head">
+            <h2 id="noticeTitle">TPE 改時通知</h2>
+            <p>僅為 CI 航班且由 TPE 出發的航段自動產生通知。</p>
+          </div>
+          <div class="panel-body">
+            <div id="noticeStatus" class="box ok">尚未整理。完成電報整理後將自動產生通知。</div>
+            <div id="noticePreview" class="notice-preview is-empty" aria-live="polite">請先貼上電報並按「整理電報」。</div>
           </div>
         </section>
       </div>
@@ -716,9 +796,12 @@
     const fakeProgressBar = document.getElementById('fakeProgressBar');
     const fakeProgressLabel = document.getElementById('fakeProgressLabel');
     const fakeProgressPercent = document.getElementById('fakeProgressPercent');
+    const noticeStatus = document.getElementById('noticeStatus');
+    const noticePreview = document.getElementById('noticePreview');
 
     let currentRows = [];
     let currentWarnings = [];
+    let currentNotices = [];
     let handledRowIds = new Set();
 
     function sanitizeSourceText(text) {
@@ -1090,6 +1173,82 @@
       }
     }
 
+    function formatNoticeDDMON(date) {
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      return `${String(date.getDate()).padStart(2, '0')}${months[date.getMonth()]}`;
+    }
+
+    function formatNoticeHHMM(date) {
+      return `${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function buildNoticeBaseDate(day) {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), Number(day));
+    }
+
+    function buildTpeNotice(row) {
+      const flightDate = buildNoticeBaseDate(row.flightDate);
+      const etdDate = new Date(
+        flightDate.getFullYear(),
+        flightDate.getMonth(),
+        Number(row.depDay),
+        Number(String(row.depClock).slice(0, 2)) + 8,
+        Number(String(row.depClock).slice(2, 4))
+      );
+      const botDate = new Date(etdDate.getTime() - 90 * 60 * 1000);
+      const flightLabel = row.flightNo;
+      const flightDDMON = formatNoticeDDMON(flightDate);
+      const etdLabel = `${formatNoticeHHMM(etdDate)}L/${formatNoticeDDMON(etdDate)}`;
+      const botLabel = `${formatNoticeHHMM(botDate)}L/${formatNoticeDDMON(botDate)}`;
+
+      return {
+        id: row.id,
+        title: `${flightLabel}/${flightDDMON}`,
+        text: `*** Schedule Change Information ***\n${flightLabel}/${flightDDMON}  **RE-TIME** NOTICE\n\nNEW ETD: ${etdLabel}\nBOT Reporting Time: ${botLabel}\n\nPlease ack on eCrew, thanks!\n\nTPEOS`
+      };
+    }
+
+    function renderTpeNoticeCards(notices) {
+      noticePreview.innerHTML = notices.map((notice, index) => `
+        <article class="notice-card" data-notice-index="${index}">
+          <div class="notice-card-head">
+            <h3 class="notice-card-title">${escapeHtml(notice.title)}</h3>
+          </div>
+          <pre class="notice-card-text">${escapeHtml(notice.text)}</pre>
+          <div class="notice-card-actions">
+            <button type="button" class="rounded-2xl bg-pink-600 text-white px-4 py-2 font-medium hover:bg-pink-700 transition" data-action="copy-notice" data-notice-index="${index}">複製通知</button>
+            <p class="notice-card-copy-status" aria-live="polite"></p>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function refreshTpeNotices(rows) {
+      const eligibleRows = rows.filter(row => row.airlinePrefix === 'CI' && row.depAirport === 'TPE' && /^\d{4}$/.test(row.depClock));
+      currentNotices = eligibleRows.map(buildTpeNotice);
+
+      if (!currentNotices.length) {
+        noticeStatus.textContent = rows.length
+          ? '已完成整理，但沒有找到 CI 航班由 TPE 出發的有效航段，因此未產生通知。'
+          : '沒有有效整理資料，因此未產生通知。';
+        noticePreview.textContent = '本批電報沒有可產生通知的 CI TPE 出發航段。';
+        noticePreview.classList.add('is-empty');
+        return;
+      }
+
+      noticeStatus.textContent = `已自動產生 ${currentNotices.length} 筆 CI TPE 出發航段的改時通知。`;
+      noticePreview.classList.remove('is-empty');
+      renderTpeNoticeCards(currentNotices);
+    }
+
+    function resetTpeNotices() {
+      currentNotices = [];
+      noticeStatus.textContent = '尚未整理。完成電報整理後將自動產生通知。';
+      noticePreview.textContent = '請先貼上電報並按「整理電報」。';
+      noticePreview.classList.add('is-empty');
+    }
+
 
     let fakeProgressTimer = null;
 
@@ -1156,6 +1315,7 @@
       renderRows(rows);
       refreshStats(rows.length, groups.length, parseWarnings.length + groupWarnings.length);
       refreshMessages(rows, [...parseWarnings, ...groupWarnings]);
+      refreshTpeNotices(rows);
     }
 
     function toTSV(rows) {
@@ -1197,6 +1357,7 @@
       statusBox.innerHTML = '尚未整理。請先貼上電報後按「整理電報」。';
       warningBox.classList.add('hidden');
       warningBox.innerHTML = '';
+      resetTpeNotices();
       resetFakeProgress();
     });
 
@@ -1225,6 +1386,22 @@
         return;
       }
       downloadFile('flight_asm_result.csv', '\uFEFF' + toCSV(currentRows), 'text/csv;charset=utf-8;');
+    });
+
+    noticePreview.addEventListener('click', async event => {
+      const copyButton = event.target.closest('[data-action="copy-notice"]');
+      if (!copyButton || !noticePreview.contains(copyButton)) return;
+      const noticeIndex = Number(copyButton.dataset.noticeIndex);
+      const notice = currentNotices[noticeIndex];
+      if (!notice) return;
+      const card = copyButton.closest('.notice-card');
+      const copyStatus = card && card.querySelector('.notice-card-copy-status');
+      try {
+        await navigator.clipboard.writeText(notice.text);
+        if (copyStatus) copyStatus.textContent = '[已複製到剪貼簿]';
+      } catch (error) {
+        if (copyStatus) copyStatus.textContent = '[複製失敗，請手動複製]';
+      }
     });
   </script>
 </body>
