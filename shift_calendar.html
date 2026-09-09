@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>班表日曆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f8fb;
+      --panel: rgba(255, 255, 255, 0.92);
+      --ink: #162033;
+      --muted: #69778b;
+      --line: rgba(126, 150, 181, 0.22);
+      --blue: #3585ff;
+      --sky: #1fb7d4;
+      --green: #2aae7a;
+      --violet: #7c69e8;
+      --rose: #e85c7c;
+      --amber: #d68a16;
+      --gray: #8b98a9;
+      --shadow: 0 28px 88px -52px rgba(28, 45, 78, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 8%, rgba(53, 133, 255, 0.13), transparent 28%),
+        radial-gradient(circle at 92% 12%, rgba(31, 183, 212, 0.12), transparent 26%),
+        linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+    }
+
+    body {
+      padding: 22px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      min-width: 240px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: #336b9c;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 38px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .home-link {
+      color: #336b9c;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1.35fr minmax(150px, 0.65fr) minmax(150px, 0.65fr) auto auto;
+      gap: 12px;
+      align-items: end;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 22px 70px -54px rgba(28, 45, 78, 0.34);
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    label {
+      color: #455875;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="file"],
+    select {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(126, 150, 181, 0.34);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 13px;
+      outline: none;
+    }
+
+    input[type="file"]::file-selector-button {
+      margin-right: 12px;
+      border: 0;
+      border-radius: 12px;
+      background: #edf6ff;
+      color: #22659d;
+      padding: 9px 12px;
+      font-weight: 800;
+    }
+
+    button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      padding: 0 16px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(180deg, #3585ff, #1767d9);
+      box-shadow: 0 18px 32px -24px rgba(23, 103, 217, 0.52);
+      font-weight: 800;
+      transition: transform 160ms ease, opacity 160ms ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      color: #215b92;
+      background: linear-gradient(180deg, #fff, #edf6ff);
+      border: 1px solid rgba(126, 150, 181, 0.28);
+      box-shadow: none;
+    }
+
+    button:disabled,
+    select:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+      transform: none;
+    }
+
+    .status {
+      min-height: 44px;
+      padding: 12px 15px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #52647a;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .relationship-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 20px;
+      background: var(--panel);
+      box-shadow: 0 22px 70px -54px rgba(28, 45, 78, 0.34);
+    }
+
+    .relationship-heading {
+      margin: 0 0 4px;
+      color: #1e2f47;
+      font-size: 20px;
+    }
+
+    .relationship-subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .relationship-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .relationship-shift {
+      border: 1px solid rgba(53, 133, 255, 0.17);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .relationship-shift h3 {
+      margin: 0 0 12px;
+      color: #1a67b8;
+      font-size: 16px;
+    }
+
+    .relationship-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .relationship-item {
+      min-width: 0;
+      padding: 10px;
+      border-radius: 12px;
+      background: #f4f8fc;
+    }
+
+    .relationship-item strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #455875;
+      font-size: 12px;
+    }
+
+    .relationship-item span {
+      display: block;
+      color: #26384f;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .relationship-empty {
+      margin: 0;
+      color: #617087;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .stage {
+      display: flex;
+      justify-content: center;
+      overflow: auto;
+      padding: 6px 0 26px;
+    }
+
+    .portrait {
+      width: min(720px, 100%);
+      aspect-ratio: 9 / 16;
+      border-radius: 30px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(250, 252, 255, 0.99)),
+        #fff;
+      box-shadow: 0 36px 100px -58px rgba(28, 45, 78, 0.48);
+      border: 1px solid rgba(126, 150, 181, 0.2);
+      padding: 28px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .portrait::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      height: 160px;
+      background:
+        linear-gradient(135deg, rgba(53, 133, 255, 0.1), rgba(31, 183, 212, 0.08)),
+        linear-gradient(180deg, rgba(245, 250, 255, 0.94), rgba(255, 255, 255, 0));
+      pointer-events: none;
+    }
+
+    .calendar-head,
+    .today-card,
+    .calendar-grid,
+    .legend,
+    .empty-state {
+      position: relative;
+      z-index: 1;
+    }
+
+    .calendar-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .calendar-kicker {
+      margin: 0 0 8px;
+      color: #426489;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .calendar-title {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 44px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .calendar-subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .month-badge {
+      flex: 0 0 auto;
+      min-width: 104px;
+      border-radius: 24px;
+      padding: 15px 18px;
+      background: #162033;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 24px 52px -34px rgba(22, 32, 51, 0.54);
+    }
+
+    .month-badge strong {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .month-badge span {
+      display: block;
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .today-card {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1fr) minmax(150px, 0.5fr);
+      gap: 12px;
+      align-items: center;
+      border: 1px solid rgba(53, 133, 255, 0.16);
+      border-radius: 24px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 18px 48px -42px rgba(53, 133, 255, 0.36);
+    }
+
+    .portrait.exporting-image {
+      grid-template-rows: auto 1fr;
+    }
+
+    .portrait.exporting-image .today-card,
+    .portrait.exporting-image .legend {
+      display: none;
+    }
+
+    .today-date {
+      display: grid;
+      place-items: center;
+      min-height: 76px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #edf6ff, #f7fbff);
+      color: #1a67b8;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .today-date strong {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .today-date span {
+      display: block;
+      margin-top: 5px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+    }
+
+    .today-main {
+      min-width: 0;
+    }
+
+    .today-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .today-shift {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .today-shift strong {
+      font-size: 23px;
+      line-height: 1.1;
+    }
+
+    .today-note {
+      margin: 8px 0 0;
+      color: #52647a;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .today-time {
+      justify-self: stretch;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid rgba(126, 150, 181, 0.16);
+      padding: 11px 12px;
+      color: #29384d;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .weekdays {
+      gap: 6px;
+      margin-bottom: 7px;
+    }
+
+    .weekday {
+      color: #627188;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .days {
+      gap: 6px;
+      height: 100%;
+    }
+
+    .day {
+      min-width: 0;
+      min-height: 94px;
+      border: 1px solid rgba(126, 150, 181, 0.18);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 8px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .day.muted {
+      background: rgba(246, 248, 251, 0.62);
+      border-color: rgba(126, 150, 181, 0.1);
+    }
+
+    .day-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: #68778c;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .day-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #26384f;
+      font-size: 12px;
+    }
+
+    .day.is-holiday .day-num,
+    .day.is-holiday .holiday-name,
+    .weekday.is-holiday {
+      color: #d92945;
+    }
+
+    .day.is-holiday .day-num {
+      background: rgba(232, 92, 124, 0.1);
+    }
+
+    .holiday-name {
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .day-body {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .shift-line {
+      border-radius: 11px;
+      padding: 7px;
+      background: #f8fafc;
+      border: 1px solid rgba(126, 150, 181, 0.14);
+      min-width: 0;
+    }
+
+    .shift-line.work-a { background: rgba(53, 133, 255, 0.08); border-color: rgba(53, 133, 255, 0.18); }
+    .shift-line.work-m { background: rgba(42, 174, 122, 0.09); border-color: rgba(42, 174, 122, 0.18); }
+    .shift-line.work-b,
+    .shift-line.work-n { background: rgba(124, 105, 232, 0.09); border-color: rgba(124, 105, 232, 0.18); }
+    .shift-line.work-od { background: rgba(31, 183, 212, 0.1); border-color: rgba(31, 183, 212, 0.19); }
+    .shift-line.status { background: rgba(139, 152, 169, 0.1); border-color: rgba(139, 152, 169, 0.15); }
+    .shift-line.rest { background: rgba(232, 92, 124, 0.08); border-color: rgba(232, 92, 124, 0.16); }
+
+    .shift-code {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      color: #1e2f47;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .shift-time {
+      margin-top: 4px;
+      color: #53657b;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .overnight {
+      color: #6d5bd6;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      height: 100%;
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed rgba(126, 150, 181, 0.35);
+      border-radius: 26px;
+      color: #67778d;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .empty-state strong {
+      display: block;
+      color: #26384f;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: #627188;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid rgba(126, 150, 181, 0.16);
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .dot.m { background: var(--green); }
+    .dot.n { background: var(--violet); }
+    .dot.rest { background: var(--rose); }
+    .dot.status { background: var(--gray); }
+
+    @media screen and (max-width: 1060px) {
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .controls .field:first-child { grid-column: 1 / -1; }
+    }
+
+    @media screen and (max-width: 860px) {
+      body {
+        padding: 14px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .portrait {
+        width: 100%;
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .calendar-head,
+      .today-card {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-head {
+        align-items: stretch;
+      }
+
+      .month-badge {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      .today-card {
+        display: grid;
+      }
+
+      .relationship-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .day {
+        min-height: 112px;
+        border-radius: 14px;
+        padding: 7px;
+      }
+
+      .shift-line {
+        padding: 7px;
+      }
+
+      .shift-code {
+        font-size: 12px;
+      }
+
+      .shift-time {
+        font-size: 10px;
+      }
+    }
+
+    @media screen and (max-width: 560px) {
+      body {
+        padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        -webkit-text-size-adjust: 100%;
+      }
+      .page, .page > *, .controls > * { min-width: 0; }
+      .topbar { padding: 16px; border-radius: 18px; }
+      .brand { min-width: 0; }
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+      .controls .field:first-child { grid-column: 1 / -1; }
+      input[type="file"], select, button { font-size: 16px; min-height: 48px; max-width: 100%; }
+      input[type="file"] { padding: 10px 8px; }
+      button { white-space: normal; padding: 10px; touch-action: manipulation; }
+      label, .relationship-item strong { font-size: 14px; }
+      .relationship-card { padding: 16px; }
+      .relationship-item span, .relationship-empty { font-size: 16px; }
+      .relationship-shift h3 { line-height: 1.6; overflow-wrap: anywhere; }
+      .portrait {
+        min-width: 0;
+        width: 100%;
+        aspect-ratio: auto;
+        padding: 16px;
+        grid-template-rows: auto auto auto auto;
+      }
+      .stage { display: block; overflow: visible; }
+      .calendar-head { gap: 12px; align-items: center; }
+      .calendar-title { font-size: 26px; line-height: 1.3; overflow-wrap: anywhere; }
+      .month-badge { display: block; width: auto; min-width: 68px; padding: 12px 10px; border-radius: 16px; }
+      .month-badge strong { font-size: 26px; }
+      .month-badge span { font-size: 12px; }
+      .today-card { grid-template-columns: 64px minmax(0, 1fr); padding: 12px; }
+      .today-date { min-height: 64px; }
+      .today-time { grid-column: 1 / -1; font-size: 16px; }
+      .weekdays, .day.muted { display: none; }
+      .days { grid-template-columns: minmax(0, 1fr); height: auto; gap: 10px; }
+      .day { grid-template-columns: 74px minmax(0, 1fr); grid-template-rows: auto; min-height: 76px; padding: 12px; align-items: center; }
+      .day-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .day-num { width: 36px; height: 36px; font-size: 16px; }
+      .holiday-name { font-size: 12px; text-align: left; }
+      .day-weekday { font-size: 14px; color: var(--muted); }
+      .shift-code { font-size: 18px; }
+      .shift-time { font-size: 14px; line-height: 1.6; }
+      .legend { font-size: 12px; }
+    }
+
+    .day-weekday { display: none; }
+    @media screen and (max-width: 560px) { .day-weekday { display: block; } }
+    .day[data-day] { cursor: pointer; touch-action: manipulation; }
+    .day.is-selected { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+
+    @media print {
+      body {
+        padding: 0;
+        background: #fff;
+      }
+
+      .topbar,
+      .controls,
+      .status,
+      .relationship-card {
+        display: none !important;
+      }
+
+      .page,
+      .stage {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .portrait {
+        width: 100%;
+        min-height: 100vh;
+        aspect-ratio: auto;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="topbar">
+      <div class="brand">
+        <p class="eyebrow">Shift Calendar</p>
+        <h1>班表日曆</h1>
+      </div>
+      <a class="home-link" href="./index.html">回首頁</a>
+    </section>
+
+    <section class="controls" aria-label="班表日曆控制區">
+      <div class="field">
+        <label for="fileInput">選擇 Excel 班表</label>
+        <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
+      </div>
+      <div class="field">
+        <label for="personSelect">姓名</label>
+        <select id="personSelect" disabled>
+          <option>請先匯入班表</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dateSelect">查詢日期</label>
+        <select id="dateSelect" disabled>
+          <option>請先匯入班表</option>
+        </select>
+      </div>
+      <button id="downloadBtn" type="button" disabled>下載直式圖片</button>
+      <button class="secondary" id="printBtn" type="button" disabled>列印 / PDF</button>
+    </section>
+
+    <div id="status" class="status">請選擇 Excel 班表，系統會自動讀取月份、姓名與班別時間。</div>
+
+    <section id="relationshipCard" class="relationship-card" hidden aria-live="polite">
+      <h2 class="relationship-heading">當日班別關係</h2>
+      <p id="relationshipSubtitle" class="relationship-subtitle"></p>
+      <div id="relationshipList" class="relationship-list"></div>
+    </section>
+
+    <section class="stage">
+      <article id="exportCard" class="portrait">
+        <header class="calendar-head">
+          <div>
+            <p class="calendar-kicker">Personal Roster</p>
+            <h2 id="calendarTitle" class="calendar-title">班表日曆</h2>
+            <p id="calendarSubtitle" class="calendar-subtitle">匯入班表後，這裡會產生你的個人月曆。</p>
+          </div>
+          <div class="month-badge">
+            <strong id="monthNumber">--</strong>
+            <span id="yearLabel">YEAR</span>
+          </div>
+        </header>
+
+        <section id="todayCard" class="today-card">
+          <div class="today-date">
+            <div>
+              <strong>--</strong>
+              <span>Today</span>
+            </div>
+          </div>
+          <div class="today-main">
+            <p class="today-label">今天班別</p>
+            <div class="today-shift"><strong>尚未匯入</strong></div>
+            <p class="today-note">選擇班表後，今天的上班時間會顯示在這裡。</p>
+          </div>
+          <div class="today-time">--</div>
+        </section>
+
+        <section id="calendarArea" class="calendar-grid">
+          <div class="empty-state">
+            <div>
+              <strong>等待班表</strong>
+              <span>請先選擇 Excel 檔案。</span>
+            </div>
+          </div>
+        </section>
+
+        <footer class="legend">
+          <span><i class="dot"></i>早班 / A</span>
+          <span><i class="dot m"></i>午班 / M</span>
+          <span><i class="dot n"></i>夜班 / B N</span>
+          <span><i class="dot rest"></i>休假</span>
+          <span><i class="dot status"></i>其他註記</span>
+        </footer>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const MONTH_MAP = {
+      JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+      JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12
+    };
+
+    const WEEKDAY_ZH = ["日", "一", "二", "三", "四", "五", "六"];
+    const FIXED_HANDOVERS = {
+      A: { incoming: { dayOffset: -1, codes: ["N", "B"] }, outgoing: { dayOffset: 0, codes: ["M", "M*"] } },
+      M: { incoming: { dayOffset: 0, codes: ["A"] }, outgoing: { dayOffset: 0, codes: ["N", "B"] } },
+      N: { incoming: { dayOffset: 0, codes: ["M"] }, outgoing: { dayOffset: 1, codes: ["A"] } },
+      B: { incoming: { dayOffset: 0, codes: ["M"] }, outgoing: { dayOffset: 1, codes: ["A"] } },
+      "M*": { incoming: { dayOffset: 0, codes: ["A"] }, outgoing: null }
+    };
+    const state = {
+      workbook: null,
+      sheetName: "",
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+      people: [],
+      rows: [],
+      shiftMap: new Map()
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    const personSelect = document.getElementById("personSelect");
+    const dateSelect = document.getElementById("dateSelect");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const printBtn = document.getElementById("printBtn");
+    const statusEl = document.getElementById("status");
+    const exportCard = document.getElementById("exportCard");
+
+    fileInput.addEventListener("change", handleFile);
+    personSelect.addEventListener("change", renderSelectedPerson);
+    dateSelect.addEventListener("change", renderSelectedPerson);
+    const calendarArea = document.getElementById("calendarArea");
+    function selectCalendarDay(event) {
+      const cell = event.target.closest("[data-day]");
+      if (!cell) return;
+      dateSelect.value = cell.dataset.day;
+      renderSelectedPerson();
+      document.getElementById("relationshipCard").scrollIntoView({ block: "start" });
+    }
+    calendarArea.addEventListener("click", selectCalendarDay);
+    calendarArea.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectCalendarDay(event);
+      }
+    });
+    downloadBtn.addEventListener("click", downloadPortraitImage);
+    printBtn.addEventListener("click", () => window.print());
+
+    async function handleFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      setStatus("正在讀取班表...");
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        parseRoster(matrix, sheetName);
+        populatePeople();
+        populateDates();
+        renderSelectedPerson();
+        setStatus(`已匯入 ${state.year} 年 ${state.month} 月班表，共 ${state.people.length} 位人員。`);
+      } catch (error) {
+        console.error(error);
+        setStatus("讀取失敗，請確認檔案是 Excel 班表，且格式與目前班表一致。");
+      }
+    }
+
+    function parseRoster(matrix, sheetName) {
+      state.sheetName = sheetName;
+      state.month = inferMonth(matrix, sheetName);
+      state.year = inferYear(matrix);
+      state.shiftMap = extractShiftDefinitions(matrix);
+
+      const headerRowIndex = findHeaderRow(matrix);
+      const headerRow = matrix[headerRowIndex] || [];
+      const dateCol = findDateColumn(matrix, headerRowIndex);
+      const weekdayCol = dateCol + 1;
+      const people = [];
+
+      for (let col = dateCol + 2; col < headerRow.length; col += 1) {
+        const name = normalizePersonName(cleanText(headerRow[col]));
+        if (!name) break;
+        if (["標準", "Name", "工時"].some((label) => name.includes(label))) break;
+        people.push({ name, col });
+      }
+
+      const rows = [];
+      for (let rowIndex = headerRowIndex + 1; rowIndex < matrix.length; rowIndex += 1) {
+        const row = matrix[rowIndex] || [];
+        const day = parseDay(row[dateCol]);
+        if (!day) continue;
+        if (day < 1 || day > 31) continue;
+        const weekday = cleanText(row[weekdayCol]);
+        const holidayName = extractHolidayName(weekday);
+        const byPerson = new Map();
+        people.forEach((person) => {
+          byPerson.set(person.name, cleanText(row[person.col]));
+        });
+        rows.push({ day, weekday, holidayName, byPerson });
+      }
+
+      state.people = people;
+      state.rows = rows;
+    }
+
+    function findHeaderRow(matrix) {
+      const dateHintIndex = matrix.findIndex((row) => row.some((value) => cleanText(value).includes("日期")));
+      if (dateHintIndex >= 0) return dateHintIndex;
+
+      let bestIndex = 0;
+      let bestScore = -1;
+      matrix.forEach((row, index) => {
+        const score = row.reduce((count, value, col) => {
+          if (col < 2) return count;
+          const text = cleanText(value);
+          return text && !text.includes(":") ? count + 1 : count;
+        }, 0);
+        if (score > bestScore) {
+          bestIndex = index;
+          bestScore = score;
+        }
+      });
+      return bestIndex;
+    }
+
+    function findDateColumn(matrix, headerRowIndex) {
+      const nextRows = matrix.slice(headerRowIndex + 1, headerRowIndex + 5);
+      for (let col = 0; col < 5; col += 1) {
+        const hits = nextRows.filter((row) => parseDay(row[col])).length;
+        if (hits >= 2) return col;
+      }
+      return 0;
+    }
+
+    function inferMonth(matrix, sheetName) {
+      const fromName = String(sheetName || "").trim().slice(0, 3).toUpperCase();
+      if (MONTH_MAP[fromName]) return MONTH_MAP[fromName];
+
+      for (const row of matrix) {
+        for (const cell of row) {
+          const text = cleanText(cell).slice(0, 3).toUpperCase();
+          if (MONTH_MAP[text]) return MONTH_MAP[text];
+        }
+      }
+      return new Date().getMonth() + 1;
+    }
+
+    function inferYear(matrix) {
+      for (const row of matrix) {
+        for (const cell of row) {
+          const text = cleanText(cell);
+          const match = text.match(/\b(20\d{2})\b/);
+          if (match) return Number(match[1]);
+          if (typeof cell === "number" && cell >= 2020 && cell <= 2100) return cell;
+        }
+      }
+      return new Date().getFullYear();
+    }
+
+    function extractShiftDefinitions(matrix) {
+      const map = new Map();
+      matrix.forEach((row) => {
+        row.forEach((cell) => {
+          const text = cleanText(cell);
+          const match = text.match(/^(.+?)\s*:\s*(.+)$/);
+          if (!match) return;
+          const code = normalizeCode(match[1]);
+          const parsed = parseTimeRange(match[2]);
+          if (code && parsed) map.set(code, parsed);
+        });
+      });
+      return map;
+    }
+
+    function populatePeople() {
+      personSelect.innerHTML = "";
+      state.people.forEach((person) => {
+        const option = document.createElement("option");
+        option.value = person.name;
+        option.textContent = person.name;
+        personSelect.appendChild(option);
+      });
+      const enabled = state.people.length > 0;
+      personSelect.disabled = !enabled;
+      downloadBtn.disabled = !enabled;
+      printBtn.disabled = !enabled;
+    }
+
+    function populateDates() {
+      dateSelect.innerHTML = "";
+      const daysInMonth = new Date(state.year, state.month, 0).getDate();
+      const today = new Date();
+      const defaultDay = today.getFullYear() === state.year && today.getMonth() + 1 === state.month
+        ? today.getDate()
+        : 1;
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const option = document.createElement("option");
+        option.value = String(day);
+        const date = new Date(state.year, state.month - 1, day);
+        option.textContent = `${state.month}/${day}（週${WEEKDAY_ZH[date.getDay()]}）`;
+        if (day === defaultDay) option.selected = true;
+        dateSelect.appendChild(option);
+      }
+      dateSelect.disabled = state.people.length === 0;
+    }
+
+    function renderSelectedPerson() {
+      const person = personSelect.value || state.people[0]?.name;
+      if (!person) return;
+
+      document.getElementById("calendarTitle").textContent = `${person} 的班表`;
+      document.getElementById("calendarSubtitle").textContent = `${state.year} 年 ${state.month} 月`;
+      document.getElementById("monthNumber").textContent = String(state.month).padStart(2, "0");
+      document.getElementById("yearLabel").textContent = `${state.year}`;
+
+      renderToday(person);
+      renderCalendar(person);
+      renderRelationship(person, Number(dateSelect.value) || 1);
+    }
+
+    function renderToday(person) {
+      const today = new Date();
+      const inThisMonth = today.getFullYear() === state.year && today.getMonth() + 1 === state.month;
+      const day = inThisMonth ? today.getDate() : 1;
+      const row = state.rows.find((item) => item.day === day);
+      const entries = buildEntries(row?.byPerson.get(person) || "");
+      const summary = entries.length ? entries : [{ code: "未排班", type: "status", note: "目前沒有班別資料。" }];
+
+      const todayCard = document.getElementById("todayCard");
+      const primary = summary[0];
+      const timeText = summary.map(formatEntryTime).filter(Boolean).join("<br>") || "無上班時間";
+      const todayNote = primary.note && primary.note !== primary.code ? `<p class="today-note">${escapeHtml(primary.note)}</p>` : "";
+
+      todayCard.innerHTML = `
+        <div class="today-date">
+          <div>
+            <strong>${inThisMonth ? today.getDate() : "--"}</strong>
+            <span>${inThisMonth ? `週${WEEKDAY_ZH[today.getDay()]}` : "Today"}</span>
+          </div>
+        </div>
+        <div class="today-main">
+          <p class="today-label">${inThisMonth ? "今天班別" : "本月班表"}</p>
+          <div class="today-shift"><strong>${escapeHtml(summary.map((entry) => entry.code).join(" / "))}</strong></div>
+          ${todayNote}
+        </div>
+        <div class="today-time">${timeText}</div>
+      `;
+    }
+
+    function renderCalendar(person) {
+      const calendarArea = document.getElementById("calendarArea");
+      const firstDate = new Date(state.year, state.month - 1, 1);
+      const daysInMonth = new Date(state.year, state.month, 0).getDate();
+      const leading = firstDate.getDay();
+      const cells = [];
+
+      for (let i = 0; i < leading; i += 1) {
+        cells.push(`<div class="day muted" aria-hidden="true"></div>`);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const row = state.rows.find((item) => item.day === day);
+        const date = new Date(state.year, state.month - 1, day);
+        const entries = buildEntries(row?.byPerson.get(person) || "");
+        const isHoliday = date.getDay() === 0 || date.getDay() === 6 || Boolean(row?.holidayName);
+        const holidayLabel = row?.holidayName ? `<span class="holiday-name">${escapeHtml(row.holidayName)}</span>` : "";
+        const body = entries.length
+          ? entries.map(renderShiftLine).join("")
+          : renderShiftLine({ code: "未排班", type: "status", note: "無資料" });
+
+        cells.push(`
+          <div class="day${isHoliday ? " is-holiday" : ""}${Number(dateSelect.value) === day ? " is-selected" : ""}" data-day="${day}" role="button" tabindex="0" aria-label="查看 ${state.month} 月 ${day} 日班別與交接" aria-pressed="${Number(dateSelect.value) === day}">
+            <div class="day-top">
+              <span class="day-num">${day}</span>
+              <span class="day-weekday">週${WEEKDAY_ZH[date.getDay()]}</span>
+              ${holidayLabel}
+            </div>
+            <div class="day-body">${body}</div>
+          </div>
+        `);
+      }
+
+      while (cells.length % 7 !== 0) {
+        cells.push(`<div class="day muted" aria-hidden="true"></div>`);
+      }
+
+      calendarArea.innerHTML = `
+        <div class="weekdays">
+          ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => `<div class="weekday${index === 0 || index === 6 ? " is-holiday" : ""}">${day}</div>`).join("")}
+        </div>
+        <div class="days">${cells.join("")}</div>
+      `;
+    }
+
+    function renderRelationship(person, day) {
+      const card = document.getElementById("relationshipCard");
+      const subtitle = document.getElementById("relationshipSubtitle");
+      const list = document.getElementById("relationshipList");
+      const row = state.rows.find((item) => item.day === day);
+      const entries = buildEntries(row?.byPerson.get(person) || "");
+      const workEntries = entries.filter((entry) => entry.type === "work" && entry.start && entry.end);
+      const date = new Date(state.year, state.month - 1, day);
+
+      card.hidden = false;
+      subtitle.textContent = `${person}｜${state.month}/${day}（週${WEEKDAY_ZH[date.getDay()]}）`;
+
+      if (!workEntries.length) {
+        const hasUnresolvedShift = entries.some((entry) => entry.type !== "rest" && !entry.start);
+        list.innerHTML = `<p class="relationship-empty">${hasUnresolvedShift
+          ? "此班別缺少可辨識的上、下班時間，無法判定同班與交接人員。"
+          : "當日沒有可計算人員關係的工作班別。"}</p>`;
+        return;
+      }
+
+      const allSessions = buildRosterSessions().filter((session) => Math.abs(session.day - day) <= 1);
+      const selectedSessions = workEntries.map((entry) => createSession(person, day, entry));
+      list.innerHTML = selectedSessions.map((session) => renderRelationshipShift(session, allSessions)).join("");
+    }
+
+    function buildRosterSessions() {
+      const sessions = [];
+      state.rows.forEach((row) => {
+        state.people.forEach((person) => {
+          buildEntries(row.byPerson.get(person.name) || "")
+            .filter((entry) => entry.type === "work" && entry.start && entry.end)
+            .forEach((entry) => sessions.push(createSession(person.name, row.day, entry)));
+        });
+      });
+      return sessions;
+    }
+
+    function createSession(person, day, entry) {
+      const [startHour, startMinute] = entry.start.split(":").map(Number);
+      const [endHour, endMinute] = entry.end.split(":").map(Number);
+      const startAt = new Date(state.year, state.month - 1, day, startHour, startMinute).getTime();
+      const endAt = new Date(state.year, state.month - 1, day + (entry.overnight ? 1 : 0), endHour, endMinute).getTime();
+      return { person, day, entry, startAt, endAt };
+    }
+
+    function renderRelationshipShift(session, sessions) {
+      const coworkers = sessions.filter((other) => other.person !== session.person
+        && other.startAt < session.endAt && other.endAt > session.startAt);
+      const previous = findHandoverSessions(session, sessions, "incoming");
+      const next = findHandoverSessions(session, sessions, "outgoing");
+
+      return `
+        <article class="relationship-shift">
+          <h3>${escapeHtml(session.entry.code)}｜${escapeHtml(formatEntryTime(session.entry))}</h3>
+          <div class="relationship-grid">
+            ${relationshipItem("上班會遇到誰", formatSessionPeople(coworkers, "此時段沒有重疊同事"))}
+            ${relationshipItem("誰交班給你", formatSessionPeople(previous, "未找到可判定的交接班人員"))}
+            ${relationshipItem("你交班給誰", formatSessionPeople(next, "未找到可判定的交接班人員"))}
+          </div>
+        </article>
+      `;
+    }
+
+    function findHandoverSessions(session, sessions, direction) {
+      const fixedRule = FIXED_HANDOVERS[session.entry.normalizedCode]?.[direction];
+      if (fixedRule === null) return [];
+      if (fixedRule) {
+        const targetDay = session.day + fixedRule.dayOffset;
+        return sessions.filter((other) => other.person !== session.person
+          && other.day === targetDay
+          && fixedRule.codes.includes(other.entry.normalizedCode));
+      }
+
+      if (direction === "incoming") {
+        const previousEnd = Math.max(...sessions
+          .filter((other) => other.person !== session.person && other.endAt <= session.startAt)
+          .map((other) => other.endAt), -Infinity);
+        return previousEnd === -Infinity ? [] : sessions.filter((other) => other.person !== session.person && other.endAt === previousEnd);
+      }
+
+      const nextStart = Math.min(...sessions
+        .filter((other) => other.person !== session.person && other.startAt >= session.endAt)
+        .map((other) => other.startAt), Infinity);
+      return nextStart === Infinity ? [] : sessions.filter((other) => other.person !== session.person && other.startAt === nextStart);
+    }
+
+    function relationshipItem(title, content) {
+      return `<div class="relationship-item"><strong>${title}</strong><span>${content}</span></div>`;
+    }
+
+    function formatSessionPeople(sessions, emptyText) {
+      if (!sessions.length) return emptyText;
+      const unique = new Map();
+      sessions.forEach((session) => {
+        const key = `${session.person}|${session.entry.code}|${session.startAt}|${session.endAt}`;
+        unique.set(key, `${escapeHtml(session.person)}（${escapeHtml(session.entry.code)} ${escapeHtml(formatEntryTime(session.entry))}）`);
+      });
+      return [...unique.values()].join("<br>");
+    }
+
+    function buildEntries(rawValue) {
+      const raw = cleanText(rawValue);
+      if (!raw) {
+        return [{
+          code: "休假",
+          normalizedCode: "REST",
+          type: "rest",
+          start: "",
+          end: "",
+          overnight: false,
+          note: "休假"
+        }];
+      }
+      return raw.split(/[\/、，,\n]+/)
+        .map((part) => cleanText(part))
+        .filter(Boolean)
+        .map((part) => {
+          const code = normalizeCode(part);
+          const mapped = state.shiftMap.get(code);
+          const directTime = parseTimeRange(part);
+          const time = mapped || directTime;
+          const type = classifyCode(code, Boolean(time));
+          const label = displayCode(part, code);
+          return {
+            code: label,
+            normalizedCode: code,
+            type,
+            start: time?.start || "",
+            end: time?.end || "",
+            overnight: Boolean(time?.overnight),
+            note: time ? "" : describeByCode(code)
+          };
+        });
+    }
+
+    function renderShiftLine(entry) {
+      const className = entryClass(entry);
+      const time = formatEntryTime(entry);
+      const detail = time || entryDetailText(entry);
+      return `
+        <div class="shift-line ${className}">
+          <div class="shift-code">
+            <span>${escapeHtml(entry.code)}</span>
+            ${entry.overnight ? `<span class="overnight">+1</span>` : ""}
+          </div>
+          ${detail ? `<div class="shift-time">${detail}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function entryDetailText(entry) {
+      const detail = entry.note || describeEntry(entry);
+      if (!detail || detail === entry.code) return "";
+      return escapeHtml(detail);
+    }
+
+    function formatEntryTime(entry) {
+      if (!entry.start || !entry.end) return "";
+      return `${entry.start} - ${entry.end}${entry.overnight ? "（隔日）" : ""}`;
+    }
+
+    function parseTimeRange(value) {
+      const text = cleanText(value).replace(/\s+/g, "");
+      const match = text.match(/(\d{1,2})(?::?(\d{2}))?[-~～到至](\d{1,2})(?::?(\d{2}))?(\+1)?/);
+      if (!match) return null;
+      const startHour = Number(match[1]);
+      const startMinute = match[2] == null ? 0 : Number(match[2]);
+      const endHour = Number(match[3]);
+      const endMinute = match[4] == null ? 0 : Number(match[4]);
+      if ([startHour, startMinute, endHour, endMinute].some((num) => Number.isNaN(num))) return null;
+      if (startHour > 23 || endHour > 23 || startMinute > 59 || endMinute > 59) return null;
+      const start = `${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}`;
+      const end = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+      const startTotal = startHour * 60 + startMinute;
+      const endTotal = endHour * 60 + endMinute;
+      return { start, end, overnight: Boolean(match[5]) || endTotal <= startTotal };
+    }
+
+    function classifyCode(code, hasTime) {
+      const upper = code.toUpperCase();
+      if (/^(AL|R|Z|OFF)$/.test(upper)) return "rest";
+      if (/^補\d+$/i.test(code)) return "rest";
+      if (/休|體檢|健檢/.test(code)) return "status";
+      if (hasTime) return "work";
+      return "status";
+    }
+
+    function entryClass(entry) {
+      if (entry.type === "rest") return "rest";
+      if (entry.type === "status") return "status";
+      const upper = entry.normalizedCode.toUpperCase();
+      if (upper.startsWith("A")) return "work-a";
+      if (upper.startsWith("M")) return "work-m";
+      if (upper.startsWith("B") || upper.startsWith("N")) return "work-n";
+      if (upper.startsWith("OD")) return "work-od";
+      return "work-a";
+    }
+
+    function describeEntry(entry) {
+      if (entry.type === "rest") return "休假或非上班日";
+      if (entry.type === "status") return entry.note || "其他註記";
+      return "上班班別";
+    }
+
+    function describeByCode(code) {
+      const upper = code.toUpperCase();
+      if (upper === "AL") return "特休";
+      if (upper === "R") return "休假";
+      if (upper === "Z") return "休假";
+      const leaveHours = code.match(/^補(\d+)$/i);
+      if (leaveHours) return `特休${leaveHours[1]}小時`;
+      if (/體檢|健檢/.test(code)) return "體檢";
+      return "無時間資料";
+    }
+
+    function displayCode(original, code) {
+      const upper = code.toUpperCase();
+      if (upper === "AL") return "特休";
+      if (upper === "R" || upper === "Z") return "休假";
+      const leaveHours = code.match(/^補(\d+)$/i);
+      if (leaveHours) return `特休${leaveHours[1]}小時`;
+      return original;
+    }
+
+    async function downloadPortraitImage() {
+      if (typeof html2canvas !== "function") {
+        setStatus("圖片功能尚未載入完成，請稍後再試。");
+        return;
+      }
+
+      setStatus("正在產生直式圖片...");
+      downloadBtn.disabled = true;
+      try {
+        const canvas = await html2canvas(exportCard, {
+          backgroundColor: "#ffffff",
+          scale: Math.min(3, window.devicePixelRatio || 2),
+          useCORS: true,
+          windowWidth: 1080,
+          onclone: (doc) => {
+            const card = doc.getElementById("exportCard");
+            card.classList.add("exporting-image");
+            card.style.width = "720px";
+            card.style.minWidth = "720px";
+            card.querySelectorAll(".is-selected").forEach((cell) => cell.classList.remove("is-selected"));
+          }
+        });
+        const person = personSelect.value || "班表";
+        const filename = `${state.year}-${String(state.month).padStart(2, "0")}-${person}-班表日曆.png`;
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        setStatus("已產生直式 PNG 圖片。");
+      } catch (error) {
+        console.error(error);
+        setStatus("圖片產生失敗，請稍後再試，或使用列印 / PDF。");
+      } finally {
+        downloadBtn.disabled = state.people.length === 0;
+      }
+    }
+
+    function normalizeCode(value) {
+      return cleanText(value)
+        .replace(/\s+/g, "")
+        .replace(/[：:]+$/, "")
+        .toUpperCase();
+    }
+
+    function cleanText(value) {
+      if (value == null) return "";
+      return String(value).replace(/\r/g, "").trim();
+    }
+
+    function normalizePersonName(value) {
+      return String(value).replace(/巣羿軒/g, "巢羿軒");
+    }
+
+    function parseDay(value) {
+      if (typeof value === "number") return Math.trunc(value);
+      const match = cleanText(value).match(/^(\d{1,2})/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function extractHolidayName(value) {
+      const text = cleanText(value);
+      const match = text.match(/[（(]([^）)]+)[）)]/);
+      return match ? match[1].trim() : "";
+    }
+
+    function escapeHtml(value) {
+      return cleanText(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+  </script>
+</body>
+</html>
